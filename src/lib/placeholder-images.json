@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "A person looking at a map with travel landmarks in the background.",
+      "imageUrl": "https://picsum.photos/seed/travel/600/600",
+      "imageHint": "travel planning"
+    }
+  ]
 }
