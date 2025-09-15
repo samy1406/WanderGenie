@@ -17,7 +17,7 @@ export async function handleAdjustItinerary(input: AdjustItineraryInput) {
     try {
       const result = await adjustItinerary(input);
       return result;
-    } catch (error)      {
+    } catch (error) {
       console.error("Error in handleAdjustItinerary:", error);
       throw new Error("Failed to adjust itinerary via server action.");
     }
