@@ -1,44 +1,17 @@
 "use client";
 
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-
-interface Day {
-  title: string;
-  content: string;
-}
-
-const parseItinerary = (itineraryText: string): Day[] => {
-  if (!itineraryText) return [];
-
-  const days: Day[] = [];
-  const dayRegex = /(Day\s*\d+.*)/gi;
-  const parts = itineraryText.split(dayRegex).filter(part => part.trim() !== '');
-
-  for (let i = 0; i < parts.length; i += 2) {
-    if (parts[i] && parts[i+1]) {
-      days.push({
-        title: parts[i].trim().replace(/:$/, ''),
-        content: parts[i+1].trim(),
-      });
-    }
-  }
-  
-  if (days.length === 0 && itineraryText.length > 0) {
-    return [{ title: "Your Itinerary", content: itineraryText }];
-  }
-  
-  return days;
-};
+import { CheckCircle2, Hand, Backpack, Info } from "lucide-react";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
-  const days = parseItinerary(itineraryData.itinerary);
-  const firstActivity = days.length > 0 ? days[0].content.split('\n')[0] : "visit the city center";
+  const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
+  const firstActivity = dailyPlan.length > 0 ? dailyPlan[0].activities.split('\n')[0] : "visit the city center";
 
   return (
     <Card className="h-full flex flex-col shadow-lg">
@@ -57,19 +30,66 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
         </div>
         <ScrollArea className="flex-1 pr-4">
           <Accordion type="single" collapsible defaultValue="day-0">
-            {days.map((day, index) => (
+            {dailyPlan.map((day, index) => (
               <AccordionItem key={index} value={`day-${index}`}>
-                <AccordionTrigger className="font-headline text-lg font-semibold">{day.title}</AccordionTrigger>
+                <AccordionTrigger className="font-headline text-lg font-semibold">Day {day.day}: {day.title}</AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-2 text-sm text-muted-foreground whitespace-pre-line">
-                    {day.content}
+                    {day.activities}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg font-headline">
+                  <Backpack className="mr-2 h-5 w-5 text-primary" />
+                  Things to Carry
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {thingsToCarry.map((item, index) => (
+                    <li key={index} className="flex items-center">
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg font-headline">
+                  <Hand className="mr-2 h-5 w-5 text-primary" />
+                  Must-Do Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {mustDo.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                       <CheckCircle2 className="mr-2 mt-1 h-4 w-4 flex-shrink-0 text-green-500" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </ScrollArea>
       </CardContent>
+      <CardFooter>
+        <div className="text-xs text-muted-foreground p-4 bg-muted/50 rounded-lg flex items-start">
+          <Info className="mr-2 h-4 w-4 flex-shrink-0 text-primary" />
+          <div>
+            <span className="font-semibold">Travel Tip:</span> {travelTips}
+          </div>
+        </div>
+      </CardFooter>
     </Card>
   );
 };

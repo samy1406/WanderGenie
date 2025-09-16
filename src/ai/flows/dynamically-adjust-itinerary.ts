@@ -24,7 +24,7 @@ const AdjustItineraryInputSchema = z.object({
   userPreferences: z
     .string()
     .optional()
-    .describe('The user\u2019s preferences, e.g., interests, budget.'),
+    .describe('The user’s preferences, e.g., interests, budget.'),
 });
 
 export type AdjustItineraryInput = z.infer<typeof AdjustItineraryInputSchema>;
@@ -54,7 +54,10 @@ const adjustItineraryPrompt = ai.definePrompt({
   name: 'adjustItineraryPrompt',
   input: {schema: AdjustItineraryInputSchema},
   output: {schema: AdjustItineraryOutputSchema},
-  prompt: `Given the user's current plan: {{{currentPlan}}}, current location: {{{location}}}, weather conditions: {{{weather}}}, and preferences: {{{userPreferences}}}, suggest an alternative indoor activity nearby and a reason for the suggestion. The alternative must be suitable, culturally interesting, and located nearby.
+  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. However, the weather is currently {{weather}}. 
+Based on these conditions and the user's preference for "{{userPreferences}}", suggest a specific, creative, and suitable alternative activity. 
+Avoid generic suggestions. Provide a compelling reason why this new activity is a great choice.
+Do not repeat the original plan in your suggestion.
 
 Output the result in JSON format.
 `,

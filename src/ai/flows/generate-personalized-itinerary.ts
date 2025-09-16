@@ -12,6 +12,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const DayPlanSchema = z.object({
+  day: z.number().describe("The day number of the plan."),
+  title: z.string().describe("A creative and short title for the day's activities."),
+  activities: z.string().describe("A detailed breakdown of the activities for the day, including morning, afternoon, and evening."),
+});
+
 const GeneratePersonalizedItineraryInputSchema = z.object({
   destination: z.string().describe('The destination for the trip.'),
   tripDuration: z.number().describe('The duration of the trip in days.'),
@@ -20,7 +26,10 @@ const GeneratePersonalizedItineraryInputSchema = z.object({
 export type GeneratePersonalizedItineraryInput = z.infer<typeof GeneratePersonalizedItineraryInputSchema>;
 
 const GeneratePersonalizedItineraryOutputSchema = z.object({
-  itinerary: z.string().describe('A personalized, day-by-day travel itinerary.'),
+  dailyPlan: z.array(DayPlanSchema).describe("A day-by-day itinerary."),
+  thingsToCarry: z.array(z.string()).describe("A list of essential items to carry for the trip."),
+  mustDo: z.array(z.string()).describe("A list of must-do activities or must-visit places at the destination."),
+  travelTips: z.string().describe("General travel tips for the destination."),
 });
 export type GeneratePersonalizedItineraryOutput = z.infer<typeof GeneratePersonalizedItineraryOutputSchema>;
 
@@ -38,7 +47,11 @@ Destination: {{{destination}}}
 Trip Duration: {{{tripDuration}}} days
 Interests: {{{interests}}}
 
-Provide a detailed itinerary with suggestions for activities, sights, and restaurants for each day.`, 
+Provide a detailed itinerary with suggestions for activities, sights, and restaurants for each day.
+Also include a list of "things to carry", "must-do" activities, and general "travel tips".
+Structure the output as a JSON object with the fields: dailyPlan, thingsToCarry, mustDo, and travelTips.
+The dailyPlan should be an array of objects, each with a day number, title, and detailed activities.
+`, 
 });
 
 const generatePersonalizedItineraryFlow = ai.defineFlow(
