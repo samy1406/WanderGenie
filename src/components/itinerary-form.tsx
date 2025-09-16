@@ -13,34 +13,48 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { handleGenerateItinerary } from "@/app/actions";
+import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
+import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { useToast } from "@/hooks/use-toast";
 import { Wand2 } from "lucide-react";
 
 const formSchema = z.object({
+  origin: z.string().min(2, "Origin must be at least 2 characters."),
   destination: z.string().min(2, "Destination must be at least 2 characters."),
   tripDuration: z.coerce.number().min(1, "Duration must be at least 1 day.").max(14, "Duration cannot exceed 14 days."),
   interests: z.string().min(10, "Tell us a bit more about your interests."),
+  travelPreference: z.enum(["budget", "comfort", "speed"]),
 });
 
 type ItineraryFormProps = {
   setItinerary: Dispatch<SetStateAction<GeneratePersonalizedItineraryOutput | null>>;
+  setTravelOptions: Dispatch<SetStateAction<GetTravelOptionsOutput | null>>;
+  setDestination: Dispatch<SetStateAction<string | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
   isLoading: boolean;
 };
 
-export default function ItineraryForm({ setItinerary, setIsLoading, setError, isLoading }: ItineraryFormProps) {
+export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setIsLoading, setError, isLoading }: ItineraryFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      origin: "",
       destination: "",
       tripDuration: 3,
       interests: "",
+      travelPreference: "budget",
     },
   });
 
@@ -48,16 +62,38 @@ export default function ItineraryForm({ setItinerary, setIsLoading, setError, is
     setIsLoading(true);
     setError(null);
     setItinerary(null);
+    setTravelOptions(null);
+    setDestination(values.destination);
+    
     try {
-      const result = await handleGenerateItinerary(values);
-      if (result) {
-        setItinerary(result);
+      const [itineraryResult, travelOptionsResult] = await Promise.all([
+        handleGenerateItinerary({
+          destination: values.destination,
+          tripDuration: values.tripDuration,
+          interests: values.interests
+        }),
+        handleGetTravelOptions({
+            origin: values.origin,
+            destination: values.destination,
+            travelPreference: values.travelPreference
+        })
+      ]);
+
+      if (itineraryResult) {
+        setItinerary(itineraryResult);
       } else {
         throw new Error("The generated itinerary was empty.");
       }
+
+      if (travelOptionsResult) {
+        setTravelOptions(travelOptionsResult);
+      } else {
+        throw new Error("Could not get travel options.");
+      }
     } catch (error) {
-      console.error("Failed to generate itinerary:", error);
-      setError("Sorry, we couldn't generate your itinerary. Please try again.");
+      console.error("Failed during generation:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      setError(`Sorry, we couldn't complete your request. ${errorMessage}`);
       toast({
         title: "Generation Failed",
         description: "There was a problem creating your trip plan.",
@@ -71,6 +107,19 @@ export default function ItineraryForm({ setItinerary, setIsLoading, setError, is
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="origin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Origin</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Mumbai" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="destination"
@@ -113,6 +162,28 @@ export default function ItineraryForm({ setItinerary, setIsLoading, setError, is
               <FormMessage />
             </FormItem>
           )}
+        />
+        <FormField
+            control={form.control}
+            name="travelPreference"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Travel Preference</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select your travel priority" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="budget">Budget-Friendly</SelectItem>
+                            <SelectItem value="comfort">Comfort</SelectItem>
+                            <SelectItem value="speed">Fastest Route</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )}
         />
         <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
           {isLoading ? (

@@ -6,6 +6,7 @@ import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 interface Day {
   title: string;
@@ -35,36 +36,38 @@ const parseItinerary = (itineraryText: string): Day[] => {
   return days;
 };
 
-const ItineraryDisplay = ({ itineraryData }: { itineraryData: GeneratePersonalizedItineraryOutput }) => {
+const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const days = parseItinerary(itineraryData.itinerary);
   const firstActivity = days.length > 0 ? days[0].content.split('\n')[0] : "visit the city center";
 
   return (
-    <Card className="h-[600px] flex flex-col shadow-lg">
+    <Card className="h-full flex flex-col shadow-lg">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="font-headline">Your Custom Itinerary</CardTitle>
-                <CardDescription>Here is your personalized plan.</CardDescription>
+                <CardTitle className="font-headline text-3xl">Your Custom Itinerary</CardTitle>
+                <CardDescription>A personalized plan for your trip to {destination}.</CardDescription>
             </div>
             <SuggestionModal currentPlan={firstActivity} />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
         <div className="h-48 rounded-lg overflow-hidden border">
-          <MapPlaceholder />
+          <MapPlaceholder destination={destination} />
         </div>
         <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6">
+          <Accordion type="single" collapsible defaultValue="day-0">
             {days.map((day, index) => (
-              <div key={index}>
-                <h3 className="font-headline text-lg font-semibold mb-2">{day.title}</h3>
-                <div className="space-y-2 text-sm text-muted-foreground whitespace-pre-line">
-                  {day.content}
-                </div>
-              </div>
+              <AccordionItem key={index} value={`day-${index}`}>
+                <AccordionTrigger className="font-headline text-lg font-semibold">{day.title}</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm text-muted-foreground whitespace-pre-line">
+                    {day.content}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </ScrollArea>
       </CardContent>
     </Card>
