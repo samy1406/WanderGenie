@@ -7,37 +7,44 @@ import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { CheckCircle2, Hand, Backpack, Info, CheckSquare } from "lucide-react";
+import { CheckCircle2, Hand, Backpack, Info, CheckSquare, MapPin } from "lucide-react";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
 
   return (
-    <Card className="h-full flex flex-col shadow-lg border-primary/20">
-      <CardHeader className="bg-primary/5">
+    <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
+      <CardHeader className="bg-primary/10">
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="font-headline text-3xl text-primary">Your Custom Itinerary</CardTitle>
-                <CardDescription>A personalized plan for your trip to {destination}.</CardDescription>
+                <CardTitle className="text-3xl text-primary">Your Trip to {destination}</CardTitle>
+                <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
-            <SuggestionModal currentPlan={firstActivity} />
+            <SuggestionModal currentPlan={firstActivity} location={destination} />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
-        <div className="h-48 rounded-lg overflow-hidden border">
+        <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
           <MapPlaceholder destination={destination} />
         </div>
-        <ScrollArea className="flex-1 pr-4">
-          <Accordion type="single" collapsible defaultValue="day-0">
+        <ScrollArea className="flex-1 pr-4 -mr-4">
+          <Accordion type="single" collapsible defaultValue="day-0" className="pr-4">
             {dailyPlan.map((day, index) => (
-              <AccordionItem key={index} value={`day-${index}`}>
-                <AccordionTrigger className="font-headline text-lg font-semibold hover:text-primary">Day {day.day}: {day.title}</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-3 text-sm text-muted-foreground">
+              <AccordionItem key={index} value={`day-${index}`} className="border-b-2 border-primary/10">
+                <AccordionTrigger className="font-headline text-xl font-bold hover:text-primary py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-body text-sm">
+                      {day.day}
+                    </div>
+                    {day.title}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pl-4 border-l-2 border-accent ml-4">
+                  <ul className="space-y-3 text-sm text-foreground/80">
                     {day.activities.map((activity, actIndex) => (
                         <li key={actIndex} className="flex items-start">
-                            <CheckSquare className="mr-2 mt-1 h-4 w-4 flex-shrink-0 text-accent" />
+                            <CheckSquare className="mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent" />
                             <span>{activity}</span>
                         </li>
                     ))}
@@ -48,9 +55,9 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
           </Accordion>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <Card>
+            <Card className="bg-secondary/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-lg font-headline">
+                <CardTitle className="flex items-center text-lg">
                   <Backpack className="mr-2 h-5 w-5 text-primary" />
                   Things to Carry
                 </CardTitle>
@@ -66,10 +73,10 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                 </ul>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-secondary/50">
               <CardHeader>
-                <CardTitle className="flex items-center text-lg font-headline">
-                  <Hand className="mr-2 h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center text-lg">
+                  <MapPin className="mr-2 h-5 w-5 text-primary" />
                   Must-Do Activities
                 </CardTitle>
               </CardHeader>

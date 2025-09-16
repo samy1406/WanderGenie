@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,38 +18,14 @@ import { Lightbulb } from "lucide-react";
 
 type SuggestionModalProps = {
   currentPlan: string;
+  location: string;
 };
 
-export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
+export default function SuggestionModal({ currentPlan, location }: SuggestionModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<AdjustItineraryOutput | null>(null);
-  const [location, setLocation] = useState<{ city: string } | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen) {
-      setSuggestion(null);
-      
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          // For demonstration, we are using a default city.
-          // In a real application, you would use a reverse geocoding service
-          // to get the city from the user's coordinates.
-          setLocation({ city: "Ahmedabad" });
-        },
-        () => {
-          toast({
-            title: "Location Access Denied",
-            description: "Using a default location for suggestions.",
-            variant: "destructive",
-          });
-          // Default location if user denies access
-          setLocation({ city: "Ahmedabad" });
-        }
-      );
-    }
-  }, [isOpen, toast]);
 
   const getSuggestion = async () => {
     if (!location) {
@@ -57,10 +33,11 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
         return;
     }
     setIsLoading(true);
+    setSuggestion(null);
     try {
       const result = await handleAdjustItinerary({
         currentPlan,
-        location: location.city,
+        location: location, // Use the destination city passed in props
         userPreferences: "Culturally interesting indoor activities",
       });
       setSuggestion(result);
@@ -86,32 +63,32 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Need a New Plan?</DialogTitle>
+          <DialogTitle>Need a New Plan?</DialogTitle>
           <DialogDescription>
-            Let's check for potential hurdles and find an alternative if needed. We'll automatically check the weather for your location.
+            Let's check real-time conditions for your activity and suggest an alternative if needed.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <p className="text-sm"><strong>Current Plan:</strong> {currentPlan}</p>
-          <p className="text-sm"><strong>Location:</strong> {location?.city || 'Fetching...'}</p>
           
           {isLoading && (
             <div className="flex items-center justify-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="ml-4 text-muted-foreground">Checking conditions...</p>
             </div>
           )}
 
           {suggestion && (
-            <div className={`mt-4 p-4 rounded-lg ${suggestion.isGoodToGo ? 'bg-green-100 dark:bg-green-900/50' : 'bg-amber-100 dark:bg-amber-900/50'}`}>
-                <h4 className="font-bold text-sm">{suggestion.isGoodToGo ? "You're Good to Go!" : "Here's an Alternative:"}</h4>
-                <p className={`font-semibold ${suggestion.isGoodToGo ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>{suggestion.suggestion}</p>
-                <p className="text-sm text-muted-foreground mt-1">{suggestion.reason}</p>
+            <div className={`mt-4 p-4 rounded-lg text-sm ${suggestion.isGoodToGo ? 'bg-green-100 dark:bg-green-900/50 text-green-900 dark:text-green-200' : 'bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200'}`}>
+                <h4 className="font-bold mb-2">{suggestion.isGoodToGo ? "You're Good to Go!" : "Here's an Alternative:"}</h4>
+                <p className="font-semibold">{suggestion.suggestion}</p>
+                <p className="text-xs text-muted-foreground mt-2">{suggestion.reason}</p>
             </div>
           )}
 
         </div>
         <DialogFooter>
-          <Button onClick={getSuggestion} disabled={isLoading || !location}>
+          <Button onClick={getSuggestion} disabled={isLoading}>
             {isLoading ? "Thinking..." : "Get Suggestion"}
           </Button>
         </DialogFooter>
