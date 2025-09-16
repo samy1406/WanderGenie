@@ -12,15 +12,13 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {getCurrentWeather} from '../tools/weather-tool';
 
 const AdjustItineraryInputSchema = z.object({
   currentPlan: z
     .string()
     .describe('The current itinerary plan that might be disrupted.'),
   location: z.string().describe('The current location of the user.'),
-  weather: z
-    .string()
-    .describe('The current weather conditions at the location.'),
   userPreferences: z
     .string()
     .optional()
@@ -55,7 +53,10 @@ const adjustItineraryPrompt = ai.definePrompt({
   name: 'adjustItineraryPrompt',
   input: {schema: AdjustItineraryInputSchema},
   output: {schema: AdjustItineraryOutputSchema},
-  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. The weather is currently {{weather}}. The user's preferences are for "{{userPreferences}}".
+  tools: [getCurrentWeather],
+  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. The user's preferences are for "{{userPreferences}}".
+
+Use the getCurrentWeather tool to get the current weather for the user's location.
 
 Analyze the situation. 
 1. If the current weather poses a clear problem for the activity (e.g., rain for an outdoor picnic), suggest a specific, creative, and suitable alternative activity. Avoid generic suggestions. Provide a compelling reason. Set 'isGoodToGo' to false.

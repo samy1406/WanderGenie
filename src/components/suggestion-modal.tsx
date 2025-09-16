@@ -14,25 +14,17 @@ import {
 import { handleAdjustItinerary } from "@/app/actions";
 import type { AdjustItineraryOutput } from "@/ai/flows/dynamically-adjust-itinerary";
 import { useToast } from "@/hooks/use-toast";
-import { Lightbulb, Sun, Cloud, CloudRain } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 
 type SuggestionModalProps = {
   currentPlan: string;
 };
-
-const weatherOptions = {
-  sunny: { label: "Sunny", icon: <Sun className="h-4 w-4 text-yellow-500" />, data: "The weather is sunny and clear." },
-  cloudy: { label: "Cloudy", icon: <Cloud className="h-4 w-4 text-gray-500" />, data: "The weather is cloudy." },
-  rainy: { label: "Rainy", icon: <CloudRain className="h-4 w-4 text-blue-500" />, data: "It is currently raining." },
-};
-type WeatherCondition = keyof typeof weatherOptions;
 
 export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<AdjustItineraryOutput | null>(null);
   const [location, setLocation] = useState<{ city: string } | null>(null);
-  const [weather, setWeather] = useState<WeatherCondition>("sunny");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -41,6 +33,9 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
       
       navigator.geolocation.getCurrentPosition(
         () => {
+          // For demonstration, we are using a default city.
+          // In a real application, you would use a reverse geocoding service
+          // to get the city from the user's coordinates.
           setLocation({ city: "Ahmedabad" });
         },
         () => {
@@ -49,6 +44,7 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
             description: "Using a default location for suggestions.",
             variant: "destructive",
           });
+          // Default location if user denies access
           setLocation({ city: "Ahmedabad" });
         }
       );
@@ -65,7 +61,6 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
       const result = await handleAdjustItinerary({
         currentPlan,
         location: location.city,
-        weather: weatherOptions[weather].data,
         userPreferences: "Culturally interesting indoor activities",
       });
       setSuggestion(result);
@@ -93,30 +88,13 @@ export default function SuggestionModal({ currentPlan }: SuggestionModalProps) {
         <DialogHeader>
           <DialogTitle className="font-headline">Need a New Plan?</DialogTitle>
           <DialogDescription>
-            Let's check for potential hurdles and find an alternative if needed.
+            Let's check for potential hurdles and find an alternative if needed. We'll automatically check the weather for your location.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <p className="text-sm"><strong>Current Plan:</strong> {currentPlan}</p>
           <p className="text-sm"><strong>Location:</strong> {location?.city || 'Fetching...'}</p>
-          <div className="text-sm">
-            <label htmlFor="weather-select" className="font-bold">Select Current Weather:</label>
-            <div className="flex items-center gap-2 mt-2">
-                 <select
-                    id="weather-select"
-                    value={weather}
-                    onChange={(e) => setWeather(e.target.value as WeatherCondition)}
-                    className="flex-grow p-2 border rounded-md bg-card"
-                    aria-label="Select weather condition"
-                >
-                    {Object.keys(weatherOptions).map(key => (
-                        <option key={key} value={key}>{weatherOptions[key as WeatherCondition].label}</option>
-                    ))}
-                </select>
-                {weatherOptions[weather].icon}
-            </div>
-          </div>
-
+          
           {isLoading && (
             <div className="flex items-center justify-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
