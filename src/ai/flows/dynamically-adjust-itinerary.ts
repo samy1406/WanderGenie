@@ -30,15 +30,16 @@ const AdjustItineraryInputSchema = z.object({
 export type AdjustItineraryInput = z.infer<typeof AdjustItineraryInputSchema>;
 
 const AdjustItineraryOutputSchema = z.object({
-  alternativeSuggestion: z
+  isGoodToGo: z.boolean().describe("Set to true if the original plan is fine, false if an alternative is suggested."),
+  suggestion: z
     .string()
     .describe(
-      'A suggested alternative activity based on the weather and user preferences.'
+      'A suggested alternative activity or a positive message if the plan is good to go.'
     ),
   reason: z
     .string()
     .describe(
-      'A brief explanation of why the alternative activity is suitable.'
+      'A brief explanation for the suggestion or reassurance.'
     ),
 });
 
@@ -54,11 +55,13 @@ const adjustItineraryPrompt = ai.definePrompt({
   name: 'adjustItineraryPrompt',
   input: {schema: AdjustItineraryInputSchema},
   output: {schema: AdjustItineraryOutputSchema},
-  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. However, the weather is currently {{weather}}. 
-Based on these conditions and the user's preference for "{{userPreferences}}", suggest a specific, creative, and suitable alternative activity. 
-Avoid generic suggestions. Provide a compelling reason why this new activity is a great choice.
-Do not repeat the original plan in your suggestion.
+  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. The weather is currently {{weather}}. The user's preferences are for "{{userPreferences}}".
 
+Analyze the situation. 
+1. If the current weather poses a clear problem for the activity (e.g., rain for an outdoor picnic), suggest a specific, creative, and suitable alternative activity. Avoid generic suggestions. Provide a compelling reason. Set 'isGoodToGo' to false.
+2. If the weather is suitable for the current plan, respond with a positive and encouraging message confirming that it's a great day for their planned activity. Set 'isGoodToGo' to true.
+
+Do not repeat the original plan in your suggestion if you provide an alternative.
 Output the result in JSON format.
 `,
 });

@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const DayPlanSchema = z.object({
   day: z.number().describe("The day number of the plan."),
   title: z.string().describe("A creative and short title for the day's activities."),
-  activities: z.string().describe("A detailed breakdown of the activities for the day, including morning, afternoon, and evening."),
+  activities: z.array(z.string()).describe("A bulleted list of activities for the day, including morning, afternoon, and evening."),
 });
 
 const GeneratePersonalizedItineraryInputSchema = z.object({
@@ -47,10 +47,10 @@ Destination: {{{destination}}}
 Trip Duration: {{{tripDuration}}} days
 Interests: {{{interests}}}
 
-Provide a detailed itinerary with suggestions for activities, sights, and restaurants for each day.
+Provide a detailed itinerary. For each day's activities, provide a bulleted list of things to do.
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
 Structure the output as a JSON object with the fields: dailyPlan, thingsToCarry, mustDo, and travelTips.
-The dailyPlan should be an array of objects, each with a day number, title, and detailed activities.
+The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of strings.
 `, 
 });
 
