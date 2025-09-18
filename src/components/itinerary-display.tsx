@@ -5,20 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import React from "react";
+import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Hand, Backpack, Info, CheckSquare, MapPin, Rocket } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, Navigation } from "lucide-react";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
+  
+  const [journeyStarted, setJourneyStarted] = useState(false);
+  const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
 
   const handleStartJourney = () => {
-    // In a real application, this would trigger location tracking.
-    // For now, we'll just log to the console.
-    console.log("Journey started! (Simulated)");
-    alert("Journey started! In a real app, we would now track your progress against the itinerary.");
+    setJourneyStarted(true);
+    // Automatically open the first day's accordion as the starting point
+    if (dailyPlan.length > 0) {
+      setActiveDay("day-0");
+    }
+    // In a real application, this is where you would initialize location tracking.
+    console.log("Journey started!");
   };
 
   return (
@@ -31,8 +37,12 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
             </div>
             <div className="flex gap-2 flex-shrink-0">
                 <SuggestionModal currentPlan={firstActivity} location={destination} />
-                <Button onClick={handleStartJourney}>
-                    <Rocket className="mr-2 h-4 w-4" /> Start Journey
+                <Button onClick={handleStartJourney} disabled={journeyStarted}>
+                    {journeyStarted ? (
+                        <><Navigation className="mr-2 h-4 w-4" /> Journey in Progress</>
+                    ) : (
+                        <><Rocket className="mr-2 h-4 w-4" /> Start Journey</>
+                    )}
                 </Button>
             </div>
         </div>
@@ -42,7 +52,14 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
           <MapPlaceholder destination={destination} />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
-          <Accordion type="single" collapsible defaultValue="day-0" className="pr-4">
+          <Accordion 
+            type="single" 
+            collapsible 
+            value={activeDay} 
+            onValueChange={setActiveDay} 
+            defaultValue="day-0" 
+            className="pr-4"
+          >
             {dailyPlan.map((day, index) => (
               <AccordionItem key={index} value={`day-${index}`} className="border-b-2 border-primary/10">
                 <AccordionTrigger className="font-headline text-xl font-bold hover:text-primary py-4">
