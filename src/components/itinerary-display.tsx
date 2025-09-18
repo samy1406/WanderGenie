@@ -5,17 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, Navigation, StopCircle } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, CloudSun } from "lucide-react";
+import { handleGetCurrentWeather } from "@/app/actions";
+
+type WeatherData = {
+    temperature: string;
+    condition: string;
+    wind: string;
+} | null;
+
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
-  const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
+  const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
+  const { dailyPlan, thingsToCarry, mustDo, travelTips } = currentItinerary;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
+  const [weather, setWeather] = useState<WeatherData>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+        if(destination) {
+            const weatherData = await handleGetCurrentWeather(destination);
+            setWeather(weatherData);
+        }
+    }
+    fetchWeather();
+  }, [destination]);
 
   const handleToggleJourney = () => {
     const isStarting = !journeyStarted;
@@ -34,6 +54,19 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
     }
   };
 
+  const handleUpdateItinerary = (newActivity: string) => {
+    setCurrentItinerary(prevItinerary => {
+        if (prevItinerary.dailyPlan.length > 0 && prevItinerary.dailyPlan[0].activities.length > 0) {
+            const updatedDailyPlan = [...prevItinerary.dailyPlan];
+            const updatedActivities = [...updatedDailyPlan[0].activities];
+            updatedActivities[0] = newActivity; // Replace the first activity
+            updatedDailyPlan[0] = { ...updatedDailyPlan[0], activities: updatedActivities };
+            return { ...prevItinerary, dailyPlan: updatedDailyPlan };
+        }
+        return prevItinerary;
+    });
+  };
+
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
       <CardHeader className="bg-primary/10">
@@ -43,7 +76,7 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} />}
+                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} onSuggestionAccepted={handleUpdateItinerary} />}
                 <Button onClick={handleToggleJourney}>
                     {journeyStarted ? (
                         <><StopCircle className="mr-2 h-4 w-4" /> End Journey</>
@@ -55,8 +88,19 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
-        <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
+        <div className="h-48 rounded-lg overflow-hidden border shadow-inner relative">
           <MapPlaceholder destination={destination} />
+          {weather && (
+            <div className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg text-xs">
+                <div className="flex items-center gap-2">
+                    <CloudSun className="h-5 w-5" />
+                    <div>
+                        <p className="font-bold">{weather.condition}</p>
+                        <p>{weather.temperature}</p>
+                    </div>
+                </div>
+            </div>
+          )}
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 

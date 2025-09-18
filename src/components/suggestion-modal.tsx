@@ -10,20 +10,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { handleAdjustItinerary } from "@/app/actions";
 import type { AdjustItineraryOutput } from "@/ai/flows/dynamically-adjust-itinerary";
 import { useToast } from "@/hooks/use-toast";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, ThumbsUp, ThumbsDown } from "lucide-react";
 
 type SuggestionModalProps = {
   currentPlan: string;
   location: string;
+  onSuggestionAccepted: (newActivity: string) => void;
 };
 
-export default function SuggestionModal({ currentPlan, location }: SuggestionModalProps) {
+export default function SuggestionModal({ currentPlan, location, onSuggestionAccepted }: SuggestionModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<AdjustItineraryOutput | null>(null);
@@ -60,8 +62,20 @@ export default function SuggestionModal({ currentPlan, location }: SuggestionMod
   const handleOpenChange = (open: boolean) => {
     if (!open) {
         setSuggestion(null); // Reset suggestion when closing
+        if(feedbackRef.current) feedbackRef.current.value = "";
     }
     setIsOpen(open);
+  }
+
+  const handleAccept = () => {
+    if (suggestion && !suggestion.isGoodToGo) {
+        onSuggestionAccepted(suggestion.suggestion);
+        toast({
+            title: "Itinerary Updated!",
+            description: "Your plan has been updated with the new suggestion.",
+        });
+    }
+    handleOpenChange(false);
   }
 
   return (
@@ -103,10 +117,27 @@ export default function SuggestionModal({ currentPlan, location }: SuggestionMod
           )}
 
         </div>
-        <DialogFooter>
-          <Button onClick={getSuggestion} disabled={isLoading}>
-            {isLoading ? "Thinking..." : "Get Suggestion"}
-          </Button>
+        <DialogFooter className="sm:justify-between gap-2">
+            {suggestion && !suggestion.isGoodToGo ? (
+                 <div className="flex w-full gap-2">
+                     <Button onClick={handleAccept} className="w-full">
+                        <ThumbsUp className="mr-2 h-4 w-4"/> Accept & Update
+                     </Button>
+                     <DialogClose asChild>
+                        <Button variant="outline" className="w-full">
+                            <ThumbsDown className="mr-2 h-4 w-4"/> Keep Original
+                        </Button>
+                     </DialogClose>
+                 </div>
+            ) : suggestion && suggestion.isGoodToGo ? (
+                <DialogClose asChild>
+                    <Button className="w-full">Sounds Good!</Button>
+                </DialogClose>
+            ) : (
+                <Button onClick={getSuggestion} disabled={isLoading} className="w-full">
+                    {isLoading ? "Thinking..." : "Get Suggestion"}
+                </Button>
+            )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

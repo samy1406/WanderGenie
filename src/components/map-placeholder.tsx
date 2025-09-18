@@ -9,13 +9,13 @@ const MapPlaceholder = ({ destination }: { destination: string }) => {
             src={mapImageUrl}
             alt={`Map of ${destination}`}
             fill
-            className="object-cover opacity-50"
+            className="object-cover opacity-70"
             data-ai-hint="city map"
             key={destination} // Add key to force re-render on destination change
         />
       <div className="z-10 text-center p-4 rounded-lg bg-black/50 text-white">
-        <h3 className="font-semibold">Map of {destination}</h3>
-        <p className="text-xs">Route will be displayed here</p>
+        <h3 className="font-semibold text-xl">Map of {destination}</h3>
+        <p className="text-xs">Your route will be displayed here</p>
       </div>
     </div>
   );
