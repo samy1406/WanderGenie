@@ -7,21 +7,34 @@ import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { CheckCircle2, Hand, Backpack, Info, CheckSquare, MapPin } from "lucide-react";
+import { Button } from "./ui/button";
+import { CheckCircle2, Hand, Backpack, Info, CheckSquare, MapPin, Rocket } from "lucide-react";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
 
+  const handleStartJourney = () => {
+    // In a real application, this would trigger location tracking.
+    // For now, we'll just log to the console.
+    console.log("Journey started! (Simulated)");
+    alert("Journey started! In a real app, we would now track your progress against the itinerary.");
+  };
+
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
       <CardHeader className="bg-primary/10">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-4">
             <div>
                 <CardTitle className="text-3xl text-primary">Your Trip to {destination}</CardTitle>
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
-            <SuggestionModal currentPlan={firstActivity} location={destination} />
+            <div className="flex gap-2 flex-shrink-0">
+                <SuggestionModal currentPlan={firstActivity} location={destination} />
+                <Button onClick={handleStartJourney}>
+                    <Rocket className="mr-2 h-4 w-4" /> Start Journey
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">

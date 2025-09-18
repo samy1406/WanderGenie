@@ -34,6 +34,8 @@ const formSchema = z.object({
   tripDuration: z.coerce.number().min(1, "Duration must be at least 1 day.").max(14, "Duration cannot exceed 14 days."),
   interests: z.string().min(10, "Tell us a bit more about your interests."),
   travelPreference: z.enum(["budget", "comfort", "speed"]),
+  departureTime: z.string().optional(),
+  arrivalTime: z.string().optional(),
 });
 
 type ItineraryFormProps = {
@@ -55,6 +57,8 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
       tripDuration: 3,
       interests: "",
       travelPreference: "budget",
+      departureTime: "any",
+      arrivalTime: "any",
     },
   });
 
@@ -75,7 +79,9 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
         handleGetTravelOptions({
             origin: values.origin,
             destination: values.destination,
-            travelPreference: values.travelPreference
+            travelPreference: values.travelPreference,
+            departureTime: values.departureTime,
+            arrivalTime: values.arrivalTime
         })
       ]);
 
@@ -104,35 +110,45 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
     }
   }
 
+  const timeOptions = [
+    { value: 'any', label: 'Any Time' },
+    { value: 'morning', label: 'Morning (5AM-12PM)' },
+    { value: 'afternoon', label: 'Afternoon (12PM-5PM)' },
+    { value: 'evening', label: 'Evening (5PM-9PM)' },
+    { value: 'night', label: 'Night (9PM-5AM)' },
+  ];
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="origin"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Origin</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Mumbai" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="destination"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Destination</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Ahmedabad" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="origin"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Origin</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., Mumbai" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="destination"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Destination</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., Ahmedabad" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="tripDuration"
@@ -163,6 +179,52 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
             </FormItem>
           )}
         />
+        <div className="grid md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="departureTime"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Preferred Departure</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a time" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {timeOptions.map(option => (
+                                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="arrivalTime"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Preferred Arrival</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a time" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {timeOptions.map(option => (
+                                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
         <FormField
             control={form.control}
             name="travelPreference"

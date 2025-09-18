@@ -17,19 +17,20 @@ export const getCurrentWeather = ai.defineTool(
     outputSchema: z.object({
       temperature: z.string(),
       condition: z.string(),
+      wind: z.string(),
     }),
   },
   async ({location}) => {
     // In a real app, you would call a weather API here.
     // For this example, we'll return some mock data.
-    const mockWeatherData = {
-        "New York": { temperature: "72°F", condition: "Sunny" },
-        "London": { temperature: "60°F", condition: "Cloudy" },
-        "Tokyo": { temperature: "80°F", condition: "Rainy" },
-        "Ahmedabad": { temperature: "90°F", condition: "Sunny" },
+    const mockWeatherData: { [key: string]: { temperature: string; condition: string; wind: string } } = {
+        "New York": { temperature: "72°F", condition: "Sunny", wind: "5 mph" },
+        "London": { temperature: "60°F", condition: "Cloudy", wind: "10 mph" },
+        "Tokyo": { temperature: "80°F", condition: "Rainy", wind: "15 mph" },
+        "Ahmedabad": { temperature: "90°F", condition: "Sunny", wind: "8 mph" },
       };
       const city = location.split(',')[0];
-      const data = mockWeatherData[city as keyof typeof mockWeatherData] || { temperature: "68°F", condition: "Clear" };
+      const data = mockWeatherData[city] || { temperature: "68°F", condition: "Clear", wind: "7 mph" };
       
       return data;
   }

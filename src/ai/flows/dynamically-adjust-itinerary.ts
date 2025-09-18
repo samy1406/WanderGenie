@@ -23,6 +23,10 @@ const AdjustItineraryInputSchema = z.object({
     .string()
     .optional()
     .describe('The user’s preferences, e.g., interests, budget.'),
+  userFeedback: z
+    .string()
+    .optional()
+    .describe('Feedback from the user about their current experience.'),
 });
 
 export type AdjustItineraryInput = z.infer<typeof AdjustItineraryInputSchema>;
@@ -54,13 +58,16 @@ const adjustItineraryPrompt = ai.definePrompt({
   input: {schema: AdjustItineraryInputSchema},
   output: {schema: AdjustItineraryOutputSchema},
   tools: [getCurrentWeather],
-  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}. The user's preferences are for "{{userPreferences}}".
+  prompt: `The user's current plan is "{{currentPlan}}" in {{location}}.
+The user's preferences are for "{{userPreferences}}".
+The user's feedback is: "{{userFeedback}}".
 
 Use the getCurrentWeather tool to get the current weather for the user's location.
 
 Analyze the situation. 
-1. If the current weather poses a clear problem for the activity (e.g., rain for an outdoor picnic), suggest a specific, creative, and suitable alternative activity. Avoid generic suggestions. Provide a compelling reason. Set 'isGoodToGo' to false.
-2. If the weather is suitable for the current plan, respond with a positive and encouraging message confirming that it's a great day for their planned activity. Set 'isGoodToGo' to true.
+1. If the current weather poses a clear problem for the activity (e.g., rain for an outdoor picnic), suggest a specific, creative, and suitable alternative activity that considers the user's feedback and preferences. Avoid generic suggestions. Provide a compelling reason. Set 'isGoodToGo' to false.
+2. If the user's feedback indicates they are not enjoying the current activity, suggest an alternative that aligns with their preferences, even if the weather is fine. Set 'isGoodToGo' to false.
+3. If the weather is suitable for the current plan and the user feedback is positive or neutral, respond with an encouraging message confirming that it's a great day for their planned activity. Set 'isGoodToGo' to true.
 
 Do not repeat the original plan in your suggestion if you provide an alternative.
 Output the result in JSON format.
