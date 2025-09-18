@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, Navigation } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, Navigation, StopCircle } from "lucide-react";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips } = itineraryData;
@@ -17,14 +17,21 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
 
-  const handleStartJourney = () => {
-    setJourneyStarted(true);
-    // Automatically open the first day's accordion as the starting point
-    if (dailyPlan.length > 0) {
-      setActiveDay("day-0");
+  const handleToggleJourney = () => {
+    const isStarting = !journeyStarted;
+    setJourneyStarted(isStarting);
+
+    if (isStarting) {
+      // Automatically open the first day's accordion as the starting point
+      if (dailyPlan.length > 0) {
+        setActiveDay("day-0");
+      }
+      console.log("Journey started!");
+    } else {
+      // Reset active day when journey ends
+      setActiveDay(undefined);
+      console.log("Journey ended.");
     }
-    // In a real application, this is where you would initialize location tracking.
-    console.log("Journey started!");
   };
 
   return (
@@ -36,10 +43,10 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-                <SuggestionModal currentPlan={firstActivity} location={destination} />
-                <Button onClick={handleStartJourney} disabled={journeyStarted}>
+                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} />}
+                <Button onClick={handleToggleJourney}>
                     {journeyStarted ? (
-                        <><Navigation className="mr-2 h-4 w-4" /> Journey in Progress</>
+                        <><StopCircle className="mr-2 h-4 w-4" /> End Journey</>
                     ) : (
                         <><Rocket className="mr-2 h-4 w-4" /> Start Journey</>
                     )}
@@ -57,7 +64,6 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
             collapsible 
             value={activeDay} 
             onValueChange={setActiveDay} 
-            defaultValue="day-0" 
             className="pr-4"
           >
             {dailyPlan.map((day, index) => (
