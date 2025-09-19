@@ -13,6 +13,7 @@ import { Compass } from "lucide-react";
 export function TripPlanner() {
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
   const [travelOptions, setTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
+  const [origin, setOrigin] = useState<string | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function TripPlanner() {
             <ItineraryForm
             setItinerary={setItinerary}
             setTravelOptions={setTravelOptions}
+            setOrigin={setOrigin}
             setDestination={setDestination}
             setIsLoading={setIsLoading}
             setError={setError}
@@ -55,9 +57,9 @@ export function TripPlanner() {
                 <p className="text-muted-foreground text-lg">Generating your adventure...</p>
               </div>
             </div>
-          ) : itinerary && destination && travelOptions ? (
+          ) : itinerary && origin && destination && travelOptions ? (
             <div className="space-y-8 h-full flex flex-col">
-              <ItineraryDisplay itineraryData={itinerary} destination={destination} />
+              <ItineraryDisplay itineraryData={itinerary} origin={origin} destination={destination} />
               <TravelOptions travelOptionsData={travelOptions} />
             </div>
           ) : (

@@ -33,7 +33,7 @@ graph TD
     E --> I;
     F --> J;
 
-    I -- Structured JSON --> M[ItineraryDisplay];
+    I -- Structured JSON (Plan + Cost) --> M[ItineraryDisplay];
     J -- Travel Options JSON --> N[TravelOptions Display];
 
     subgraph Itinerary Display
@@ -44,6 +44,7 @@ graph TD
         L -- Weather Data --> H;
         H -- Weather Data --> M;
         M -- Displays --> Q[Weather Info & Map];
+        M -- Renders --> V[Estimated Cost];
     end
 
     P -- on click --> R{Journey Started?};
@@ -81,16 +82,17 @@ graph TD
     style M fill:#D5F5E3,stroke:#2ECC71,stroke-width:2px
     style N fill:#D5F5E3,stroke:#2ECC71,stroke-width:2px
     style T fill:#F5CBA7,stroke:#E67E22,stroke-width:2px
+    style V fill:#D5F5E3,stroke:#2ECC71,stroke-width:2px
 ```
 
 ### Explanation of Components
 
 1.  **Client-Side (React & Next.js)**
     *   **`TripPlanner`**: The main UI component that manages the overall state.
-    *   **`ItineraryForm`**: Collects user input for the destination, duration, interests, and travel preferences.
+    *   **`ItineraryForm`**: Collects user input for the destination, duration, interests, travel preferences, and departure/arrival times.
     *   **`Display Area`**: The right-hand side of the UI that shows the generated plan. It renders either a placeholder or the `ItineraryDisplay` and `TravelOptions` components.
-    *   **`ItineraryDisplay`**: Renders the structured trip plan, including the daily accordion, weather, and the "Start/End Journey" button.
-    *   **`SuggestionModal`**: An interactive dialog for the "Smart Suggestion" feature. It takes user feedback and presents AI-generated alternatives.
+    *   **`ItineraryDisplay`**: Renders the structured trip plan, including the daily accordion, weather, estimated cost, and the "Start/End Journey" button.
+    *   **`SuggestionModal`**: An interactive dialog for the "Smart Suggestion" feature. It takes user feedback and presents AI-generated alternatives with options to accept or decline.
 
 2.  **Server Actions (Backend Logic)**
     *   These are server-side functions that are securely called from the client. They act as the bridge between the UI and the AI flows.
@@ -100,7 +102,7 @@ graph TD
 
 3.  **Genkit AI Flows (AI Core)**
     *   These flows define the AI's tasks and prompts. They are responsible for communicating with the underlying language model (e.g., Gemini).
-    *   **`Generate Itinerary Flow`**: Instructs the AI to create a detailed, structured JSON output for the trip plan.
+    *   **`Generate Itinerary Flow`**: Instructs the AI to create a detailed, structured JSON output for the trip plan, including a new `estimatedCost` object based on the user's travel preference.
     *   **`Get Travel Options Flow`**: Prompts the AI to generate realistic travel options.
     *   **`Adjust Itinerary Flow`**: The "smartest" flow. It uses the `Weather Tool` to get real-time data and combines it with user feedback to suggest relevant alternatives.
 

@@ -41,13 +41,14 @@ const formSchema = z.object({
 type ItineraryFormProps = {
   setItinerary: Dispatch<SetStateAction<GeneratePersonalizedItineraryOutput | null>>;
   setTravelOptions: Dispatch<SetStateAction<GetTravelOptionsOutput | null>>;
+  setOrigin: Dispatch<SetStateAction<string | null>>;
   setDestination: Dispatch<SetStateAction<string | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
   isLoading: boolean;
 };
 
-export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setIsLoading, setError, isLoading }: ItineraryFormProps) {
+export default function ItineraryForm({ setItinerary, setTravelOptions, setOrigin, setDestination, setIsLoading, setError, isLoading }: ItineraryFormProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,6 +68,7 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
     setError(null);
     setItinerary(null);
     setTravelOptions(null);
+    setOrigin(values.origin);
     setDestination(values.destination);
     
     try {
@@ -74,7 +76,8 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
         handleGenerateItinerary({
           destination: values.destination,
           tripDuration: values.tripDuration,
-          interests: values.interests
+          interests: values.interests,
+          travelPreference: values.travelPreference,
         }),
         handleGetTravelOptions({
             origin: values.origin,

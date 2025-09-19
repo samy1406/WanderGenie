@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, CloudSun } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, CloudSun, IndianRupee, Building, Utensils, BusFront } from "lucide-react";
 import { handleGetCurrentWeather } from "@/app/actions";
 
 type WeatherData = {
@@ -17,10 +17,9 @@ type WeatherData = {
     wind: string;
 } | null;
 
-
-const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
+const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, origin: string, destination: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
-  const { dailyPlan, thingsToCarry, mustDo, travelTips } = currentItinerary;
+  const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = currentItinerary;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
   
   const [journeyStarted, setJourneyStarted] = useState(false);
@@ -89,7 +88,7 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
         <div className="h-48 rounded-lg overflow-hidden border shadow-inner relative">
-          <MapPlaceholder destination={destination} />
+          <MapPlaceholder origin={origin} destination={destination} />
           {weather && (
             <div className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg text-xs">
                 <div className="flex items-center gap-2">
@@ -136,22 +135,34 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <Card className="bg-secondary/50">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Backpack className="mr-2 h-5 w-5 text-primary" />
-                  Things to Carry
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {thingsToCarry.map((item, index) => (
-                    <li key={index} className="flex items-center">
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <IndianRupee className="mr-2 h-5 w-5 text-primary" />
+                    Estimated Trip Cost
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 text-sm">
+                      <div className="flex justify-between items-center font-bold text-base">
+                          <span>Total</span>
+                          <span>{estimatedCost.total}</span>
+                      </div>
+                      <div className="space-y-2 text-muted-foreground">
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2"><Building className="h-4 w-4" /> Accommodation</span>
+                            <span>{estimatedCost.accommodation}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2"><Utensils className="h-4 w-4" /> Food</span>
+                            <span>{estimatedCost.food}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2"><BusFront className="h-4 w-4" /> Local Transport</span>
+                            <span>{estimatedCost.localTransport}</span>
+                          </div>
+                      </div>
+                  </div>
+                </CardContent>
             </Card>
             <Card className="bg-secondary/50">
               <CardHeader>
@@ -165,6 +176,24 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                   {mustDo.map((item, index) => (
                     <li key={index} className="flex items-start">
                        <CheckCircle2 className="mr-2 mt-1 h-4 w-4 flex-shrink-0 text-green-500" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card className="bg-secondary/50 md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Backpack className="mr-2 h-5 w-5 text-primary" />
+                  Things to Carry
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground grid md:grid-cols-2">
+                  {thingsToCarry.map((item, index) => (
+                    <li key={index} className="flex items-center">
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                       {item}
                     </li>
                   ))}
