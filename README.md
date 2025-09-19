@@ -124,6 +124,8 @@ This project adheres to our `Code of Conduct`. By participating, you are expecte
 
 WanderGenie is built and maintained by:
 
+- **vatsal21770** - Project Owner
+- **aki1608** - Project Owner
 - **samy1406** - Project Owner
 
 ---
