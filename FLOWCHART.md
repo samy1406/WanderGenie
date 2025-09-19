@@ -4,26 +4,26 @@ This document outlines the architecture and data flow of the WanderGenie applica
 
 ```mermaid
 graph TD
-    subgraph Client-Side (React & Next.js)
+    subgraph "Client-Side (React & Next.js)"
         A[TripPlanner Component] --> B[ItineraryForm];
         A --> C{Display Area};
         B -- User Input --> D[Submit Button];
     end
 
-    subgraph Server Actions
+    subgraph "Server Actions"
         E[handleGenerateItinerary];
         F[handleGetTravelOptions];
         G[handleAdjustItinerary];
         H[handleGetCurrentWeather];
     end
 
-    subgraph Genkit AI Flows
+    subgraph "Genkit AI Flows"
         I[Generate Itinerary Flow];
         J[Get Travel Options Flow];
         K[Adjust Itinerary Flow];
     end
     
-    subgraph Genkit Tools
+    subgraph "Genkit Tools"
         L[Weather Tool];
     end
 
@@ -33,17 +33,17 @@ graph TD
     E --> I;
     F --> J;
 
-    I -- Structured JSON (Plan + Cost) --> M[ItineraryDisplay];
-    J -- Travel Options JSON --> N[TravelOptions Display];
+    I -- "Structured JSON (Plan + Cost)" --> M[ItineraryDisplay];
+    J -- "Travel Options JSON" --> N[TravelOptions Display];
 
-    subgraph Itinerary Display
+    subgraph "Itinerary Display"
         M -- Renders --> O[Accordion Plan];
         M -- Renders --> P[Start/End Journey Button];
         M -- Fetches Weather --> H;
         H --> L;
-        L -- Weather Data --> H;
-        H -- Weather Data --> M;
-        M -- Displays --> Q[Weather Info & Map];
+        L -- "Weather Data" --> H;
+        H -- "Weather Data" --> M;
+        M -- Displays --> Q["Weather Info & Map"];
         M -- Renders --> V[Estimated Cost];
     end
 
@@ -51,11 +51,11 @@ graph TD
     R -- Yes --> S[Show SuggestionModal Button];
 
     S -- on click --> T[SuggestionModal];
-    T -- User Feedback --> G;
-    G -- Itinerary & Feedback --> K;
+    T -- "User Feedback" --> G;
+    G -- "Itinerary & Feedback" --> K;
     K -- uses --> L;
-    L -- Real-time Weather --> K;
-    K -- AI Suggestion --> T;
+    L -- "Real-time Weather" --> K;
+    K -- "AI Suggestion" --> T;
     
     T -- Displays --> U[Accept/Decline Buttons];
     U -- on Accept --> M;
