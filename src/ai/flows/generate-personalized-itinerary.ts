@@ -19,10 +19,10 @@ const DayPlanSchema = z.object({
 });
 
 const EstimatedCostSchema = z.object({
-  total: z.string().describe("The estimated total cost of the trip in INR, formatted with the ₹ symbol."),
-  accommodation: z.string().describe("Estimated cost for accommodation in INR."),
-  food: z.string().describe("Estimated cost for food in INR."),
-  localTransport: z.string().describe("Estimated cost for local transportation in INR."),
+  total: z.string().describe("The estimated total cost of the trip."),
+  accommodation: z.string().describe("Estimated cost for accommodation."),
+  food: z.string().describe("Estimated cost for food."),
+  localTransport: z.string().describe("Estimated cost for local transportation."),
 });
 
 const GeneratePersonalizedItineraryInputSchema = z.object({
@@ -59,7 +59,7 @@ Travel Preference: {{{travelPreference}}}
 
 Provide a detailed itinerary. For each day's activities, provide a bulleted list of things to do.
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
-Finally, provide an "estimatedCost" breakdown for the trip in INR, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference. All costs must be in INR and include the '₹' symbol.
+Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference.
 
 Structure the output as a JSON object with the fields: dailyPlan, thingsToCarry, mustDo, travelTips, and estimatedCost.
 The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of strings.
