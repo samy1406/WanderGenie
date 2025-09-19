@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./
 import { Button } from "./ui/button";
 import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, CloudSun, IndianRupee, Building, Utensils, BusFront } from "lucide-react";
 import { handleGetCurrentWeather } from "@/app/actions";
+import { Separator } from "./ui/separator";
 
 type WeatherData = {
     temperature: string;
@@ -29,10 +30,15 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
   useEffect(() => {
     const fetchWeather = async () => {
         if(destination) {
-            const weatherData = await handleGetCurrentWeather(destination);
-            setWeather(weatherData);
+            try {
+                const weatherData = await handleGetCurrentWeather(destination);
+                setWeather(weatherData);
+            } catch (error) {
+                console.error("Failed to fetch weather:", error);
+                setWeather(null); // Set to null or some default error state
+            }
         }
-    }
+    };
     fetchWeather();
   }, [destination]);
 
@@ -134,7 +140,7 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
           </Accordion>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <Card className="bg-secondary/50">
+          <Card className="bg-secondary/50">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <IndianRupee className="mr-2 h-5 w-5 text-primary" />
@@ -143,24 +149,34 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4 text-sm">
-                      <div className="flex justify-between items-center font-bold text-base">
-                          <span>Total</span>
-                          <span>{estimatedCost.total}</span>
-                      </div>
-                      <div className="space-y-2 text-muted-foreground">
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2"><Building className="h-4 w-4" /> Accommodation</span>
-                            <span>{estimatedCost.accommodation}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2"><Utensils className="h-4 w-4" /> Food</span>
-                            <span>{estimatedCost.food}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2"><BusFront className="h-4 w-4" /> Local Transport</span>
-                            <span>{estimatedCost.localTransport}</span>
-                          </div>
-                      </div>
+                    <div className="text-center pb-4">
+                      <p className="text-2xl font-bold text-primary">{estimatedCost.total}</p>
+                      <p className="text-xs text-muted-foreground">(approx. for your preferences)</p>
+                    </div>
+                    <Separator />
+                    <div className="space-y-3 text-muted-foreground pt-2">
+                        <div className="flex gap-4">
+                            <Building className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
+                            <div>
+                                <p className="font-semibold text-foreground">Accommodation</p>
+                                <p>{estimatedCost.accommodation}</p>
+                            </div>
+                        </div>
+                         <div className="flex gap-4">
+                            <Utensils className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
+                            <div>
+                                <p className="font-semibold text-foreground">Food</p>
+                                <p>{estimatedCost.food}</p>
+                            </div>
+                        </div>
+                         <div className="flex gap-4">
+                            <BusFront className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
+                            <div>
+                                <p className="font-semibold text-foreground">Local Transport</p>
+                                <p>{estimatedCost.localTransport}</p>
+                            </div>
+                        </div>
+                    </div>
                   </div>
                 </CardContent>
             </Card>
