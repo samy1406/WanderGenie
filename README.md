@@ -34,12 +34,14 @@ Provide your origin, destination, duration, and interests to get started.
 
 #### 2. Get a Detailed, AI-Generated Itinerary
 WanderGenie creates a complete day-by-day plan which you can explore.
+
 <img width="923" height="630" alt="image" src="https://github.com/user-attachments/assets/4017ef23-4c81-4366-baee-beade036efd7" />
 
 
 
 #### 3. Dive Into Daily Activities
 Expand each day to see a checklist of activities, including tips and suggestions.
+
 <img width="915" height="705" alt="image" src="https://github.com/user-attachments/assets/0699ee06-5c86-49c8-8dbd-7ad23ea3b35f" />
 
 
