@@ -37,7 +37,7 @@ graph TD
     J -- "Travel Options JSON" --> N[TravelOptions Display];
 
     subgraph "Itinerary Display"
-        M -- Renders --> O[Accordion Plan];
+        M -- Renders --> O[Accomodation Plan];
         M -- Renders --> P[Start/End Journey Button];
         M -- Fetches Weather --> H;
         H --> L;
