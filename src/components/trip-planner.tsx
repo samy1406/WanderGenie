@@ -19,6 +19,7 @@ export function TripPlanner() {
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
   const [travelOptions, setTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
+  const [origin, setOrigin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -61,6 +62,7 @@ export function TripPlanner() {
               setItinerary={setItinerary}
               setTravelOptions={setTravelOptions}
               setDestination={setDestination}
+              setOrigin={setOrigin}
               setIsLoading={setIsLoading}
               setError={setError}
               isLoading={isLoading}
@@ -77,9 +79,9 @@ export function TripPlanner() {
                 <p className="text-muted-foreground text-lg">Generating your adventure...</p>
               </div>
             </div>
-          ) : itinerary && destination && travelOptions ? (
+          ) : itinerary && destination && travelOptions && origin ? (
             <div className="space-y-8 h-full flex flex-col">
-              <ItineraryDisplay itineraryData={itinerary} destination={destination} />
+              <ItineraryDisplay itineraryData={itinerary} destination={destination} origin={origin} />
               <TravelOptions travelOptionsData={travelOptions} />
             </div>
           ) : (

@@ -2,19 +2,18 @@
 
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import LiveMap from "./live-map";
+import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Newspaper, Link } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { handleGetNews } from "@/app/actions";
 import { FormatBoldText } from "./format-bold-text";
 
-const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
+const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string, origin: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = currentItinerary;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
@@ -51,22 +50,6 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
     });
   };
 
-  const onGetNews = async () => {
-    try {
-        const news = await handleGetNews(destination);
-        toast({
-            title: `Latest News in ${destination}`,
-            description: news.headline,
-        });
-    } catch (error) {
-        toast({
-            title: "Error",
-            description: "Could not fetch news at this time.",
-            variant: "destructive"
-        })
-    }
-  }
-
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
       <CardHeader className="bg-primary/10">
@@ -88,11 +71,8 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
-        <div className="h-48 rounded-lg overflow-hidden border shadow-inner relative">
-          <LiveMap destination={destination} />
-          <Button size="icon" className="absolute bottom-2 right-2 rounded-full h-10 w-10 bg-black/50 hover:bg-black/70" onClick={onGetNews}>
-            <Newspaper />
-          </Button>
+        <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
+            <MapPlaceholder origin={origin} destination={destination} />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 

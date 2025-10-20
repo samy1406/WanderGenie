@@ -45,13 +45,14 @@ type ItineraryFormProps = {
   setItinerary: Dispatch<SetStateAction<GeneratePersonalizedItineraryOutput | null>>;
   setTravelOptions: Dispatch<SetStateAction<GetTravelOptionsOutput | null>>;
   setDestination: Dispatch<SetStateAction<string | null>>;
+  setOrigin: Dispatch<SetStateAction<string | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
   isLoading: boolean;
   form: UseFormReturn<z.infer<typeof formSchema>>;
 };
 
-export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setIsLoading, setError, isLoading, form }: ItineraryFormProps) {
+export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setOrigin, setIsLoading, setError, isLoading, form }: ItineraryFormProps) {
   const { toast } = useToast();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -60,6 +61,7 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
     setItinerary(null);
     setTravelOptions(null);
     setDestination(values.destination);
+    setOrigin(values.origin);
     
     try {
       const [itineraryResult, travelOptionsResult] = await Promise.all([
@@ -208,7 +210,7 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>Preferred Arrival</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValuechange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a time" />
