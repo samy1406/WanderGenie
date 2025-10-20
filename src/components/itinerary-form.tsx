@@ -27,6 +27,7 @@ import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-pe
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { useToast } from "@/hooks/use-toast";
 import { Wand2 } from "lucide-react";
+import { VoiceInput } from "./voice-input";
 
 const formSchema = z.object({
   origin: z.string().min(2, "Origin must be at least 2 characters."),
@@ -170,11 +171,14 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
             <FormItem>
               <FormLabel>What are your interests?</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="e.g., A relaxing trip focused on beaches and local food"
-                  className="resize-none"
-                  {...field}
-                />
+                <div className="relative">
+                    <Textarea
+                    placeholder="e.g., A relaxing trip focused on beaches and local food"
+                    className="resize-none pr-12"
+                    {...field}
+                    />
+                    <VoiceInput onTranscriptionEnd={(text) => form.setValue('interests', field.value ? `${field.value} ${text}`: text)} />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
