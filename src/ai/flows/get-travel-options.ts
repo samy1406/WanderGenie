@@ -61,10 +61,11 @@ Preferred Departure Time: {{#if departureTime}} {{{departureTime}}} {{else}} any
 Preferred Arrival Time: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} any time {{/if}}
 
 1.  **Travel Options**: Provide up to three distinct options for each major mode of travel (Flight, Train, Bus), if applicable. Prioritize options based on the user's preference (budget, comfort, or speed). For each option, include the mode, specific details (like a fictional airline or train name), estimated cost, duration, and comfort level. For the 'bookingLink', create a specific Google search URL.
-    - For **Flights**, create a Google Flights search URL. Example: 'https://www.google.com/travel/flights?q=Flights+from+New+York+to+London'.
-    - For **other modes**, create a detailed search query. Example for a 'Vistara' train from 'New York' to 'London': 'https://www.google.com/search?q=Vistara+train+from+New+York+to+London'.
+    - For **Flights**, create a Google Flights search URL. Example: 'https://www.google.com/travel/flights?q=Flights+from+{{{origin}}}+to+{{{destination}}}'.
+    - For **Trains**, create a detailed Google search query including the train details. Example for a 'Vistara Express' train: 'https://www.google.com/search?q=Vistara+Express+train+from+{{{origin}}}+to+{{{destination}}}'.
+    - For **Buses**, create a detailed Google search query including the bus line. Example for a 'Red Bus' line: 'https://www.google.com/search?q=Red+Bus+from+{{{origin}}}+to+{{{destination}}}'.
 
-2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. For the 'bookingLink', create a Google search URL for the hotel and destination (e.g., for 'Grand Hyatt' in 'New York', the URL should be 'https://www.google.com/search?q=Grand+Hyatt+New+York'). IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
+2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. For the 'bookingLink', create a specific Google search URL for that hotel in the destination city. Example for 'Grand Hyatt' in '{{{destination}}}': 'https://www.google.com/search?q=Grand+Hyatt+{{{destination}}}'. IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
 
 Structure the entire output as a single JSON object.
 `,
