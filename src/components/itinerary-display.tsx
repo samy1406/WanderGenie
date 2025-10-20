@@ -2,47 +2,22 @@
 
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import LiveMap from "./live-map";
+import MapPlaceholder from "./map-placeholder";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, CloudSun, IndianRupee, Building, Utensils, BusFront, Newspaper } from "lucide-react";
-import { handleGetCurrentWeather, handleGetNews } from "@/app/actions";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { useToast } from "@/hooks/use-toast";
-
-type WeatherData = {
-    temperature: string;
-    condition: string;
-    wind: string;
-} | null;
 
 const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, origin: string, destination: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = currentItinerary;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
-  const { toast } = useToast();
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
-  const [weather, setWeather] = useState<WeatherData>(null);
-
-  useEffect(() => {
-    const fetchWeather = async () => {
-        if(destination) {
-            try {
-                const weatherData = await handleGetCurrentWeather(destination);
-                setWeather(weatherData);
-            } catch (error) {
-                console.error("Failed to fetch weather:", error);
-                setWeather(null); // Set to null or some default error state
-            }
-        }
-    };
-    fetchWeather();
-  }, [destination]);
 
   const handleToggleJourney = () => {
     const isStarting = !journeyStarted;
@@ -74,22 +49,6 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
     });
   };
 
-  const onNewsClick = async () => {
-    try {
-        const news = await handleGetNews(destination);
-        toast({
-            title: `Latest News for ${destination}`,
-            description: news.headline,
-        });
-    } catch (error) {
-        toast({
-            title: "Error fetching news",
-            description: "Could not fetch the latest news at this time.",
-            variant: "destructive"
-        });
-    }
-  }
-
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
       <CardHeader className="bg-primary/10">
@@ -111,24 +70,8 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
-        <div className="h-48 rounded-lg overflow-hidden border shadow-inner relative">
-          <LiveMap destination={destination} />
-          <div className="absolute top-2 right-2 flex gap-2">
-            {weather && (
-                <div className=" bg-black/50 text-white p-2 rounded-lg text-xs">
-                    <div className="flex items-center gap-2">
-                        <CloudSun className="h-5 w-5" />
-                        <div>
-                            <p className="font-bold">{weather.condition}</p>
-                            <p>{weather.temperature}</p>
-                        </div>
-                    </div>
-                </div>
-              )}
-             <Button size="icon" variant="outline" className="h-10 w-10 bg-black/50 text-white border-white/20 hover:bg-black/70 hover:text-white" onClick={onNewsClick}>
-                <Newspaper className="h-5 w-5" />
-             </Button>
-          </div>
+        <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
+          <MapPlaceholder origin={origin} destination={destination} />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 
@@ -163,7 +106,7 @@ const ItineraryDisplay = ({ itineraryData, origin, destination }: { itineraryDat
           </Accordion>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Card className="bg-secondary/50">
+           <Card className="bg-secondary/50">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <IndianRupee className="mr-2 h-5 w-5 text-primary" />
