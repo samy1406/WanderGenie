@@ -14,8 +14,8 @@ const MapPlaceholder = ({ origin, destination }: { origin: string, destination: 
             key={`${origin}-${destination}`} // Add key to force re-render on change
         />
       <div className="z-10 text-center p-4 rounded-lg bg-black/50 text-white">
-        <h3 className="font-semibold text-xl">Map: {origin} to {destination}</h3>
-        <p className="text-xs">Your route will be displayed here</p>
+        <h3 className="font-semibold text-xl">Map from {origin} to {destination}</h3>
+        <p className="text-xs">A real map will be displayed here.</p>
       </div>
     </div>
   );
