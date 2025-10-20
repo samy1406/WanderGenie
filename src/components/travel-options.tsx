@@ -7,6 +7,7 @@ import { Separator } from "./ui/separator";
 import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import React, { useState, useMemo } from "react";
+import { FormatBoldText } from "./format-bold-text";
 
 const iconMap: { [key: string]: React.ReactElement } = {
     Flight: <Plane className="h-6 w-6 text-primary" />,
@@ -96,7 +97,9 @@ const TravelOptions = ({ travelOptionsData }: { travelOptionsData: GetTravelOpti
                                                 <BedDouble className="h-6 w-6 text-primary" />
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-lg text-primary">{option.name}</h4>
+                                                <h4 className="font-semibold text-lg text-primary">
+                                                    <FormatBoldText text={option.name} />
+                                                </h4>
                                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                                                     <div className="flex items-center gap-1">
                                                         {Array.from({ length: 5 }).map((_, i) => (

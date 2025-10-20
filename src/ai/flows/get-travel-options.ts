@@ -22,7 +22,7 @@ const TravelOptionSchema = z.object({
 });
 
 const HotelOptionSchema = z.object({
-    name: z.string().describe("The name of the hotel."),
+    name: z.string().describe("The name of the hotel. This should be wrapped in double asterisks (e.g., '**Grand Hyatt**')."),
     rating: z.number().min(1).max(5).describe("The star rating of the hotel (1-5)."),
     pricePerNight: z.string().describe("The estimated price per night."),
     bookingLink: z.string().url().describe("A placeholder link for booking the hotel."),
@@ -61,7 +61,7 @@ Preferred Departure Time: {{#if departureTime}} {{{departureTime}}} {{else}} any
 Preferred Arrival Time: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} any time {{/if}}
 
 1.  **Travel Options**: Provide up to three distinct options for each major mode of travel (Flight, Train, Bus), if applicable. Prioritize options based on the user's preference (budget, comfort, or speed). For each option, include the mode, specific details (like a fictional airline or train name), estimated cost, duration, comfort level, and a placeholder booking link (e.g., 'https://example.com/book-travel').
-2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), estimated price per night, and a placeholder booking link (e.g., 'https://example.com/book-hotel').
+2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), estimated price per night, and a placeholder booking link (e.g., 'https://example.com/book-hotel'). IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
 
 Structure the entire output as a single JSON object.
 `,

@@ -12,6 +12,7 @@ import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, 
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { handleGetNews } from "@/app/actions";
+import { FormatBoldText } from "./format-bold-text";
 
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
@@ -117,7 +118,7 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                         <li key={actIndex} className="flex items-start">
                             <CheckSquare className="mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent" />
                             <span>
-                                {activity.description}
+                                <FormatBoldText text={activity.description} />
                                 <a href={activity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary ml-2">
                                     <Link className="h-3 w-3 mr-1" />
                                 </a>
@@ -183,7 +184,7 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                   {mustDo.map((item, index) => (
                     <li key={index} className="flex items-start">
                        <CheckCircle2 className="mr-2 mt-1 h-4 w-4 flex-shrink-0 text-green-500" />
-                      {item}
+                      <FormatBoldText text={item} />
                     </li>
                   ))}
                 </ul>
