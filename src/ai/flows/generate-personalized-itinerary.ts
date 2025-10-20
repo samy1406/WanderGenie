@@ -12,10 +12,15 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const ActivitySchema = z.object({
+  description: z.string().describe("The description of the activity."),
+  link: z.string().url().describe("A plausible Google Maps URL for the activity location."),
+});
+
 const DayPlanSchema = z.object({
   day: z.number().describe("The day number of the plan."),
   title: z.string().describe("A creative and short title for the day's activities."),
-  activities: z.array(z.string()).describe("A bulleted list of activities for the day, including morning, afternoon, and evening."),
+  activities: z.array(ActivitySchema).describe("A list of activities for the day, each with a description and a link."),
 });
 
 const EstimatedCostSchema = z.object({
@@ -57,12 +62,12 @@ Trip Duration: {{{tripDuration}}} days
 Interests: {{{interests}}}
 Travel Preference: {{{travelPreference}}}
 
-Provide a detailed itinerary. For each day's activities, provide a bulleted list of things to do.
+Provide a detailed itinerary. For each day's activity, provide a description and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
 Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference.
 
-Structure the output as a JSON object with the fields: dailyPlan, thingsToCarry, mustDo, travelTips, and estimatedCost.
-The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of strings.
+Structure the output as a JSON object.
+The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of objects. Each activity object must have a 'description' and a 'link'.
 `, 
 });
 

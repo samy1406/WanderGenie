@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Newspaper } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Newspaper, Link } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { handleGetNews } from "@/app/actions";
@@ -16,7 +16,7 @@ import { handleGetNews } from "@/app/actions";
 const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = currentItinerary;
-  const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0] : "visit the city center";
+  const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
   const { toast } = useToast();
   
   const [journeyStarted, setJourneyStarted] = useState(false);
@@ -42,7 +42,7 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
         if (prevItinerary.dailyPlan.length > 0 && prevItinerary.dailyPlan[0].activities.length > 0) {
             const updatedDailyPlan = [...prevItinerary.dailyPlan];
             const updatedActivities = [...updatedDailyPlan[0].activities];
-            updatedActivities[0] = newActivity;
+            updatedActivities[0] = { ...updatedActivities[0], description: newActivity };
             updatedDailyPlan[0] = { ...updatedDailyPlan[0], activities: updatedActivities };
             return { ...prevItinerary, dailyPlan: updatedDailyPlan };
         }
@@ -116,7 +116,12 @@ const ItineraryDisplay = ({ itineraryData, destination }: { itineraryData: Gener
                     {day.activities.map((activity, actIndex) => (
                         <li key={actIndex} className="flex items-start">
                             <CheckSquare className="mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent" />
-                            <span>{activity}</span>
+                            <span>
+                                {activity.description}
+                                <a href={activity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary ml-2">
+                                    <Link className="h-3 w-3 mr-1" />
+                                </a>
+                            </span>
                         </li>
                     ))}
                   </ul>
