@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import 'regenerator-runtime/runtime';
 
 interface SpeechRecognitionOptions {
@@ -16,6 +16,8 @@ const SpeechRecognition =
 export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOptions) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const handleError = useCallback(onError, [onError]);
 
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -44,7 +46,7 @@ export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOpt
       } else if (event.error === 'not-allowed') {
         errorMessage = 'Microphone access was denied. Please allow microphone access in your browser settings.';
       }
-      onError(errorMessage);
+      handleError(errorMessage);
     };
 
     recognition.onresult = (event) => {
@@ -58,16 +60,18 @@ export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOpt
     recognitionRef.current = recognition;
 
     return () => {
-        recognition.stop();
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
     }
-  }, [onError, onResult]);
+  }, [onResult, handleError]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       try {
         recognitionRef.current.start();
       } catch (error) {
-        onError("Could not start voice recognition. Please try again.");
+        handleError("Could not start voice recognition. Please try again.");
       }
     }
   };

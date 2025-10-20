@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,27 +29,7 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
   const [transcribedText, setTranscribedText] = useState("");
   const { toast } = useToast();
 
-  const {
-    isListening,
-    isSupported,
-    startListening,
-    stopListening,
-  } = useSpeechRecognition({
-    onResult: (result) => {
-        setTranscribedText(result);
-        processTranscription(result);
-    },
-    onError: (error) => {
-        toast({
-            title: "Voice Error",
-            description: error,
-            variant: "destructive"
-        })
-        setIsProcessing(false);
-    }
-  });
-
-  const processTranscription = async (text: string) => {
+  const processTranscription = useCallback(async (text: string) => {
     if (!text) return;
     setIsProcessing(true);
     try {
@@ -74,7 +54,28 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
     } finally {
         setIsProcessing(false);
     }
-  }
+  }, [form, toast]);
+
+  const {
+    isListening,
+    isSupported,
+    startListening,
+    stopListening,
+  } = useSpeechRecognition({
+    onResult: (result) => {
+        setTranscribedText(result);
+        processTranscription(result);
+    },
+    onError: (error) => {
+        toast({
+            title: "Voice Error",
+            description: error,
+            variant: "destructive"
+        })
+        setIsProcessing(false);
+    }
+  });
+
 
   const handleToggleListening = () => {
     if (isListening) {
