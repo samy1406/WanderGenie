@@ -2,11 +2,11 @@
 'use server';
 
 /**
- * @fileOverview Provides travel options based on user preferences.
+ * @fileOverview Provides travel and hotel options based on user preferences.
  *
- * - getTravelOptions - A function that suggests travel options.
+ * - getTravelOptions - A function that suggests travel and accommodation options.
  * - GetTravelOptionsInput - The input type for the getTravelOptions function.
- * - GetTravelOptionsOutput - The return type for the getTravelOptions function.
+ * - GetTravelOptionsOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -18,8 +18,16 @@ const TravelOptionSchema = z.object({
     cost: z.string().describe("Estimated cost of the travel option."),
     duration: z.string().describe("Estimated travel time."),
     comfort: z.string().describe("A brief description of the comfort level."),
-    bookingLink: z.string().describe("A placeholder link for booking."),
+    bookingLink: z.string().url().describe("A placeholder link for booking."),
 });
+
+const HotelOptionSchema = z.object({
+    name: z.string().describe("The name of the hotel."),
+    rating: z.number().min(1).max(5).describe("The star rating of the hotel (1-5)."),
+    pricePerNight: z.string().describe("The estimated price per night."),
+    bookingLink: z.string().url().describe("A placeholder link for booking the hotel."),
+});
+
 
 const GetTravelOptionsInputSchema = z.object({
   origin: z.string().describe("The starting point of the journey."),
@@ -31,7 +39,8 @@ const GetTravelOptionsInputSchema = z.object({
 export type GetTravelOptionsInput = z.infer<typeof GetTravelOptionsInputSchema>;
 
 const GetTravelOptionsOutputSchema = z.object({
-  travelOptions: z.array(TravelOptionSchema).describe("A list of suggested travel options."),
+  travelOptions: z.array(TravelOptionSchema).describe("A list of up to 3 suggested travel options for each mode (Flight, Train, Bus)."),
+  hotelOptions: z.array(HotelOptionSchema).describe("A list of 3 suggested hotel options at the destination."),
 });
 export type GetTravelOptionsOutput = z.infer<typeof GetTravelOptionsOutputSchema>;
 
@@ -43,7 +52,7 @@ const prompt = ai.definePrompt({
   name: 'getTravelOptionsPrompt',
   input: {schema: GetTravelOptionsInputSchema},
   output: {schema: GetTravelOptionsOutputSchema},
-  prompt: `You are a travel agent. Based on the user's origin, destination, and travel preferences, provide three distinct travel options (e.g., one flight, one train, one bus if applicable). 
+  prompt: `You are a travel agent. Based on the user's origin, destination, and travel preferences, provide a comprehensive list of travel and accommodation options.
 
 Origin: {{{origin}}}
 Destination: {{{destination}}}
@@ -51,7 +60,10 @@ Preference: {{{travelPreference}}}
 Preferred Departure Time: {{#if departureTime}} {{{departureTime}}} {{else}} any time {{/if}}
 Preferred Arrival Time: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} any time {{/if}}
 
-For each option, provide the mode of travel, specific details (like a fictional airline or train name), an estimated cost, travel duration, a comfort level description, and a placeholder booking link (e.g., 'https://example.com/book').
+1.  **Travel Options**: Provide up to three distinct options for each major mode of travel (Flight, Train, Bus), if applicable. Prioritize options based on the user's preference (budget, comfort, or speed). For each option, include the mode, specific details (like a fictional airline or train name), estimated cost, duration, comfort level, and a placeholder booking link (e.g., 'https://example.com/book-travel').
+2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), estimated price per night, and a placeholder booking link (e.g., 'https://example.com/book-hotel').
+
+Structure the entire output as a single JSON object.
 `,
 });
 
