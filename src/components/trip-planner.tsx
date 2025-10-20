@@ -46,7 +46,6 @@ export function TripPlanner() {
                 <Compass className="h-8 w-8" />
                 <span className="ml-3 text-3xl font-headline font-semibold">WanderGenie</span>
             </div>
-            <VoiceCommandModal form={form} />
         </div>
         <div className="space-y-4 mb-8">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tighter">
