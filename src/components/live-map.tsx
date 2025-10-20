@@ -8,7 +8,6 @@ const containerStyle = {
   height: '100%',
 };
 
-// Replace with a default location, e.g., a central point in a country or continent
 const defaultCenter = {
   lat: 20.5937,
   lng: 78.9629 // India
@@ -17,6 +16,7 @@ const defaultCenter = {
 const LiveMap = ({ destination }: { destination: string }) => {
   const [center, setCenter] = useState(defaultCenter);
   const [userPosition, setUserPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -59,8 +59,8 @@ const LiveMap = ({ destination }: { destination: string }) => {
 
   if (loadError) {
     return (
-        <div className="w-full h-full bg-destructive/20 flex items-center justify-center text-destructive">
-            Map cannot be loaded. Please check the API key.
+        <div className="w-full h-full bg-destructive/20 flex items-center justify-center text-destructive p-4 text-center">
+           Could not load map. Please ensure your Google Maps API key is configured correctly in a .env.local file.
         </div>
     );
   }
@@ -77,7 +77,14 @@ const LiveMap = ({ destination }: { destination: string }) => {
       }}
     >
       <MarkerF position={center} label={{ text: "Destination", color: "white" }} />
-      {userPosition && <MarkerF position={userPosition} label="You" />}
+      {userPosition && <MarkerF position={userPosition} label={{text: "You are here", color: "white"}} icon={{
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: "#4285F4",
+          fillOpacity: 1,
+          strokeColor: "white",
+          strokeWeight: 2,
+      }}/>}
     </GoogleMap>
   ) : (
     <div className="w-full h-full bg-muted flex items-center justify-center">
