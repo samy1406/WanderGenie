@@ -6,6 +6,7 @@ import 'regenerator-runtime/runtime';
 
 interface SpeechRecognitionOptions {
   onResult: (result: string) => void;
+  onEnd: () => void;
   onError: (error: string) => void;
 }
 
@@ -13,11 +14,12 @@ interface SpeechRecognitionOptions {
 const SpeechRecognition =
   (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition));
 
-export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOptions) => {
+export const useSpeechRecognition = ({ onResult, onEnd, onError }: SpeechRecognitionOptions) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const handleError = useCallback(onError, [onError]);
+  const handleEnd = useCallback(onEnd, [onEnd]);
 
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -35,6 +37,7 @@ export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOpt
 
     recognition.onend = () => {
       setIsListening(false);
+      handleEnd();
     };
 
     recognition.onerror = (event) => {
@@ -64,7 +67,7 @@ export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOpt
             recognitionRef.current.stop();
         }
     }
-  }, [onResult, handleError]);
+  }, [onResult, handleError, handleEnd]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
@@ -89,3 +92,5 @@ export const useSpeechRecognition = ({ onResult, onError }: SpeechRecognitionOpt
     stopListening,
   };
 };
+
+    

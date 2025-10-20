@@ -122,12 +122,16 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
                 if (wordMatch) {
                     valueToSet = wordToNumber[wordMatch];
                 } else {
-                    valueToSet = 1;
+                    toast({ title: "Invalid Duration", description: `I couldn't understand the number of days. Please say a number like 'five' or '5'.`, variant: "destructive"});
+                    setPendingConfirmationText(null);
+                    setTranscribedText("");
+                    transcriptRef.current = "";
+                    return;
                 }
             }
         } else if (currentQuestion.options) {
             const text = transcriptRef.current.toLowerCase();
-            const matchedOption = currentQuestion.options.find(opt => text.includes(opt.value));
+            const matchedOption = currentQuestion.options.find(opt => text.includes(opt.value.toLowerCase()));
             if (matchedOption) {
                 valueToSet = matchedOption.value;
             } else {
@@ -145,6 +149,17 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
     setTranscribedText("");
     transcriptRef.current = "";
   };
+  
+  const handleVoiceResult = (result: string) => {
+    transcriptRef.current = result;
+    setTranscribedText(result);
+  };
+  
+  const handleListeningStop = () => {
+      if (transcriptRef.current) {
+        setPendingConfirmationText(transcriptRef.current);
+      }
+  };
 
   const {
     isListening,
@@ -152,15 +167,8 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
     startListening,
     stopListening,
   } = useSpeechRecognition({
-    onResult: (result) => {
-      transcriptRef.current = result;
-      setTranscribedText(result);
-    },
-    onEnd: () => {
-      if (transcriptRef.current) {
-        setPendingConfirmationText(transcript_ref.current);
-      }
-    },
+    onResult: handleVoiceResult,
+    onEnd: handleListeningStop,
     onError: (error) => {
         toast({
             title: "Voice Error",
@@ -319,3 +327,5 @@ export default function VoiceCommandModal({ form }: VoiceCommandModalProps) {
     </Dialog>
   );
 }
+
+    
