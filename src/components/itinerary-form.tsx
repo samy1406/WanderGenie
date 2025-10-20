@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Wand2 } from "lucide-react";
 import { VoiceInput } from "./voice-input";
 
-const formSchema = z.object({
+export const formSchema = z.object({
   origin: z.string().min(2, "Origin must be at least 2 characters."),
   destination: z.string().min(2, "Destination must be at least 2 characters."),
   tripDuration: z.coerce.number().min(1, "Duration must be at least 1 day.").max(14, "Duration cannot exceed 14 days."),
@@ -46,22 +46,11 @@ type ItineraryFormProps = {
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
   isLoading: boolean;
+  form: UseFormReturn<z.infer<typeof formSchema>>;
 };
 
-export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setIsLoading, setError, isLoading }: ItineraryFormProps) {
+export default function ItineraryForm({ setItinerary, setTravelOptions, setDestination, setIsLoading, setError, isLoading, form }: ItineraryFormProps) {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      origin: "",
-      destination: "",
-      tripDuration: 3,
-      interests: "",
-      travelPreference: "budget",
-      departureTime: "any",
-      arrivalTime: "any",
-    },
-  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -171,14 +160,11 @@ export default function ItineraryForm({ setItinerary, setTravelOptions, setDesti
             <FormItem>
               <FormLabel>What are your interests?</FormLabel>
               <FormControl>
-                <div className="relative">
-                    <Textarea
-                    placeholder="e.g., A relaxing trip focused on beaches and local food"
-                    className="resize-none pr-12"
-                    {...field}
-                    />
-                    <VoiceInput onTranscriptionEnd={(text) => form.setValue('interests', field.value ? `${field.value} ${text}`: text)} />
-                </div>
+                <Textarea
+                placeholder="e.g., A relaxing trip focused on beaches and local food"
+                className="resize-none"
+                {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

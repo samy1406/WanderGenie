@@ -5,6 +5,7 @@ import { adjustItinerary, type AdjustItineraryInput } from "@/ai/flows/dynamical
 import { getTravelOptions, type GetTravelOptionsInput } from "@/ai/flows/get-travel-options";
 import { getCurrentWeather } from "@/ai/tools/weather-tool";
 import { getNewsForLocation } from "@/ai/tools/news-tool";
+import { extractTripDetailsFromText } from "@/ai/flows/extract-trip-details-from-text";
 
 
 export async function handleGenerateItinerary(input: GeneratePersonalizedItineraryInput) {
@@ -41,7 +42,7 @@ export async function handleGetCurrentWeather(location: string) {
     try {
         const result = await getCurrentWeather({ location });
         return result;
-    } catch (error) {
+    } catch (error)        {
         console.error("Error in handleGetCurrentWeather:", error);
         throw new Error("Failed to get current weather via server action.");
     }
@@ -54,5 +55,15 @@ export async function handleGetNews(location: string) {
     } catch (error) {
         console.error("Error in handleGetNews:", error);
         throw new Error("Failed to get news via server action.");
+    }
+}
+
+export async function handleExtractTripDetails(text: string) {
+    try {
+        const result = await extractTripDetailsFromText(text);
+        return result;
+    } catch (error) {
+        console.error("Error in handleExtractTripDetails:", error);
+        throw new Error("Failed to extract trip details via server action.");
     }
 }

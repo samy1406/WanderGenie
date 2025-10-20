@@ -6,3 +6,4 @@ import '@/ai/flows/generate-personalized-itinerary.ts';
 import '@/ai/flows/get-travel-options.ts';
 import '@/ai/tools/weather-tool.ts';
 import '@/ai/tools/news-tool.ts';
+import '@/ai/flows/extract-trip-details-from-text.ts';

@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import ItineraryForm from "@/components/itinerary-form";
+import ItineraryForm, { formSchema } from "@/components/itinerary-form";
 import ItineraryDisplay from "@/components/itinerary-display";
 import TravelOptions from "@/components/travel-options";
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { Compass } from "lucide-react";
+import { Compass, Mic } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
+import VoiceCommandModal from "./voice-command-modal";
+import { Button } from "./ui/button";
 
 export function TripPlanner() {
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
@@ -16,15 +21,32 @@ export function TripPlanner() {
   const [destination, setDestination] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   const heroImage = placeholderImages.find(img => img.id === 'hero');
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      origin: "",
+      destination: "",
+      tripDuration: 3,
+      interests: "",
+      travelPreference: "budget",
+      departureTime: "any",
+      arrivalTime: "any",
+    },
+  });
 
   return (
     <div className="grid md:grid-cols-2 min-h-screen bg-secondary/30">
       <div className="flex flex-col bg-card p-8 md:p-12 shadow-2xl z-10">
-        <div className="flex items-center mb-8 text-primary">
-            <Compass className="h-8 w-8" />
-            <span className="ml-3 text-3xl font-headline font-semibold">WanderGenie</span>
+        <div className="flex items-center justify-between mb-8 text-primary">
+            <div className="flex items-center">
+                <Compass className="h-8 w-8" />
+                <span className="ml-3 text-3xl font-headline font-semibold">WanderGenie</span>
+            </div>
+            <VoiceCommandModal form={form} />
         </div>
         <div className="space-y-4 mb-8">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tighter">
@@ -36,12 +58,13 @@ export function TripPlanner() {
         </div>
         <div className="mt-auto">
             <ItineraryForm
-            setItinerary={setItinerary}
-            setTravelOptions={setTravelOptions}
-            setDestination={setDestination}
-            setIsLoading={setIsLoading}
-            setError={setError}
-            isLoading={isLoading}
+              form={form}
+              setItinerary={setItinerary}
+              setTravelOptions={setTravelOptions}
+              setDestination={setDestination}
+              setIsLoading={setIsLoading}
+              setError={setError}
+              isLoading={isLoading}
             />
             {error && <p className="text-destructive text-sm mt-4">{error}</p>}
         </div>
