@@ -25,7 +25,7 @@ export const formSchema = z.object({
 
 type ItineraryFormProps = {
   form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>;
-  onSubmit: (values: z.infer<typeof formSchema>>) => void;
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
   isLoading: boolean;
   tripType: TripType;
 };
