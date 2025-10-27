@@ -39,12 +39,12 @@ export const HeroSection = ({ children, tripType, setTripType, form }: HeroSecti
                     Round Trip
                 </Button>
             </div>
-            <p className="text-lg font-semibold">Search Lowest Price</p>
+            <div className='flex items-center gap-4'>
+                 <VoiceForm onTranscriptionComplete={onTranscriptionComplete} form={form} />
+                <p className="text-lg font-semibold hidden md:block">Search Lowest Price</p>
+            </div>
         </div>
         {children}
-        <div className="mt-6 text-center">
-            <VoiceForm onTranscriptionComplete={onTranscriptionComplete} form={form} />
-        </div>
       </div>
     </div>
   );

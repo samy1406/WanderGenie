@@ -27,7 +27,7 @@ export const VoiceInput = ({ isListening, onToggleListening, isSupported }: Voic
       onClick={onToggleListening}
       disabled={!isSupported}
       title={getTitle()}
-      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+      className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-full"
     >
       {isListening ? (
         <>
@@ -37,12 +37,12 @@ export const VoiceInput = ({ isListening, onToggleListening, isSupported }: Voic
       ) : !isSupported ? (
         <>
           <CircleAlert className="h-5 w-5 mr-2 text-destructive" />
-          Voice not supported
+          Not Supported
         </>
       ) : (
         <>
             <Mic className="h-5 w-5 mr-2" />
-            Use Voice Command
+            Use Voice
         </>
       )}
     </Button>
