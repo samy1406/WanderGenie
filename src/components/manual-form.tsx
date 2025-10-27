@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon, Mic } from "lucide-react";
+import { Users, CalendarIcon } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -38,17 +38,13 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
 
     return (
         <div className="space-y-4">
-        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-[auto_1fr_1fr_1fr_auto] items-end">
-            {/* Mic Button - Moved for visibility */}
-            <div className="p-2 flex items-end h-full">
-               
-            </div>
+        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-[1fr_1fr_1fr_auto] items-end">
             {/* From */}
             <FormField
             control={form.control}
             name="origin"
             render={({ field }) => (
-                <FormItem className="p-4 relative border-l">
+                <FormItem className="p-4 relative">
                 <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -151,7 +147,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
         </div>
 
         <Card>
-            <CardContent className="grid md:grid-cols-3 gap-6 pt-6">
+            <CardContent className="grid md:grid-cols-2 gap-6 pt-6">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -180,27 +176,6 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                         </FormItem>
                     )}
                     />
-                 <FormField
-                    control={form.control}
-                    name="travelPreference"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Travel Preference</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select your travel priority" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="budget">Budget-Friendly</SelectItem>
-                            <SelectItem value="comfort">Comfort</SelectItem>
-                            <SelectItem value="speed">Fastest Route</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
             </CardContent>
       </Card>
     </div>
