@@ -1,96 +1,115 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
-
-const containerStyle = {
-  width: '100%',
-  height: '100%',
-};
-
-const defaultCenter = {
-  lat: 20.5937,
-  lng: 78.9629 // India
-};
+import { useRef, useEffect, useState } from 'react';
+import Map from 'ol/Map.js';
+import OSM from 'ol/source/OSM.js';
+import TileLayer from 'ol/layer/Tile.js';
+import View from 'ol/View.js';
+import { fromLonLat } from 'ol/proj.js';
+import Feature from 'ol/Feature.js';
+import Point from 'ol/geom/Point.js';
+import { Vector as VectorLayer } from 'ol/layer.js';
+import { Vector as VectorSource } from 'ol/source.js';
+import { Style, Icon } from 'ol/style.js';
 
 const LiveMap = ({ destination }: { destination: string }) => {
-  const [center, setCenter] = useState(defaultCenter);
-  const [userPosition, setUserPosition] = useState<google.maps.LatLngLiteral | null>(null);
-  
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ['places'],
-  });
-
-  const geocoder = useMemo(() => {
-    if (isLoaded && window.google) {
-      return new window.google.maps.Geocoder();
-    }
-    return null;
-  }, [isLoaded]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (geocoder && destination) {
-      geocoder.geocode({ address: destination }, (results, status) => {
-        if (status === 'OK' && results && results[0]) {
-          const location = results[0].geometry.location;
-          setCenter({ lat: location.lat(), lng: location.lng() });
-        } else {
-          console.error(`Geocode was not successful for the following reason: ${status}`);
-        }
-      });
+    if (!mapRef.current) {
+      return;
     }
-  }, [geocoder, destination]);
-  
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserPosition({ lat: latitude, lng: longitude });
-        },
-        (error) => {
-          console.error("Error getting user location:", error);
-        }
-      );
-    }
-  }, []);
 
-  if (loadError) {
+    const fetchCoords = async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=1`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch coordinates from Nominatim API');
+        }
+        const data = await response.json();
+        if (data.length === 0) {
+          throw new Error(`No coordinates found for "${destination}"`);
+        }
+        const { lat, lon } = data[0];
+        return [parseFloat(lon), parseFloat(lat)];
+      } catch (err: any) {
+        setError(err.message || 'Could not fetch coordinates for the destination.');
+        console.error(err);
+        return null; // Return null if coordinates can't be fetched
+      }
+    };
+    
+    let map: Map | undefined;
+
+    fetchCoords().then(coordinates => {
+        if (!mapRef.current) return;
+        
+        let centerCoordinates = fromLonLat([78.9629, 20.5937]); // Default to India
+        let zoom = 4;
+        
+        const layers = [
+            new TileLayer({
+                source: new OSM(),
+            }),
+        ];
+
+        if (coordinates) {
+            centerCoordinates = fromLonLat(coordinates);
+            zoom = 12;
+            const marker = new Feature({
+              geometry: new Point(centerCoordinates),
+            });
+
+            marker.setStyle(new Style({
+                image: new Icon({
+                    color: '#E44D26',
+                    crossOrigin: 'anonymous',
+                    src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
+                    imgSize: [20, 20],
+                    anchor: [0.5, 0.5],
+                }),
+            }));
+
+            const vectorSource = new VectorSource({
+              features: [marker],
+            });
+
+            const markerVectorLayer = new VectorLayer({
+              source: vectorSource,
+            });
+            layers.push(markerVectorLayer);
+        }
+
+         map = new Map({
+            target: mapRef.current,
+            layers: layers,
+            view: new View({
+              center: centerCoordinates,
+              zoom: zoom,
+            }),
+        });
+    });
+
+
+    return () => {
+      if (map) {
+        map.setTarget(undefined);
+      }
+    };
+  }, [destination]);
+
+   if (error) {
     return (
         <div className="w-full h-full bg-destructive/20 flex items-center justify-center text-destructive p-4 text-center">
-           Could not load map. Please ensure your Google Maps API key is configured correctly in a .env.local file.
+           {error}
         </div>
     );
   }
 
-  return isLoaded ? (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={center}
-      zoom={10}
-      options={{
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-      }}
-    >
-      <MarkerF position={center} label={{ text: "Destination", color: "white" }} />
-      {userPosition && <MarkerF position={userPosition} label={{text: "You are here", color: "white"}} icon={{
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: "#4285F4",
-          fillOpacity: 1,
-          strokeColor: "white",
-          strokeWeight: 2,
-      }}/>}
-    </GoogleMap>
-  ) : (
-    <div className="w-full h-full bg-muted flex items-center justify-center">
-        <p>Loading Map...</p>
-    </div>
-  );
+  return <div ref={mapRef} className="w-full h-full bg-muted" />;
 };
 
 export default LiveMap;

@@ -2,7 +2,7 @@
 
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import MapPlaceholder from "./map-placeholder";
+import LiveMap from "./live-map";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect } from "react";
@@ -72,7 +72,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
         <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
-            <MapPlaceholder origin={origin} destination={destination} />
+            <LiveMap destination={destination} />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 
