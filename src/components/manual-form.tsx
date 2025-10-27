@@ -1,7 +1,6 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Wand2, Users, ArrowRight, BookOpen, Plus, CalendarIcon, Trash } from "lucide-react";
+import { Users, CalendarIcon } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -36,10 +35,6 @@ type ManualFormProps = {
 };
 
 export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
-    const { fields, append, remove } = useFieldArray({
-        control: form.control,
-        name: "destinations",
-    });
 
     return (
         <div className="space-y-4">
@@ -59,20 +54,18 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
             />
 
             {/* To */}
-            {tripType !== 'multicity' && (
-                <FormField
-                    control={form.control}
-                    name="destination"
-                    render={({ field }) => (
-                    <FormItem className="p-4 border-l">
-                        <FormLabel className="text-xs text-gray-500">TO</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </FormControl>
-                    </FormItem>
-                    )}
-                />
-            )}
+            <FormField
+                control={form.control}
+                name="destination"
+                render={({ field }) => (
+                <FormItem className="p-4 border-l">
+                    <FormLabel className="text-xs text-gray-500">TO</FormLabel>
+                    <FormControl>
+                    <Input placeholder="e.g., Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </FormControl>
+                </FormItem>
+                )}
+            />
             
             {tripType === 'roundtrip' && (
                 <FormField
@@ -117,7 +110,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
               />
             )}
 
-            {tripType !== 'roundtrip' && tripType !== 'multicity' && (
+            {tripType !== 'roundtrip' && (
                  <FormField
                     control={form.control}
                     name="travelPreference"
@@ -153,56 +146,8 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
             </Button>
         </div>
 
-        {tripType === 'multicity' && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Destinations</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {fields.map((field, index) => (
-                         <div key={field.id} className="flex items-center gap-2">
-                             <FormField
-                                control={form.control}
-                                name={`destinations.${index}`}
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                    <FormControl>
-                                        <Input placeholder={`City ${index + 1}`} {...field} />
-                                    </FormControl>
-                                    </FormItem>
-                                )}
-                                />
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                onClick={() => remove(index)}
-                                disabled={fields.length <= 1}
-                            >
-                                <Trash className="h-4 w-4" />
-                            </Button>
-                         </div>
-                    ))}
-                     <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => append("")}
-                        >
-                        <Plus className="mr-2 h-4 w-4" /> Add another city
-                    </Button>
-                </CardContent>
-             </Card>
-        )}
-
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                    <BookOpen className="mr-2"/>
-                    Trip Details
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-6">
+            <CardContent className="grid md:grid-cols-3 gap-6 pt-6">
                 <FormField
                     control={form.control}
                     name="tripDuration"

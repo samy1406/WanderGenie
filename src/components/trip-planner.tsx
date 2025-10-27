@@ -14,11 +14,12 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 
-export type TripType = "oneway" | "roundtrip" | "multicity";
+export type TripType = "oneway" | "roundtrip";
 
 export function TripPlanner() {
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
-  const [travelOptions, setTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
+  const [outboundTravelOptions, setOutboundTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
+  const [returnTravelOptions, setReturnTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
   const [origin, setOrigin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,36 +38,56 @@ export function TripPlanner() {
       departureTime: "any",
       arrivalTime: "any",
       tripType: "oneway",
-      destinations: [""],
     },
   });
+
+  // Update tripType in form when it changes
+  const currentTripType = form.watch("tripType");
+  if (currentTripType !== tripType) {
+    form.setValue("tripType", tripType);
+  }
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setError(null);
     setItinerary(null);
-    setTravelOptions(null);
+    setOutboundTravelOptions(null);
+    setReturnTravelOptions(null);
     
-    const currentDestination = tripType === 'multicity' ? values.destinations.join(' to ') : values.destination;
-    setDestination(currentDestination);
+    setDestination(values.destination);
     setOrigin(values.origin);
     
     try {
-      const [itineraryResult, travelOptionsResult] = await Promise.all([
-        handleGenerateItinerary({
-          destination: currentDestination,
-          tripDuration: values.tripDuration,
-          interests: values.interests,
+      const itineraryPromise = handleGenerateItinerary({
+        destination: values.destination,
+        tripDuration: values.tripDuration,
+        interests: values.interests,
+        travelPreference: values.travelPreference,
+      });
+
+      const outboundOptionsPromise = handleGetTravelOptions({
+          origin: values.origin,
+          destination: values.destination,
           travelPreference: values.travelPreference,
-        }),
-        handleGetTravelOptions({
-            origin: values.origin,
-            destination: currentDestination,
-            travelPreference: values.travelPreference,
-            departureTime: values.departureTime,
-            arrivalTime: values.arrivalTime
-        })
-      ]);
+          departureTime: values.departureTime,
+          arrivalTime: values.arrivalTime
+      });
+      
+      const promises = [itineraryPromise, outboundOptionsPromise];
+
+      if (values.tripType === 'roundtrip') {
+          const returnOptionsPromise = handleGetTravelOptions({
+              origin: values.destination, // Swap origin and destination
+              destination: values.origin,
+              travelPreference: values.travelPreference,
+              departureTime: values.departureTime,
+              arrivalTime: values.arrivalTime
+          });
+          promises.push(returnOptionsPromise);
+      }
+
+      const [itineraryResult, outboundOptionsResult, returnOptionsResult] = await Promise.all(promises);
 
       if (itineraryResult) {
         setItinerary(itineraryResult);
@@ -74,11 +95,16 @@ export function TripPlanner() {
         throw new Error("The generated itinerary was empty.");
       }
 
-      if (travelOptionsResult) {
-        setTravelOptions(travelOptionsResult);
+      if (outboundOptionsResult) {
+        setOutboundTravelOptions(outboundOptionsResult);
       } else {
-        throw new Error("Could not get travel options.");
+        throw new Error("Could not get outbound travel options.");
       }
+
+      if (values.tripType === 'roundtrip' && returnOptionsResult) {
+          setReturnTravelOptions(returnOptionsResult as GetTravelOptionsOutput);
+      }
+
     } catch (error) {
       console.error("Failed during generation:", error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
@@ -105,7 +131,7 @@ export function TripPlanner() {
             />
         </HeroSection>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-background p-4 md:p-8 flex flex-col rounded-lg -mt-16 relative z-10 shadow-lg">
+            <div className="bg-background p-4 md:p-8 flex flex-col rounded-lg -mt-32 relative z-10 shadow-lg">
                 {isLoading ? (
                     <div className="w-full h-96 flex items-center justify-center">
                         <div className="flex flex-col items-center gap-4">
@@ -113,10 +139,14 @@ export function TripPlanner() {
                             <p className="text-muted-foreground text-lg">Generating your adventure...</p>
                         </div>
                     </div>
-                ) : itinerary && destination && travelOptions && origin ? (
+                ) : itinerary && destination && outboundTravelOptions && origin ? (
                     <div className="space-y-8 h-full flex flex-col">
                         <ItineraryDisplay itineraryData={itinerary} destination={destination} origin={origin} />
-                        <TravelOptions travelOptionsData={travelOptions} />
+                        <TravelOptions 
+                            outboundTravelOptions={outboundTravelOptions} 
+                            returnTravelOptions={returnTravelOptions}
+                            hotelOptions={outboundTravelOptions.hotelOptions}
+                        />
                     </div>
                 ) : (
                     <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8">

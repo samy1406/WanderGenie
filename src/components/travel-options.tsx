@@ -15,20 +15,63 @@ const iconMap: { [key: string]: React.ReactElement } = {
     Bus: <Bus className="h-6 w-6 text-primary" />,
 };
 
-const TravelOptions = ({ travelOptionsData }: { travelOptionsData: GetTravelOptionsOutput }) => {
-    const { travelOptions, hotelOptions } = travelOptionsData;
-    const [showAllTransport, setShowAllTransport] = useState(false);
+const TravelModeSection = ({ options, showAll }: { options: GetTravelOptionsOutput['travelOptions'], showAll: boolean }) => {
+    const modes = useMemo(() => Array.from(new Set(options.map(o => o.mode))), [options]);
 
-    const transportModes = useMemo(() => {
-        const modes = new Set(travelOptions.map(o => o.mode));
-        return Array.from(modes);
-    }, [travelOptions]);
+    return (
+        <div className="space-y-6">
+            {modes.map(mode => {
+                const optionsForMode = options.filter(o => o.mode === mode);
+                const displayedOptions = showAll ? optionsForMode : optionsForMode.slice(0, 1);
+                
+                if (optionsForMode.length === 0) return null;
+
+                return (
+                    <React.Fragment key={mode}>
+                        {displayedOptions.map((option, index) => (
+                            <div key={`${mode}-${index}`}>
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-full">
+                                            {iconMap[option.mode] || <Plane className="h-6 w-6 text-primary" />}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-lg">{option.mode}: <span className="text-primary">{option.details}</span></h4>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                                                <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {option.duration}</span>
+                                                <span className="flex items-center gap-1.5"><Wallet className="h-4 w-4" /> {option.cost}</span>
+                                                <span className="flex items-center gap-1.5"><Armchair className="h-4 w-4" /> {option.comfort}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
+                                        <a href={option.bookingLink} target="_blank" rel="noopener noreferrer">
+                                            Book Now <ArrowRight className="ml-2 h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                </div>
+                                {index < displayedOptions.length - 1 && <Separator className="mt-6" />}
+                            </div>
+                        ))}
+                    </React.Fragment>
+                );
+            })}
+        </div>
+    )
+}
+
+const TravelOptions = ({ outboundTravelOptions, returnTravelOptions, hotelOptions }: { outboundTravelOptions: GetTravelOptionsOutput, returnTravelOptions: GetTravelOptionsOutput | null, hotelOptions: GetTravelOptionsOutput['hotelOptions'] }) => {
+    const [showAllTransport, setShowAllTransport] = useState(false);
+    const hasMultipleOptions = useMemo(() => {
+        const outBoundModes = new Set(outboundTravelOptions.travelOptions.map(o => o.mode));
+        return outboundTravelOptions.travelOptions.length > outBoundModes.size;
+    }, [outboundTravelOptions]);
 
     return (
         <Card className="shadow-lg bg-card">
             <CardHeader>
                 <CardTitle className="text-3xl">Travel & Booking</CardTitle>
-                <CardDescription>Here are some options to get you to your destination.</CardDescription>
+                <CardDescription>Here are some options to get you to your destination and back.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="transport" className="w-full">
@@ -41,45 +84,22 @@ const TravelOptions = ({ travelOptionsData }: { travelOptionsData: GetTravelOpti
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="transport" className="mt-6">
-                        <div className="space-y-6">
-                            {transportModes.map(mode => {
-                                const optionsForMode = travelOptions.filter(o => o.mode === mode);
-                                const displayedOptions = showAllTransport ? optionsForMode : optionsForMode.slice(0, 1);
-                                
-                                if (optionsForMode.length === 0) return null;
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-4">Departure Options</h3>
+                                <TravelModeSection options={outboundTravelOptions.travelOptions} showAll={showAllTransport} />
+                            </div>
 
-                                return (
-                                    <React.Fragment key={mode}>
-                                        {displayedOptions.map((option, index) => (
-                                            <div key={`${mode}-${index}`}>
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="bg-primary/10 p-3 rounded-full">
-                                                            {iconMap[option.mode] || <Plane className="h-6 w-6 text-primary" />}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold text-lg">{option.mode}: <span className="text-primary">{option.details}</span></h4>
-                                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                                                                <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {option.duration}</span>
-                                                                <span className="flex items-center gap-1.5"><Wallet className="h-4 w-4" /> {option.cost}</span>
-                                                                <span className="flex items-center gap-1.5"><Armchair className="h-4 w-4" /> {option.comfort}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
-                                                        <a href={option.bookingLink} target="_blank" rel="noopener noreferrer">
-                                                            Book Now <ArrowRight className="ml-2 h-4 w-4" />
-                                                        </a>
-                                                    </Button>
-                                                </div>
-                                                {index < displayedOptions.length - 1 && <Separator className="mt-6" />}
-                                            </div>
-                                        ))}
-                                    </React.Fragment>
-                                );
-                            })}
-                             {travelOptions.length > transportModes.length && (
-                                <div className="text-center">
+                            {returnTravelOptions && (
+                                <div>
+                                    <Separator className="my-8" />
+                                    <h3 className="text-xl font-bold mb-4">Return Options</h3>
+                                    <TravelModeSection options={returnTravelOptions.travelOptions} showAll={showAllTransport} />
+                                </div>
+                            )}
+
+                             {hasMultipleOptions && (
+                                <div className="text-center pt-4">
                                     <Button variant="outline" onClick={() => setShowAllTransport(prev => !prev)}>
                                         {showAllTransport ? "Show Fewer Options" : "Show All Options"}
                                     </Button>
