@@ -11,7 +11,10 @@ import Point from 'ol/geom/Point.js';
 import LineString from 'ol/geom/LineString.js';
 import { Vector as VectorLayer } from 'ol/layer.js';
 import { Vector as VectorSource } from 'ol/source.js';
-import { Style, Icon, Stroke } from 'ol/style.js';
+import { Style, Icon, Stroke, Fill, Circle as CircleStyle } from 'ol/style.js';
+import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
+
+type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
 const fetchCoords = async (location: string): Promise<[number, number] | null> => {
   try {
@@ -29,31 +32,24 @@ const fetchCoords = async (location: string): Promise<[number, number] | null> =
   }
 };
 
-const LiveMap = ({ destination, origin, journeyStarted }: { destination: string, origin: string, journeyStarted: boolean }) => {
+const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: { 
+    destination: string, 
+    origin: string, 
+    journeyStarted: boolean,
+    selectedActivity: Activity | null;
+}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
   const vectorLayerRef = useRef<VectorLayer<VectorSource<Point | LineString>> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize map effect
   useEffect(() => {
     if (!mapRef.current) return;
     
     let isMounted = true;
-    const movingFeature = new Feature({
-        geometry: new Point(fromLonLat([0,0])),
-    });
     
-    movingFeature.setStyle(new Style({
-        image: new Icon({
-            color: '#E44D26',
-            crossOrigin: 'anonymous',
-            src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
-            imgSize: [20, 20],
-            anchor: [0.5, 0.5],
-        }),
-    }));
-
     const initializeMap = async () => {
       const [originCoords, destCoords] = await Promise.all([
         fetchCoords(origin),
@@ -68,34 +64,14 @@ const LiveMap = ({ destination, origin, journeyStarted }: { destination: string,
       }
       
       const from = fromLonLat(originCoords);
-      const to = fromLonLat(destCoords);
 
-      const route = new LineString([from, to]);
-      const routeFeature = new Feature({
-          geometry: route,
-          name: 'Route',
-      });
-       routeFeature.setStyle(new Style({
-        stroke: new Stroke({
-          width: 6, color: '#3B82F6', lineDash: [8, 8]
-        })
-      }));
-      
-      const vectorSource = new VectorSource({
-          features: [routeFeature, movingFeature]
-      });
-
-      const vectorLayer = new VectorLayer({
-          source: vectorSource,
-      });
-
+      const vectorSource = new VectorSource();
+      const vectorLayer = new VectorLayer({ source: vectorSource });
       vectorLayerRef.current = vectorLayer;
-      movingFeature.getGeometry()?.setCoordinates(from);
 
       const view = new View({
         center: from,
-        zoom: 4,
-        padding: [50, 50, 50, 50], // To ensure the whole route is visible
+        zoom: 5,
       });
       
       const map = new Map({
@@ -105,7 +81,7 @@ const LiveMap = ({ destination, origin, journeyStarted }: { destination: string,
       });
       
       mapInstanceRef.current = map;
-      view.fit(route, { duration: 1000 });
+      view.fit(new Point(fromLonLat(destCoords)).getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
     };
 
     initializeMap();
@@ -120,6 +96,7 @@ const LiveMap = ({ destination, origin, journeyStarted }: { destination: string,
   }, [origin, destination]);
 
 
+  // Animate journey from origin to destination
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !vectorLayerRef.current) return;
@@ -127,48 +104,72 @@ const LiveMap = ({ destination, origin, journeyStarted }: { destination: string,
     const source = vectorLayerRef.current.getSource();
     if (!source) return;
 
-    const features = source.getFeatures();
-    const routeFeature = features.find(f => f.getGeometry()?.getType() === 'LineString');
-    const movingFeature = features.find(f => f.getGeometry()?.getType() === 'Point');
+    const animateJourney = async () => {
+        source.clear(); // Clear previous features
 
-    if (!routeFeature || !movingFeature) return;
-    
-    const route = routeFeature.getGeometry() as LineString;
-    const movingPoint = movingFeature.getGeometry() as Point;
-    
-    const duration = 10000; // 10 seconds for the journey
-    let start: number | null = null;
-    let animationId: number;
+        const [originCoords, destCoords] = await Promise.all([fetchCoords(origin), fetchCoords(destination)]);
+        if (!originCoords || !destCoords) return;
 
-    const move = (time: number) => {
-        if (start === null) start = time;
-        const elapsed = time - start;
-        const fraction = elapsed / duration;
+        const from = fromLonLat(originCoords);
+        const to = fromLonLat(destCoords);
+        
+        const route = new LineString([from, to]);
+        const routeFeature = new Feature({ geometry: route });
+        routeFeature.setStyle(new Style({ stroke: new Stroke({ width: 6, color: '#3B82F6', lineDash: [8, 8] }) }));
+        
+        const movingFeature = new Feature({ geometry: new Point(from) });
+        movingFeature.setStyle(new Style({
+            image: new Icon({
+                color: '#E44D26',
+                crossOrigin: 'anonymous',
+                src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
+                imgSize: [20, 20],
+                anchor: [0.5, 0.5],
+            }),
+        }));
+        
+        source.addFeatures([routeFeature, movingFeature]);
 
-        if (fraction < 1) {
+        map.getView().fit(route.getExtent(), { duration: 1000, padding: [50, 50, 50, 50] });
+
+        const duration = 5000; // 5 seconds for the journey
+        let start: number | null = null;
+        
+        const move = (time: number) => {
+            if (start === null) start = time;
+            const elapsed = time - start;
+            let fraction = elapsed / duration;
+            if (fraction > 1) fraction = 1;
+
             const newCoord = route.getCoordinateAt(fraction);
-            movingPoint.setCoordinates(newCoord);
+            (movingFeature.getGeometry() as Point).setCoordinates(newCoord);
             
-            const view = map.getView();
-            view.setCenter(newCoord);
-
-            animationId = requestAnimationFrame(move);
-            animationFrameRef.current = animationId;
-        } else {
-            movingPoint.setCoordinates(route.getCoordinateAt(1));
-        }
-    };
-
+            if (fraction < 1) {
+                animationFrameRef.current = requestAnimationFrame(move);
+            } else {
+                 if (selectedActivity) {
+                    // Journey finished, now focus on the first activity
+                    const flyToActivity = async () => {
+                        const activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
+                        if (activityCoords) {
+                            map.getView().animate({ center: fromLonLat(activityCoords), zoom: 15, duration: 1000 });
+                        }
+                    }
+                    flyToActivity();
+                }
+            }
+        };
+        animationFrameRef.current = requestAnimationFrame(move);
+    }
+    
     if (journeyStarted) {
-        movingPoint.setCoordinates(route.getCoordinateAt(0)); // Reset to start
-        animationId = requestAnimationFrame(move);
-        animationFrameRef.current = animationId;
+       animateJourney();
     } else {
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
-        movingPoint.setCoordinates(route.getCoordinateAt(0));
-        map.getView().fit(route.getExtent(), { duration: 500, padding: [50, 50, 50, 50] });
+        source.clear();
     }
 
     return () => {
@@ -176,20 +177,62 @@ const LiveMap = ({ destination, origin, journeyStarted }: { destination: string,
             cancelAnimationFrame(animationFrameRef.current);
         }
     }
+  }, [journeyStarted, origin, destination]);
 
-  }, [journeyStarted]);
 
-  if (error) {
-    return (
-        <div className="w-full h-full bg-destructive/20 flex items-center justify-center text-destructive p-4 text-center">
-           {error}
-        </div>
-    );
-  }
+  // Fly to selected activity
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !selectedActivity || !journeyStarted) return;
+    
+    const flyToActivity = async () => {
+      const coords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
+      if (coords) {
+        const source = vectorLayerRef.current?.getSource();
+        if(source) {
+            source.clear(); // Clear the main journey route
+            
+            const activityFeature = new Feature({
+                geometry: new Point(fromLonLat(coords)),
+            });
+            activityFeature.setStyle(new Style({
+                image: new CircleStyle({
+                    radius: 8,
+                    fill: new Fill({ color: 'rgba(255, 138, 91, 0.7)'}), // Accent color
+                    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+                })
+            }));
+            source.addFeature(activityFeature);
+        }
 
-  return <div ref={mapRef} className="w-full h-full bg-muted" />;
+        map.getView().animate({
+          center: fromLonLat(coords),
+          zoom: 15,
+          duration: 1000
+        });
+      } else {
+          setError(`Could not find location: ${selectedActivity.location}`);
+          setTimeout(() => setError(null), 3000); // Clear error after 3s
+      }
+    };
+
+    // Only fly to activity if journey is complete (marker reached destination)
+    if (!animationFrameRef.current) {
+        flyToActivity();
+    }
+
+  }, [selectedActivity, journeyStarted, destination]);
+
+  return (
+    <div className="relative w-full h-full">
+        {error && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-destructive/80 text-destructive-foreground p-2 rounded-md text-xs">
+            {error}
+            </div>
+        )}
+        <div ref={mapRef} className="w-full h-full bg-muted" />
+    </div>
+  );
 };
 
 export default LiveMap;
-
-    

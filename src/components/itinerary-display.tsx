@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import LiveMap from "./live-map";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
 import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
+import { cn } from "@/lib/utils";
+
+type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
 const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string, origin: string }) => {
   const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
@@ -21,6 +24,8 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+
 
   const handleToggleJourney = () => {
     const isStarting = !journeyStarted;
@@ -29,10 +34,15 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
     if (isStarting) {
       if (dailyPlan.length > 0) {
         setActiveDay("day-0");
+        // Select the first activity of the first day
+        if (dailyPlan[0].activities.length > 0) {
+            setSelectedActivity(dailyPlan[0].activities[0]);
+        }
       }
       console.log("Journey started!");
     } else {
       setActiveDay(undefined);
+      setSelectedActivity(null);
       console.log("Journey ended.");
     }
   };
@@ -42,8 +52,16 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
         if (prevItinerary.dailyPlan.length > 0 && prevItinerary.dailyPlan[0].activities.length > 0) {
             const updatedDailyPlan = [...prevItinerary.dailyPlan];
             const updatedActivities = [...updatedDailyPlan[0].activities];
-            updatedActivities[0] = { ...updatedActivities[0], description: newActivity };
+            // Also update the location if possible, for this we just update description
+            const newLocation = newActivity.split('**').length > 1 ? newActivity.split('**')[1] : newActivity;
+            updatedActivities[0] = { ...updatedActivities[0], description: newActivity, location: newLocation };
             updatedDailyPlan[0] = { ...updatedDailyPlan[0], activities: updatedActivities };
+
+             // Update the selected activity if it was the one being changed
+            if (selectedActivity?.description === firstActivity) {
+                setSelectedActivity(updatedActivities[0]);
+            }
+
             return { ...prevItinerary, dailyPlan: updatedDailyPlan };
         }
         return prevItinerary;
@@ -72,7 +90,12 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
         <div className="h-64 rounded-lg overflow-hidden border shadow-inner">
-            <LiveMap destination={destination} origin={origin} journeyStarted={journeyStarted} />
+            <LiveMap 
+                destination={destination} 
+                origin={origin} 
+                journeyStarted={journeyStarted} 
+                selectedActivity={selectedActivity}
+            />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 
@@ -93,11 +116,21 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pl-4 border-l-2 border-accent ml-4">
-                  <ul className="space-y-3 text-sm text-foreground/80">
+                  <ul className="space-y-1 text-sm text-foreground/80">
                     {day.activities.map((activity, actIndex) => (
-                        <li key={actIndex} className="flex items-start">
-                            <CheckSquare className="mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent" />
-                            <span>
+                        <li key={actIndex} 
+                            onClick={() => journeyStarted && setSelectedActivity(activity)}
+                            className={cn(
+                                "flex items-start p-2 rounded-md transition-colors",
+                                journeyStarted && "cursor-pointer hover:bg-primary/10",
+                                selectedActivity?.description === activity.description && journeyStarted && "bg-primary/20"
+                            )}
+                        >
+                            <MapPin className={cn(
+                                "mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent",
+                                selectedActivity?.description === activity.description && journeyStarted && "text-primary animate-pulse"
+                                )} />
+                            <span className="flex-1">
                                 <FormatBoldText text={activity.description} />
                                 <a href={activity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary ml-2">
                                     <Link className="h-3 w-3 mr-1" />
@@ -204,5 +237,3 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
 };
 
 export default ItineraryDisplay;
-
-    

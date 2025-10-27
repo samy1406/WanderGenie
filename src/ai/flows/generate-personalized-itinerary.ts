@@ -14,6 +14,7 @@ import {z} from 'genkit';
 
 const ActivitySchema = z.object({
   description: z.string().describe("The description of the activity. Specific place names or landmarks should be wrapped in double asterisks (e.g., 'Visit the **Eiffel Tower**')."),
+  location: z.string().describe("The specific name of the landmark, park, or restaurant for geocoding (e.g., 'Eiffel Tower, Paris' or 'Central Park, New York')."),
   link: z.string().url().describe("A plausible Google Maps URL for the activity location."),
 });
 
@@ -62,14 +63,14 @@ Trip Duration: {{{tripDuration}}} days
 Interests: {{{interests}}}
 Travel Preference: {{{travelPreference}}}
 
-Provide a detailed itinerary. For each day's activity, provide a description and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
+Provide a detailed itinerary. For each day's activity, provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
 Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference.
 
 IMPORTANT: In the activity descriptions and must-do list, wrap any specific place names or landmarks in double asterisks to mark them as bold (e.g., 'Visit the **Eiffel Tower**' or '**Golden Gate Bridge**').
 
 Structure the output as a JSON object.
-The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of objects. Each activity object must have a 'description' and a 'link'.
+The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of objects. Each activity object must have a 'description', a 'location', and a 'link'.
 `, 
 });
 
@@ -84,3 +85,4 @@ const generatePersonalizedItineraryFlow = ai.defineFlow(
     return output!;
   }
 );
+
