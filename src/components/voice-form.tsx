@@ -60,7 +60,7 @@ export function VoiceForm({ onTranscriptionComplete, form }: VoiceFormProps) {
 
     return (
         <>
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-1/2 -translate-y-1/2 right-4 transform">
                 <VoiceInput
                     isListening={isListening}
                     onToggleListening={handleToggleListening}

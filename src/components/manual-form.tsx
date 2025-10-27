@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Users, CalendarIcon } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
 import type { TripType } from "./trip-planner";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -44,7 +44,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
             control={form.control}
             name="origin"
             render={({ field }) => (
-                <FormItem className="p-4">
+                <FormItem className="p-4 relative">
                 <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />

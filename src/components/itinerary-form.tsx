@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Form
@@ -43,7 +42,6 @@ export default function ItineraryForm({ form, onSubmit, isLoading, tripType }: I
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
           <div className="relative">
             <ManualForm form={form} isLoading={isLoading} tripType={tripType} />
-            <VoiceForm onTranscriptionComplete={onTranscriptionComplete} form={form} />
           </div>
       </form>
     </Form>

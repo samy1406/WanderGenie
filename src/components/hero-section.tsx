@@ -18,13 +18,13 @@ export const HeroSection = ({ children, tripType, setTripType }: HeroSectionProp
                 <Button 
                     variant={tripType === 'oneway' ? 'secondary' : 'ghost'} 
                     onClick={() => setTripType('oneway')}
-                    className="bg-white/90 data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white text-blue-600 rounded-full shadow-lg hover:bg-white">
+                    className="bg-white/90 text-blue-600 rounded-full shadow-lg data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white hover:bg-white hover:text-blue-600">
                     One Way
                 </Button>
                 <Button 
                     variant={tripType === 'roundtrip' ? 'secondary' : 'ghost'}
                     onClick={() => setTripType('roundtrip')}
-                    className="bg-white/90 data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white text-blue-600 rounded-full shadow-lg hover:bg-white">
+                    className="bg-white/90 text-blue-600 rounded-full shadow-lg data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white hover:bg-white hover:text-blue-600">
                     Round Trip
                 </Button>
             </div>

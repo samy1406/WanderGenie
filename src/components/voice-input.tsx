@@ -28,14 +28,14 @@ export const VoiceInput = ({ isListening, onToggleListening, isSupported }: Voic
       onClick={onToggleListening}
       disabled={!isSupported}
       title={getTitle()}
-      className="text-white hover:bg-white/20 hover:text-white"
+      className="text-gray-600 hover:bg-gray-100 hover:text-gray-900"
     >
       {isListening ? (
         <Waves className="h-6 w-6 text-accent" />
       ) : !isSupported ? (
         <CircleAlert className="h-6 w-6 text-destructive" />
       ) : (
-        <Mic className="h-6 w-6 text-white" />
+        <Mic className="h-6 w-6" />
       )}
     </Button>
   );
