@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/form";
 import { ManualForm } from "./manual-form";
 import type { TripType } from "./trip-planner";
-import { VoiceForm } from "./voice-form";
 
 export const formSchema = z.object({
   origin: z.string().min(2, "Origin must be at least 2 characters."),
@@ -30,12 +29,6 @@ type ItineraryFormProps = {
 };
 
 export default function ItineraryForm({ form, onSubmit, isLoading, tripType }: ItineraryFormProps) {
-
-  const onTranscriptionComplete = (transcribedText: string) => {
-    // You could call an AI flow here to parse the text and set form values
-    console.log("Transcribed text:", transcribedText);
-    // For now, let's just log it. A real implementation would use handleExtractTripDetails
-  };
 
   return (
     <Form {...form}>

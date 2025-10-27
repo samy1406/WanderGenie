@@ -23,19 +23,27 @@ export const VoiceInput = ({ isListening, onToggleListening, isSupported }: Voic
   return (
     <Button
       type="button"
-      size="icon"
-      variant="ghost"
+      variant="outline"
       onClick={onToggleListening}
       disabled={!isSupported}
       title={getTitle()}
-      className="text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
     >
       {isListening ? (
-        <Waves className="h-6 w-6 text-accent" />
+        <>
+          <Waves className="h-5 w-5 mr-2" />
+          Listening...
+        </>
       ) : !isSupported ? (
-        <CircleAlert className="h-6 w-6 text-destructive" />
+        <>
+          <CircleAlert className="h-5 w-5 mr-2 text-destructive" />
+          Voice not supported
+        </>
       ) : (
-        <Mic className="h-6 w-6" />
+        <>
+            <Mic className="h-5 w-5 mr-2" />
+            Use Voice Command
+        </>
       )}
     </Button>
   );

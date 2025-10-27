@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon } from "lucide-react";
+import { Users, CalendarIcon, Mic } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -38,13 +38,17 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
 
     return (
         <div className="space-y-4">
-        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-[1fr_1fr_1fr_auto] items-end">
+        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-[auto_1fr_1fr_1fr_auto] items-end">
+            {/* Mic Button - Moved for visibility */}
+            <div className="p-2 flex items-end h-full">
+               
+            </div>
             {/* From */}
             <FormField
             control={form.control}
             name="origin"
             render={({ field }) => (
-                <FormItem className="p-4 relative">
+                <FormItem className="p-4 relative border-l">
                 <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />

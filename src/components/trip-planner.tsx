@@ -121,7 +121,7 @@ export function TripPlanner() {
 
   return (
     <div className="flex flex-col">
-        <HeroSection tripType={tripType} setTripType={setTripType}>
+        <HeroSection tripType={tripType} setTripType={setTripType} form={form}>
             <ItineraryForm
               form={form}
               onSubmit={onSubmit}

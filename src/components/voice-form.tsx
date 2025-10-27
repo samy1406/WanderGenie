@@ -60,13 +60,11 @@ export function VoiceForm({ onTranscriptionComplete, form }: VoiceFormProps) {
 
     return (
         <>
-            <div className="absolute top-1/2 -translate-y-1/2 right-4 transform">
-                <VoiceInput
-                    isListening={isListening}
-                    onToggleListening={handleToggleListening}
-                    isSupported={isSupported}
-                />
-            </div>
+            <VoiceInput
+                isListening={isListening}
+                onToggleListening={handleToggleListening}
+                isSupported={isSupported}
+            />
             {isListening && (
                 <div className="fixed inset-0 bg-black/70 z-40 flex flex-col items-center justify-center backdrop-blur-sm">
                     <div className="text-white text-center">
