@@ -27,7 +27,7 @@ export const VoiceInput = ({ isListening, onToggleListening, isSupported }: Voic
       onClick={onToggleListening}
       disabled={!isSupported}
       title={getTitle()}
-      className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-full"
+      className="bg-white/90 text-blue-600 rounded-full shadow-lg hover:bg-white"
     >
       {isListening ? (
         <>
