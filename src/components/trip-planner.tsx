@@ -1,3 +1,4 @@
+// src/components/trip-planner.tsx
 "use client";
 
 import { useState } from "react";
@@ -13,6 +14,8 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 
+export type TripType = "oneway" | "roundtrip" | "multicity";
+
 export function TripPlanner() {
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
   const [travelOptions, setTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
@@ -20,6 +23,7 @@ export function TripPlanner() {
   const [origin, setOrigin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tripType, setTripType] = useState<TripType>("oneway");
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -32,6 +36,8 @@ export function TripPlanner() {
       travelPreference: "budget",
       departureTime: "any",
       arrivalTime: "any",
+      tripType: "oneway",
+      destinations: [""],
     },
   });
 
@@ -40,20 +46,22 @@ export function TripPlanner() {
     setError(null);
     setItinerary(null);
     setTravelOptions(null);
-    setDestination(values.destination);
+    
+    const currentDestination = tripType === 'multicity' ? values.destinations.join(' to ') : values.destination;
+    setDestination(currentDestination);
     setOrigin(values.origin);
     
     try {
       const [itineraryResult, travelOptionsResult] = await Promise.all([
         handleGenerateItinerary({
-          destination: values.destination,
+          destination: currentDestination,
           tripDuration: values.tripDuration,
           interests: values.interests,
           travelPreference: values.travelPreference,
         }),
         handleGetTravelOptions({
             origin: values.origin,
-            destination: values.destination,
+            destination: currentDestination,
             travelPreference: values.travelPreference,
             departureTime: values.departureTime,
             arrivalTime: values.arrivalTime
@@ -88,11 +96,12 @@ export function TripPlanner() {
 
   return (
     <div className="flex flex-col">
-        <HeroSection>
+        <HeroSection tripType={tripType} setTripType={setTripType}>
             <ItineraryForm
               form={form}
               onSubmit={onSubmit}
               isLoading={isLoading}
+              tripType={tripType}
             />
         </HeroSection>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
