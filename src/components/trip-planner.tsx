@@ -1,7 +1,7 @@
 // src/components/trip-planner.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ItineraryForm, { formSchema } from "@/components/itinerary-form";
 import ItineraryDisplay from "@/components/itinerary-display";
 import TravelOptions from "@/components/travel-options";
@@ -41,11 +41,10 @@ export function TripPlanner() {
     },
   });
 
-  // Update tripType in form when it changes
-  const currentTripType = form.watch("tripType");
-  if (currentTripType !== tripType) {
+  // Update tripType in form when it changes using useEffect
+  useEffect(() => {
     form.setValue("tripType", tripType);
-  }
+  }, [tripType, form]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -74,7 +73,7 @@ export function TripPlanner() {
           arrivalTime: values.arrivalTime
       });
       
-      const promises = [itineraryPromise, outboundOptionsPromise];
+      const promises: Promise<any>[] = [itineraryPromise, outboundOptionsPromise];
 
       if (values.tripType === 'roundtrip') {
           const returnOptionsPromise = handleGetTravelOptions({
