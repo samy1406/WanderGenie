@@ -6,8 +6,9 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import React, { useState, useMemo } from "react";
+import React, from "react";
 import { FormatBoldText } from "./format-bold-text";
+import { BookingModal } from "./booking-modal";
 
 const iconMap: { [key: string]: React.ReactElement } = {
     Flight: <Plane className="h-6 w-6 text-primary" />,
@@ -15,8 +16,12 @@ const iconMap: { [key: string]: React.ReactElement } = {
     Bus: <Bus className="h-6 w-6 text-primary" />,
 };
 
-const TravelModeSection = ({ options, showAll }: { options: GetTravelOptionsOutput['travelOptions'], showAll: boolean }) => {
-    const modes = useMemo(() => Array.from(new Set(options.map(o => o.mode))), [options]);
+type TravelOptionType = GetTravelOptionsOutput['travelOptions'][0];
+type HotelOptionType = GetTravelOptionsOutput['hotelOptions'][0];
+
+
+const TravelModeSection = ({ options, showAll }: { options: TravelOptionType[], showAll: boolean }) => {
+    const modes = React.useMemo(() => Array.from(new Set(options.map(o => o.mode))), [options]);
 
     return (
         <div className="space-y-6">
@@ -44,11 +49,15 @@ const TravelModeSection = ({ options, showAll }: { options: GetTravelOptionsOutp
                                             </div>
                                         </div>
                                     </div>
-                                    <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
-                                        <a href={option.bookingLink} target="_blank" rel="noopener noreferrer">
-                                            Book Now <ArrowRight className="ml-2 h-4 w-4" />
-                                        </a>
-                                    </Button>
+                                    <BookingModal
+                                        option={option}
+                                        optionType="travel"
+                                        triggerButton={
+                                            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
+                                                Book Now <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        }
+                                    />
                                 </div>
                                 {index < displayedOptions.length - 1 && <Separator className="mt-6" />}
                             </div>
@@ -61,8 +70,8 @@ const TravelModeSection = ({ options, showAll }: { options: GetTravelOptionsOutp
 }
 
 const TravelOptions = ({ outboundTravelOptions, returnTravelOptions, hotelOptions }: { outboundTravelOptions: GetTravelOptionsOutput, returnTravelOptions: GetTravelOptionsOutput | null, hotelOptions: GetTravelOptionsOutput['hotelOptions'] }) => {
-    const [showAllTransport, setShowAllTransport] = useState(false);
-    const hasMultipleOptions = useMemo(() => {
+    const [showAllTransport, setShowAllTransport] = React.useState(false);
+    const hasMultipleOptions = React.useMemo(() => {
         const outBoundModes = new Set(outboundTravelOptions.travelOptions.map(o => o.mode));
         return outboundTravelOptions.travelOptions.length > outBoundModes.size;
     }, [outboundTravelOptions]);
@@ -130,11 +139,15 @@ const TravelOptions = ({ outboundTravelOptions, returnTravelOptions, hotelOption
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
-                                            <a href={option.bookingLink} target="_blank" rel="noopener noreferrer">
-                                                Book Now <ArrowRight className="ml-2 h-4 w-4" />
-                                            </a>
-                                        </Button>
+                                         <BookingModal
+                                            option={option}
+                                            optionType="hotel"
+                                            triggerButton={
+                                                <Button className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
+                                                    Book Now <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Button>
+                                            }
+                                        />
                                     </div>
                                     {index < hotelOptions.length - 1 && <Separator className="mt-6" />}
                                 </div>

@@ -56,3 +56,25 @@ export async function handleExtractTripDetails(text: string) {
         throw new Error("Failed to extract trip details via server action.");
     }
 }
+
+// Mock function to simulate a booking request
+export async function handleBookingRequest(bookingDetails: { item: string, details: string }) {
+  console.log("Booking request received for:", bookingDetails);
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Simulate a successful booking
+  const bookingId = `BKNG-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  console.log("Booking successful, ID:", bookingId);
+  return { success: true, bookingId };
+}
+
+// Mock function to simulate a payment request
+export async function handlePaymentRequest(paymentDetails: { bookingId: string, cardholderName: string }) {
+    console.log("Payment request received for:", paymentDetails);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Simulate a successful payment
+    const transactionId = `TRN-${Math.random().toString(36).substr(2, 12).toUpperCase()}`;
+    console.log("Payment successful, Transaction ID:", transactionId);
+    return { success: true, transactionId };
+}
