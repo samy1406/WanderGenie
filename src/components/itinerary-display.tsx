@@ -71,8 +71,8 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
-        <div className="h-48 rounded-lg overflow-hidden border shadow-inner">
-            <LiveMap destination={destination} />
+        <div className="h-64 rounded-lg overflow-hidden border shadow-inner">
+            <LiveMap destination={destination} origin={origin} journeyStarted={journeyStarted} />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <Accordion 
@@ -204,3 +204,5 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
 };
 
 export default ItineraryDisplay;
+
+    
