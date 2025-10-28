@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
@@ -69,7 +70,17 @@ const TravelModeSection = ({ options, showAll }: { options: TravelOptionType[], 
     )
 }
 
-const TravelOptions = ({ outboundTravelOptions, returnTravelOptions, hotelOptions }: { outboundTravelOptions: GetTravelOptionsOutput, returnTravelOptions: GetTravelOptionsOutput | null, hotelOptions: GetTravelOptionsOutput['hotelOptions'] }) => {
+const TravelOptions = ({ 
+    outboundTravelOptions, 
+    returnTravelOptions, 
+    hotelOptions, 
+    onHotelBooked 
+}: { 
+    outboundTravelOptions: GetTravelOptionsOutput, 
+    returnTravelOptions: GetTravelOptionsOutput | null, 
+    hotelOptions: GetTravelOptionsOutput['hotelOptions'],
+    onHotelBooked: (hotelName: string) => void
+}) => {
     const [showAllTransport, setShowAllTransport] = React.useState(false);
     const hasMultipleOptions = React.useMemo(() => {
         const outBoundModes = new Set(outboundTravelOptions.travelOptions.map(o => o.mode));
@@ -142,6 +153,7 @@ const TravelOptions = ({ outboundTravelOptions, returnTravelOptions, hotelOption
                                          <BookingModal
                                             option={option}
                                             optionType="hotel"
+                                            onBookingComplete={onHotelBooked}
                                             triggerButton={
                                                 <Button className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
                                                     Book Now <ArrowRight className="ml-2 h-4 w-4" />

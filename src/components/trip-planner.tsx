@@ -1,3 +1,4 @@
+
 // src/components/trip-planner.tsx
 "use client";
 
@@ -118,6 +119,42 @@ export function TripPlanner() {
     }
   }
 
+  const handleHotelBooking = (hotelName: string) => {
+    if (!itinerary) return;
+
+    // Create a deep copy to avoid direct state mutation
+    const newItinerary = JSON.parse(JSON.stringify(itinerary));
+
+    const dayOneActivities = newItinerary.dailyPlan[0]?.activities;
+    if (dayOneActivities && dayOneActivities.length > 0) {
+      // Find the first activity that mentions "accommodation"
+      const accommodationActivityIndex = dayOneActivities.findIndex((activity: any) => 
+        activity.description.toLowerCase().includes('accommodation')
+      );
+
+      if (accommodationActivityIndex !== -1) {
+        // Replace it with the booked hotel
+        dayOneActivities[accommodationActivityIndex] = {
+          ...dayOneActivities[accommodationActivityIndex],
+          description: `Check into ${hotelName}`,
+          location: hotelName,
+        };
+      } else {
+        // If not found, prepend it
+        dayOneActivities.unshift({
+          description: `Check into ${hotelName}`,
+          location: hotelName,
+          link: `https://maps.google.com/?q=${encodeURIComponent(hotelName)}`
+        });
+      }
+    }
+
+    setItinerary(newItinerary);
+    toast({
+      title: "Itinerary Updated",
+      description: `${hotelName} has been added to your plan.`,
+    });
+  };
 
   return (
     <div className="flex flex-col">
@@ -145,6 +182,7 @@ export function TripPlanner() {
                             outboundTravelOptions={outboundTravelOptions} 
                             returnTravelOptions={returnTravelOptions}
                             hotelOptions={outboundTravelOptions.hotelOptions}
+                            onHotelBooked={handleHotelBooking}
                         />
                     </div>
                 ) : (

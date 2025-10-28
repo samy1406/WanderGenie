@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -26,9 +27,10 @@ type BookingModalProps = {
   option: TravelOption | HotelOption;
   optionType: 'travel' | 'hotel';
   triggerButton: React.ReactNode;
+  onBookingComplete?: (itemName: string) => void;
 };
 
-export function BookingModal({ option, optionType, triggerButton }: BookingModalProps) {
+export function BookingModal({ option, optionType, triggerButton, onBookingComplete }: BookingModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"details" | "booking" | "payment" | "confirmation">("details");
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -83,6 +85,9 @@ export function BookingModal({ option, optionType, triggerButton }: BookingModal
       if (result.success && result.transactionId) {
         setTransactionId(result.transactionId);
         setStep("confirmation");
+         if (optionType === 'hotel' && onBookingComplete) {
+          onBookingComplete((option as HotelOption).name);
+        }
       } else {
         throw new Error("Payment failed on the server.");
       }
