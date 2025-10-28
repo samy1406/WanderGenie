@@ -86,7 +86,9 @@ export function BookingModal({ option, optionType, triggerButton, onBookingCompl
         setTransactionId(result.transactionId);
         setStep("confirmation");
          if (optionType === 'hotel' && onBookingComplete) {
-          onBookingComplete((option as HotelOption).name);
+          // The name from the AI might have markdown, so we strip it.
+          const hotelName = (option as HotelOption).name.replace(/\*\*/g, '');
+          onBookingComplete(hotelName);
         }
       } else {
         throw new Error("Payment failed on the server.");
