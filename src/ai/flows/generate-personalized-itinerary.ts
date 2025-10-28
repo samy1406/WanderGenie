@@ -1,3 +1,4 @@
+
 // src/ai/flows/generate-personalized-itinerary.ts
 'use server';
 
@@ -63,7 +64,7 @@ Trip Duration: {{{tripDuration}}} days
 Interests: {{{interests}}}
 Travel Preference: {{{travelPreference}}}
 
-Provide a detailed itinerary. For each day's activity, provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
+Provide a detailed itinerary. For each day's activity, you MUST provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
 Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference.
 
@@ -85,4 +86,5 @@ const generatePersonalizedItineraryFlow = ai.defineFlow(
     return output!;
   }
 );
+
 
