@@ -43,7 +43,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   const mapInstanceRef = useRef<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource<Point | LineString> | null>(null);
   const userLocationFeatureRef = useRef<Feature<Point> | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize map effect
@@ -123,105 +122,61 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 
     return () => {
       isMounted = false;
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       mapInstanceRef.current?.setTarget(undefined);
     };
   }, [origin, destination]);
 
 
-  // Animate journey from origin to destination
+  // Handle journey state change
   useEffect(() => {
     const map = mapInstanceRef.current;
     const source = vectorSourceRef.current;
-    if (!map || !source) return;
+    const userFeature = userLocationFeatureRef.current;
+    if (!map || !source || !userFeature) return;
 
-    const animateJourney = async () => {
-        // Clear everything except the user location marker
-        source.getFeatures().forEach(f => {
-            if (f.get('type') !== 'user') {
-                source.removeFeature(f);
+    const handleJourneyState = async () => {
+        const featuresToRemove = source.getFeatures().filter(f => f.get('type') === 'activity' || f.get('type') === 'destination' || f.getGeometry()?.getType() === 'LineString');
+        featuresToRemove.forEach(f => source.removeFeature(f));
+
+        if (journeyStarted) {
+            const destCoords = await fetchCoords(destination);
+            if (destCoords) {
+                const to = fromLonLat(destCoords);
+                (userFeature.getGeometry() as Point).setCoordinates(to);
+                map.getView().animate({ center: to, zoom: 14, duration: 1500 });
             }
-        });
-        
-        const [originCoords, destCoords] = await Promise.all([fetchCoords(origin), fetchCoords(destination)]);
-        if (!originCoords || !destCoords) return;
+        } else {
+            // Reset to initial state
+            const [originCoords, destCoords] = await Promise.all([
+                fetchCoords(origin),
+                fetchCoords(destination)
+            ]);
 
-        const from = fromLonLat(originCoords);
-        const to = fromLonLat(destCoords);
-        
-        const route = new LineString([from, to]);
-        const routeFeature = new Feature({ geometry: route });
-        routeFeature.setStyle(new Style({ stroke: new Stroke({ width: 6, color: '#3B82F6', lineDash: [8, 8] }) }));
-        
-        const movingFeature = userLocationFeatureRef.current;
-        if (!movingFeature) return;
+            if (originCoords && destCoords) {
+                const from = fromLonLat(originCoords);
+                const to = fromLonLat(destCoords);
 
-        (movingFeature.getGeometry() as Point).setCoordinates(from);
+                (userFeature.getGeometry() as Point).setCoordinates(from);
+                
+                const destinationFeature = new Feature({ geometry: new Point(to) });
+                 destinationFeature.setStyle(new Style({
+                    image: new CircleStyle({
+                        radius: 8,
+                        fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}),
+                        stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+                    })
+                }));
+                destinationFeature.set('type', 'destination');
+                source.addFeature(destinationFeature);
 
-        source.addFeature(routeFeature);
-
-        map.getView().fit(route.getExtent(), { duration: 1000, padding: [50, 50, 50, 50] });
-
-        const duration = 5000;
-        let start: number | null = null;
-        
-        const move = (time: number) => {
-            if (start === null) start = time;
-            const elapsed = time - start;
-            let fraction = elapsed / duration;
-            if (fraction > 1) fraction = 1;
-
-            const newCoord = route.getCoordinateAt(fraction);
-            (movingFeature.getGeometry() as Point).setCoordinates(newCoord);
-            
-            if (fraction < 1) {
-                animationFrameRef.current = requestAnimationFrame(move);
-            } else {
-                 animationFrameRef.current = null;
-                 source.removeFeature(routeFeature); // Remove journey line
-                 if (selectedActivity) {
-                    const flyToActivity = async () => {
-                        const activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
-                        if (activityCoords) {
-                            map.getView().animate({ center: fromLonLat(activityCoords), zoom: 15, duration: 1000 });
-                        }
-                    }
-                    flyToActivity();
-                }
+                const routeForExtent = new LineString([from, to]);
+                map.getView().fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100, 100, 100, 100] });
             }
-        };
-        animationFrameRef.current = requestAnimationFrame(move);
+        }
     }
     
-    if (journeyStarted) {
-       animateJourney();
-    } else {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
-        }
-        // Don't clear source, just reset state if needed
-        const userFeature = userLocationFeatureRef.current;
-        if (userFeature) {
-            const resetMap = async () => {
-                const originCoords = await fetchCoords(origin);
-                if (originCoords) {
-                    (userFeature.getGeometry() as Point).setCoordinates(fromLonLat(originCoords));
-                }
-                const featuresToRemove = source.getFeatures().filter(f => f.get('type') === 'activity' || f.getGeometry()?.getType() === 'LineString');
-                featuresToRemove.forEach(f => source.removeFeature(f));
-            }
-            resetMap();
-        }
-    }
+    handleJourneyState();
 
-    return () => {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-        }
-    }
   }, [journeyStarted, origin, destination]);
 
 
@@ -268,10 +223,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       }
     };
     
-    // Only update if journey animation is complete
-    if (!animationFrameRef.current) {
-        updateMarkers();
-    }
+    updateMarkers();
 
   }, [selectedActivity, journeyStarted, destination]);
 
@@ -288,5 +240,3 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 };
 
 export default LiveMap;
-
-
