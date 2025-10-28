@@ -120,41 +120,40 @@ export function TripPlanner() {
   }
 
   const handleHotelBooking = (hotelName: string) => {
-    if (!itinerary) return;
-
+    if (!itinerary || !destination) return;
+  
     // Create a deep copy to avoid direct state mutation
     const newItinerary = JSON.parse(JSON.stringify(itinerary));
-
+  
     const dayOneActivities = newItinerary.dailyPlan[0]?.activities;
     if (dayOneActivities && dayOneActivities.length > 0) {
       // Find the first activity that mentions "accommodation"
-      const accommodationActivityIndex = dayOneActivities.findIndex((activity: any) => 
+      const accommodationActivityIndex = dayOneActivities.findIndex((activity: any) =>
         activity.description.toLowerCase().includes('accommodation')
       );
-
+  
+      const newActivity = {
+        description: `Check into **${hotelName}**`,
+        location: `${hotelName}, ${destination}`, // Provide city context for better geocoding
+        link: `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`
+      };
+  
       if (accommodationActivityIndex !== -1) {
-        // Replace it with the booked hotel
-        dayOneActivities[accommodationActivityIndex] = {
-          ...dayOneActivities[accommodationActivityIndex],
-          description: `Check into ${hotelName}`,
-          location: hotelName,
-        };
+        // Replace the existing accommodation activity
+        dayOneActivities[accommodationActivityIndex] = newActivity;
       } else {
-        // If not found, prepend it
-        dayOneActivities.unshift({
-          description: `Check into ${hotelName}`,
-          location: hotelName,
-          link: `https://maps.google.com/?q=${encodeURIComponent(hotelName)}`
-        });
+        // If not found for some reason, prepend it to the day's activities
+        dayOneActivities.unshift(newActivity);
       }
     }
-
+  
     setItinerary(newItinerary);
     toast({
       title: "Itinerary Updated",
       description: `${hotelName} has been added to your plan.`,
     });
   };
+  
 
   return (
     <div className="flex flex-col">
