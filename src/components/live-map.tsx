@@ -70,6 +70,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       const vectorSource = new VectorSource();
       vectorSourceRef.current = vectorSource;
 
+      // User location marker (blue dot)
       const userLocationFeature = new Feature({
           geometry: new Point(from),
       });
@@ -85,6 +86,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       userLocationFeature.set('type', 'user');
       userLocationFeatureRef.current = userLocationFeature;
 
+      // Destination marker (red circle)
       const destinationFeature = new Feature({
           geometry: new Point(to),
       });
@@ -114,6 +116,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       
       mapInstanceRef.current = map;
       
+      // Fit map to show both origin and destination
       const routeForExtent = new LineString([from, to]);
       view.fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
     };
@@ -130,23 +133,18 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   // Handle journey state change
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const source = vectorSourceRef.current;
-    const userFeature = userLocationFeatureRef.current;
-    if (!map || !source || !userFeature) return;
+    if (!map) return;
 
     const handleJourneyState = async () => {
-        const featuresToRemove = source.getFeatures().filter(f => f.get('type') === 'activity' || f.get('type') === 'destination' || f.getGeometry()?.getType() === 'LineString');
-        featuresToRemove.forEach(f => source.removeFeature(f));
-
         if (journeyStarted) {
+            // When journey starts, pan to the destination
             const destCoords = await fetchCoords(destination);
             if (destCoords) {
                 const to = fromLonLat(destCoords);
-                (userFeature.getGeometry() as Point).setCoordinates(to);
                 map.getView().animate({ center: to, zoom: 14, duration: 1500 });
             }
         } else {
-            // Reset to initial state
+            // When journey ends, fit map back to origin and destination
             const [originCoords, destCoords] = await Promise.all([
                 fetchCoords(origin),
                 fetchCoords(destination)
@@ -155,20 +153,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
             if (originCoords && destCoords) {
                 const from = fromLonLat(originCoords);
                 const to = fromLonLat(destCoords);
-
-                (userFeature.getGeometry() as Point).setCoordinates(from);
-                
-                const destinationFeature = new Feature({ geometry: new Point(to) });
-                 destinationFeature.setStyle(new Style({
-                    image: new CircleStyle({
-                        radius: 8,
-                        fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}),
-                        stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-                    })
-                }));
-                destinationFeature.set('type', 'destination');
-                source.addFeature(destinationFeature);
-
                 const routeForExtent = new LineString([from, to]);
                 map.getView().fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100, 100, 100, 100] });
             }
@@ -184,7 +168,26 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   useEffect(() => {
     const map = mapInstanceRef.current;
     const source = vectorSourceRef.current;
-    if (!map || !source || !selectedActivity || !journeyStarted) return;
+    const userFeature = userLocationFeatureRef.current;
+
+    // Only run this logic if the journey has started
+    if (!map || !source || !userFeature || !journeyStarted) {
+        // If journey has not started, remove any existing activity markers
+        if (source) {
+            const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
+            if (prevActivityMarker) {
+                source.removeFeature(prevActivityMarker);
+            }
+        }
+        return;
+    };
+    
+    // If no activity is selected, just remove previous markers
+    if (!selectedActivity) {
+        const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
+        if (prevActivityMarker) source.removeFeature(prevActivityMarker);
+        return;
+    }
     
     const updateMarkers = async () => {
       // Find and remove previous activity marker
@@ -193,10 +196,12 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
         source.removeFeature(prevActivityMarker);
       }
       
-      const coords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
-      if (coords) {
+      const activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
+      
+      if (activityCoords) {
+            const activityPosition = fromLonLat(activityCoords);
             const activityFeature = new Feature({
-                geometry: new Point(fromLonLat(coords)),
+                geometry: new Point(activityPosition),
             });
             activityFeature.set('type', 'activity'); // Tag for easy removal
             activityFeature.setStyle(new Style({
@@ -208,15 +213,9 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
             }));
             source.addFeature(activityFeature);
             
-            // Pan to fit both user location and activity
-            if (userLocationFeatureRef.current) {
-                const userGeom = userLocationFeatureRef.current.getGeometry();
-                if (userGeom) {
-                  const view = map.getView();
-                  const line = new LineString([userGeom.getCoordinates(), fromLonLat(coords)]);
-                  view.fit(line.getExtent(), { duration: 1000, padding: [80,80,80,80], maxZoom: 15 });
-                }
-            }
+            // Pan to the activity
+            const view = map.getView();
+            view.animate({ center: activityPosition, zoom: 15, duration: 1000 });
       } else {
           setError(`Could not find location: ${selectedActivity.location}`);
           setTimeout(() => setError(null), 3000); // Clear error after 3s
