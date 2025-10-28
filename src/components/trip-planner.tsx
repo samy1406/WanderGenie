@@ -176,7 +176,12 @@ export function TripPlanner() {
                     </div>
                 ) : itinerary && destination && outboundTravelOptions && origin ? (
                     <div className="space-y-8 h-full flex flex-col">
-                        <ItineraryDisplay itineraryData={itinerary} destination={destination} origin={origin} />
+                        <ItineraryDisplay 
+                          itineraryData={itinerary} 
+                          destination={destination} 
+                          origin={origin}
+                          onItineraryUpdate={setItinerary} 
+                        />
                         <TravelOptions 
                             outboundTravelOptions={outboundTravelOptions} 
                             returnTravelOptions={returnTravelOptions}
@@ -198,3 +203,5 @@ export function TripPlanner() {
     </div>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
@@ -16,11 +17,14 @@ import { cn } from "@/lib/utils";
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
-const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryData: GeneratePersonalizedItineraryOutput, destination: string, origin: string }) => {
-  const [currentItinerary, setCurrentItinerary] = useState(itineraryData);
-  const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = currentItinerary;
+const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate }: { 
+  itineraryData: GeneratePersonalizedItineraryOutput, 
+  destination: string, 
+  origin: string,
+  onItineraryUpdate: (newItinerary: GeneratePersonalizedItineraryOutput) => void 
+}) => {
+  const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
-  const { toast } = useToast();
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
@@ -47,26 +51,31 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
     }
   };
 
-  const handleUpdateItinerary = (newActivity: string) => {
-    setCurrentItinerary(prevItinerary => {
-        if (prevItinerary.dailyPlan.length > 0 && prevItinerary.dailyPlan[0].activities.length > 0) {
-            const updatedDailyPlan = [...prevItinerary.dailyPlan];
-            const updatedActivities = [...updatedDailyPlan[0].activities];
-            // Also update the location if possible, for this we just update description
-            const newLocation = newActivity.split('**').length > 1 ? newActivity.split('**')[1] : newActivity;
-            updatedActivities[0] = { ...updatedActivities[0], description: newActivity, location: newLocation };
-            updatedDailyPlan[0] = { ...updatedDailyPlan[0], activities: updatedActivities };
+  const handleSuggestionAccepted = (newActivityDescription: string) => {
+    const newItinerary = JSON.parse(JSON.stringify(itineraryData));
+    
+    if (newItinerary.dailyPlan.length > 0 && newItinerary.dailyPlan[0].activities.length > 0) {
+      const firstDayActivities = newItinerary.dailyPlan[0].activities;
+      
+      // Assuming the suggestion always updates the first activity of the first day
+      const updatedActivity = {
+        ...firstDayActivities[0],
+        description: newActivityDescription,
+        // Also update location for the map. A simple approach is to extract from bolded text.
+        location: newActivityDescription.split('**')[1] || newActivityDescription
+      };
+      
+      firstDayActivities[0] = updatedActivity;
+      
+      // If the currently selected activity was the one that got updated, update it too
+      if (selectedActivity?.description === firstActivity) {
+        setSelectedActivity(updatedActivity);
+      }
 
-             // Update the selected activity if it was the one being changed
-            if (selectedActivity?.description === firstActivity) {
-                setSelectedActivity(updatedActivities[0]);
-            }
-
-            return { ...prevItinerary, dailyPlan: updatedDailyPlan };
-        }
-        return prevItinerary;
-    });
+      onItineraryUpdate(newItinerary);
+    }
   };
+
 
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
@@ -77,7 +86,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} onSuggestionAccepted={handleUpdateItinerary} />}
+                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} onSuggestionAccepted={handleSuggestionAccepted} />}
                 <Button onClick={handleToggleJourney}>
                     {journeyStarted ? (
                         <><StopCircle className="mr-2 h-4 w-4" /> End Journey</>
@@ -237,3 +246,5 @@ const ItineraryDisplay = ({ itineraryData, destination, origin }: { itineraryDat
 };
 
 export default ItineraryDisplay;
+
+    
