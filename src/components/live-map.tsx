@@ -66,9 +66,39 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       }
       
       const from = fromLonLat(originCoords);
+      const to = fromLonLat(destCoords);
 
       const vectorSource = new VectorSource();
       vectorSourceRef.current = vectorSource;
+
+      const userLocationFeature = new Feature({
+          geometry: new Point(from),
+      });
+      userLocationFeature.setStyle(new Style({
+          image: new Icon({
+              color: '#3B82F6',
+              crossOrigin: 'anonymous',
+              src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
+              imgSize: [20, 20],
+              anchor: [0.5, 0.5],
+          }),
+      }));
+      userLocationFeature.set('type', 'user');
+      userLocationFeatureRef.current = userLocationFeature;
+
+      const destinationFeature = new Feature({
+          geometry: new Point(to),
+      });
+      destinationFeature.setStyle(new Style({
+          image: new CircleStyle({
+              radius: 8,
+              fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}), // Red color for destination
+              stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+          })
+      }));
+      destinationFeature.set('type', 'destination');
+      
+      vectorSource.addFeatures([userLocationFeature, destinationFeature]);
 
       const vectorLayer = new VectorLayer({ source: vectorSource });
       
@@ -84,7 +114,9 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       });
       
       mapInstanceRef.current = map;
-      view.fit(new Point(fromLonLat(destCoords)).getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
+      
+      const routeForExtent = new LineString([from, to]);
+      view.fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
     };
 
     initializeMap();
@@ -106,8 +138,13 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
     if (!map || !source) return;
 
     const animateJourney = async () => {
-        source.clear();
-
+        // Clear everything except the user location marker
+        source.getFeatures().forEach(f => {
+            if (f.get('type') !== 'user') {
+                source.removeFeature(f);
+            }
+        });
+        
         const [originCoords, destCoords] = await Promise.all([fetchCoords(origin), fetchCoords(destination)]);
         if (!originCoords || !destCoords) return;
 
@@ -118,19 +155,12 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
         const routeFeature = new Feature({ geometry: route });
         routeFeature.setStyle(new Style({ stroke: new Stroke({ width: 6, color: '#3B82F6', lineDash: [8, 8] }) }));
         
-        const movingFeature = new Feature({ geometry: new Point(from) });
-        movingFeature.setStyle(new Style({
-            image: new Icon({
-                color: '#3B82F6',
-                crossOrigin: 'anonymous',
-                src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
-                imgSize: [20, 20],
-                anchor: [0.5, 0.5],
-            }),
-        }));
-        userLocationFeatureRef.current = movingFeature;
-        
-        source.addFeatures([routeFeature, movingFeature]);
+        const movingFeature = userLocationFeatureRef.current;
+        if (!movingFeature) return;
+
+        (movingFeature.getGeometry() as Point).setCoordinates(from);
+
+        source.addFeature(routeFeature);
 
         map.getView().fit(route.getExtent(), { duration: 1000, padding: [50, 50, 50, 50] });
 
@@ -172,8 +202,19 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
             cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
         }
-        source.clear();
-        userLocationFeatureRef.current = null;
+        // Don't clear source, just reset state if needed
+        const userFeature = userLocationFeatureRef.current;
+        if (userFeature) {
+            const resetMap = async () => {
+                const originCoords = await fetchCoords(origin);
+                if (originCoords) {
+                    (userFeature.getGeometry() as Point).setCoordinates(fromLonLat(originCoords));
+                }
+                const featuresToRemove = source.getFeatures().filter(f => f.get('type') === 'activity' || f.getGeometry()?.getType() === 'LineString');
+                featuresToRemove.forEach(f => source.removeFeature(f));
+            }
+            resetMap();
+        }
     }
 
     return () => {
@@ -247,4 +288,5 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 };
 
 export default LiveMap;
+
 
