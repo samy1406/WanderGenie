@@ -1,3 +1,4 @@
+
 // src/components/hero-section.tsx
 import React from 'react';
 import { Button } from './ui/button';
@@ -6,6 +7,7 @@ import { VoiceForm } from './voice-form';
 import type { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import type { formSchema } from './itinerary-form';
+import { cn } from '@/lib/utils';
 
 type HeroSectionProps = {
   children: React.ReactNode;
@@ -29,13 +31,23 @@ export const HeroSection = ({ children, tripType, setTripType, form }: HeroSecti
                 <Button 
                     variant={tripType === 'oneway' ? 'secondary' : 'ghost'} 
                     onClick={() => setTripType('oneway')}
-                    className="bg-white/90 text-blue-600 rounded-full shadow-lg data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white hover:bg-white hover:text-blue-600">
+                    className={cn(
+                        "rounded-full shadow-lg",
+                        tripType === 'oneway' 
+                        ? "bg-white text-primary hover:bg-white/90" 
+                        : "bg-transparent text-white hover:bg-white/20 hover:text-white"
+                    )}>
                     One Way
                 </Button>
                 <Button 
                     variant={tripType === 'roundtrip' ? 'secondary' : 'ghost'}
                     onClick={() => setTripType('roundtrip')}
-                    className="bg-white/90 text-blue-600 rounded-full shadow-lg data-[variant=ghost]:bg-transparent data-[variant=ghost]:text-white hover:bg-white hover:text-blue-600">
+                    className={cn(
+                        "rounded-full shadow-lg",
+                        tripType === 'roundtrip' 
+                        ? "bg-white text-primary hover:bg-white/90" 
+                        : "bg-transparent text-white hover:bg-white/20 hover:text-white"
+                    )}>
                     Round Trip
                 </Button>
             </div>

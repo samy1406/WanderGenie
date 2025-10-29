@@ -46,15 +46,16 @@ type ItineraryFormProps = {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
   isLoading: boolean;
   tripType: TripType;
+  setTripType: (tripType: TripType) => void;
 };
 
-export default function ItineraryForm({ form, onSubmit, isLoading, tripType }: ItineraryFormProps) {
+export default function ItineraryForm({ form, onSubmit, isLoading, tripType, setTripType }: ItineraryFormProps) {
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
           <div className="relative">
-            <ManualForm form={form} isLoading={isLoading} tripType={tripType} />
+            <ManualForm form={form} isLoading={isLoading} tripType={tripType} setTripType={setTripType} />
           </div>
       </form>
     </Form>

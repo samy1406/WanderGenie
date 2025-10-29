@@ -33,19 +33,20 @@ type ManualFormProps = {
   isLoading: boolean;
   form: UseFormReturn<z.infer<typeof formSchema>>;
   tripType: TripType;
+  setTripType: (tripType: TripType) => void;
 };
 
-export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
+export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFormProps) {
 
     return (
         <div className="space-y-4">
-        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] items-end">
+        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] items-end">
             {/* From */}
             <FormField
             control={form.control}
             name="origin"
             render={({ field }) => (
-                <FormItem className="p-4 relative">
+                <FormItem className="p-4 relative lg:col-span-1">
                 <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -59,7 +60,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                 control={form.control}
                 name="destination"
                 render={({ field }) => (
-                <FormItem className="p-4 border-l">
+                <FormItem className="p-4 border-l lg:col-span-1">
                     <FormLabel className="text-xs text-gray-500">TO</FormLabel>
                     <FormControl>
                     <Input placeholder="e.g., Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -72,7 +73,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                 control={form.control}
                 name="departureDate"
                 render={({ field }) => (
-                  <FormItem className="p-4 border-l flex flex-col">
+                  <FormItem className="p-4 border-l flex flex-col lg:col-span-1">
                     <FormLabel className="text-xs text-gray-500">DEPARTURE</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -99,7 +100,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date < new Date() || date < new Date("1900-01-01")
+                            date < new Date(new Date().setHours(0,0,0,0))
                           }
                           initialFocus
                         />
@@ -108,28 +109,28 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                   </FormItem>
                 )}
               />
-
-            {tripType === 'roundtrip' && (
-                <FormField
+            
+            <FormField
                 control={form.control}
                 name="returnDate"
                 render={({ field }) => (
-                  <FormItem className="p-4 border-l flex flex-col">
+                  <FormItem className="p-4 border-l flex flex-col lg:col-span-1" onClick={() => { if (tripType === 'oneway') setTripType('roundtrip')}}>
                     <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
                             variant={"outline"}
+                            disabled={tripType === 'oneway'}
                             className={cn(
-                              "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold",
+                              "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold disabled:opacity-100",
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value ? (
+                            {field.value && tripType === 'roundtrip' ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span className="text-2xl font-bold text-gray-400">Pick a date</span>
+                              <span className="text-lg font-medium text-gray-400">Book a round trip to save more</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -150,31 +151,28 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                   </FormItem>
                 )}
               />
-            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 col-span-1 md:col-span-2 lg:col-span-1">
-                 <FormField
-                    control={form.control}
-                    name="travelPreference"
-                    render={({ field }) => (
-                    <FormItem className="p-4 border-l">
-                        <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>Travel Preferences</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left text-lg font-semibold">
-                            <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="budget">Budget-Friendly</SelectItem>
-                            <SelectItem value="comfort">Comfort</SelectItem>
-                            <SelectItem value="speed">Fastest Route</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
-            </div>
+             <FormField
+                control={form.control}
+                name="travelPreference"
+                render={({ field }) => (
+                <FormItem className="p-4 border-l lg:col-span-1">
+                    <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>Travel Preferences</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left text-lg font-semibold">
+                        <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="budget">Budget-Friendly</SelectItem>
+                        <SelectItem value="comfort">Comfort</SelectItem>
+                        <SelectItem value="speed">Fastest Route</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </FormItem>
+                )}
+            />
 
 
             {/* Search Button */}

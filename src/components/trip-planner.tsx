@@ -55,26 +55,36 @@ export function TripPlanner() {
         // When switching to roundtrip, set a default return date if not already set
         if (!form.getValues('returnDate')) {
             const departure = form.getValues('departureDate');
-            form.setValue('returnDate', addDays(departure || new Date(), 3));
+            const duration = form.getValues('tripDuration');
+            form.setValue('returnDate', addDays(departure || new Date(), duration || 3));
         }
     }
   }, [tripType, form]);
 
   const departureDate = form.watch("departureDate");
   const returnDate = form.watch("returnDate");
+  const tripDuration = form.watch("tripDuration");
 
+  // Effect to update trip duration when dates change in roundtrip mode
   useEffect(() => {
     if (departureDate && returnDate && tripType === 'roundtrip') {
       const duration = differenceInDays(returnDate, departureDate);
-      form.setValue('tripDuration', duration > 0 ? duration : 1);
-    } else if (tripType === 'oneway') {
-        // You can set a default or leave it as is.
-        // Let's ensure it has a default if not set.
-        if (!form.getValues('tripDuration')) {
-             form.setValue('tripDuration', 3);
-        }
+      if (duration !== form.getValues('tripDuration')) {
+          form.setValue('tripDuration', duration > 0 ? duration : 1);
+      }
     }
   }, [departureDate, returnDate, tripType, form]);
+
+  // Effect to update return date when duration changes in roundtrip mode
+  useEffect(() => {
+      if (departureDate && tripDuration && tripType === 'roundtrip') {
+          const newReturnDate = addDays(departureDate, tripDuration);
+          const currentReturnDate = form.getValues('returnDate');
+          if (!currentReturnDate || differenceInDays(newReturnDate, currentReturnDate) !== 0) {
+              form.setValue('returnDate', newReturnDate);
+          }
+      }
+  }, [departureDate, tripDuration, tripType, form]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -192,6 +202,7 @@ export function TripPlanner() {
               onSubmit={onSubmit}
               isLoading={isLoading}
               tripType={tripType}
+              setTripType={setTripType}
             />
         </HeroSection>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
