@@ -66,7 +66,7 @@ export default function BookPage() {
   
   useEffect(() => {
     if (isAuthenticated && user) {
-      form.setValue('contactEmail', user.email);
+      form.setValue('contactEmail', user.email || '');
     }
   }, [isAuthenticated, user, form]);
 
@@ -126,212 +126,213 @@ export default function BookPage() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50">
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-            {renderFlightDetails()}
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {renderFlightDetails()}
 
-            <Card>
-                <CardHeader className="bg-purple-50 flex items-center gap-4 p-4 rounded-t-lg">
-                    <ShieldCheck className="h-8 w-8 text-purple-600" />
-                    <div>
-                        <CardTitle className="text-lg">Add travel insurance and secure your trip</CardTitle>
-                        <CardDescription>Get comprehensive travel coverage for your trip.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <FormField
-                        control={form.control}
-                        name="insurance"
-                        render={({ field }) => (
-                            <FormItem>
-                                <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="space-y-2"
-                                >
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="yes" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            Yes, I want to secure my trip with insurance.
-                                        </FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="no" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            No, I do not want to insure my trip.
-                                        </FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-
-          <h2 className="text-2xl font-bold">Travellers Details</h2>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {fields.map((field, index) => (
-                    <Card key={field.id}>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="flex items-center"><User className="mr-2"/> Adult {index + 1}</CardTitle>
-                             <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => remove(index)}
-                                disabled={fields.length === 1}
-                                >
-                                <Trash2 className="h-4 w-4 mr-2" /> Remove
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name={`passengers.${index}.title`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Title</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Title" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="Mr">Mr</SelectItem>
-                                                <SelectItem value="Mrs">Mrs</SelectItem>
-                                                <SelectItem value="Ms">Ms</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name={`passengers.${index}.firstName`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>First Name</FormLabel>
-                                        <FormControl>
-                                        <Input placeholder="John" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name={`passengers.${index}.lastName`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Last Name</FormLabel>
-                                        <FormControl>
-                                        <Input placeholder="Doe" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
+                    <Card>
+                        <CardHeader className="bg-purple-50 flex items-center gap-4 p-4 rounded-t-lg">
+                            <ShieldCheck className="h-8 w-8 text-purple-600" />
+                            <div>
+                                <CardTitle className="text-lg">Add travel insurance and secure your trip</CardTitle>
+                                <CardDescription>Get comprehensive travel coverage for your trip.</CardDescription>
                             </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <FormField
+                                control={form.control}
+                                name="insurance"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            className="space-y-2"
+                                        >
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="yes" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    Yes, I want to secure my trip with insurance.
+                                                </FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="no" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    No, I do not want to insure my trip.
+                                                </FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
+                                    </FormItem>
+                                )}
+                            />
                         </CardContent>
                     </Card>
-                ))}
-                <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '' })}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
-                </Button>
-              
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>Your ticket & flight details will be shared here.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="contactEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4"/> Email Address</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="you@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4"/> Mobile no</FormLabel>
-                        <FormControl>
-                          <Input type="tel" placeholder="+91 Enter Mobile no" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+                    <h2 className="text-2xl font-bold">Travellers Details</h2>
+                
+                        {fields.map((field, index) => (
+                            <Card key={field.id}>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="flex items-center"><User className="mr-2"/> Adult {index + 1}</CardTitle>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => remove(index)}
+                                        disabled={fields.length === 1}
+                                        >
+                                        <Trash2 className="h-4 w-4 mr-2" /> Remove
+                                    </Button>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name={`passengers.${index}.title`}
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Title</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Title" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Mr">Mr</SelectItem>
+                                                        <SelectItem value="Mrs">Mrs</SelectItem>
+                                                        <SelectItem value="Ms">Ms</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`passengers.${index}.firstName`}
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>First Name</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="John" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`passengers.${index}.lastName`}
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Last Name</FormLabel>
+                                                <FormControl>
+                                                <Input placeholder="Doe" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
+                        </Button>
+                    
 
-               <Card>
-                    <CardContent className="pt-6 space-y-4">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>Contact Information</CardTitle>
+                        <CardDescription>Your ticket & flight details will be shared here.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
-                            name="agreeToTerms"
+                            name="contactEmail"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>
-                                           I understand and agree to the rules, Privacy Policy, User Agreement and Terms & Conditions of WanderGenie.
-                                        </FormLabel>
-                                        <FormMessage />
-                                    </div>
-                                </FormItem>
+                            <FormItem>
+                                <FormLabel className="flex items-center"><Mail className="mr-2 h-4 w-4"/> Email Address</FormLabel>
+                                <FormControl>
+                                <Input type="email" placeholder="you@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                             )}
                         />
                         <FormField
                             control={form.control}
-                            name="useGST"
+                            name="contactPhone"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>
-                                            Use GST for this booking (Optional)
-                                        </FormLabel>
-                                    </div>
-                                </FormItem>
+                            <FormItem>
+                                <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4"/> Mobile no</FormLabel>
+                                <FormControl>
+                                <Input type="tel" placeholder="+91 Enter Mobile no" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                             )}
                         />
-                    </CardContent>
-                </Card>
-              
-              <div className="flex justify-end">
-                <Button type="submit" size="lg" className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-                  Continue Booking <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </form>
-          </Form>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                            <CardContent className="pt-6 space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="agreeToTerms"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>
+                                                I understand and agree to the rules, Privacy Policy, User Agreement and Terms & Conditions of WanderGenie.
+                                                </FormLabel>
+                                                <FormMessage />
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="useGST"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>
+                                                    Use GST for this booking (Optional)
+                                                </FormLabel>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                    
+                    <div className="flex justify-end">
+                        <Button type="submit" size="lg" className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
+                        Continue Booking <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </div>
+                </form>
+            </Form>
         </div>
 
         <div className="lg:col-span-1 space-y-6">
@@ -374,5 +375,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    
