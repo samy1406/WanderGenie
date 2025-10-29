@@ -168,11 +168,11 @@ export default function AdminPage() {
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="contact" className="text-right">Contact</Label>
-                        <Input id="contact" value={editingUser.contact} onChange={(e) => setEditingUser({...editingUser, contact: e.target.value})} className="col-span-3"/>
+                        <Input id="contact" value={editingUser.contact ?? ''} onChange={(e) => setEditingUser({...editingUser, contact: e.target.value})} className="col-span-3"/>
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="age" className="text-right">Age</Label>
-                        <Input id="age" type="number" value={editingUser.age} onChange={(e) => setEditingUser({...editingUser, age: Number(e.target.value)})} className="col-span-3"/>
+                        <Input id="age" type="number" value={editingUser.age ?? ''} onChange={(e) => setEditingUser({...editingUser, age: Number(e.target.value)})} className="col-span-3"/>
                     </div>
                 </div>
             )}
