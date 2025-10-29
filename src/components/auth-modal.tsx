@@ -113,7 +113,7 @@ export function AuthModal() {
            {view === 'signup' && (
             <div className="grid gap-2">
                 <Label htmlFor="contact">Contact Number</Label>
-                <Input id="contact" type="tel" value={contact} onChange={(e) => setContact(e.targe.value)} placeholder="e.g., +91 1234567890" />
+                <Input id="contact" type="tel" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g., +91 1234567890" />
             </div>
            )}
           <div className="grid gap-2">
@@ -155,5 +155,4 @@ export function AuthModal() {
     </Dialog>
   );
 }
-
     
