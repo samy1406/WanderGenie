@@ -5,7 +5,7 @@
 import { useBooking } from '@/context/booking-context';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,21 +14,20 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Info, Square, CheckSquare, Briefcase } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
-import { FormatBoldText } from '@/components/format-bold-text';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
-type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
 
 const passengerSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
+  age: z.coerce.number().min(0, "Age is required").max(120, "Enter a valid age"),
   email: z.string().email('Invalid email').optional(),
   contactNumber: z.string().optional(),
 });
@@ -42,15 +41,22 @@ const bookingFormSchema = z.object({
   insurance: z.enum(['yes', 'no']).default('no'),
 });
 
+// Pricing constants based on Indian standards
+const PRICES = {
+    ADULT: { base: 6833, taxes: 1355 },
+    CHILD: { base: 5100, taxes: 1100 },
+    INFANT: { base: 1500, taxes: 500 },
+};
+
 export default function BookPage() {
   const router = useRouter();
   const { bookingOption, addBooking, setPendingBooking } = useBooking();
   const { isAuthenticated, user, openAuthModal } = useAuth();
-
+  
   const form = useForm<z.infer<typeof bookingFormSchema>>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      passengers: [{ title: 'Mr', firstName: '', lastName: '' }],
+      passengers: [{ title: 'Mr', firstName: '', lastName: '', age: 30 }],
       contactEmail: '',
       contactPhone: '',
       agreeToTerms: false,
@@ -64,6 +70,39 @@ export default function BookPage() {
     name: 'passengers',
   });
   
+  const watchedPassengers = form.watch('passengers');
+
+  const priceSummary = useMemo(() => {
+    const summary = {
+      adults: { count: 0, total: 0, base: 0, taxes: 0 },
+      children: { count: 0, total: 0, base: 0, taxes: 0 },
+      infants: { count: 0, total: 0, base: 0, taxes: 0 },
+      grandTotal: 0
+    };
+
+    watchedPassengers.forEach(passenger => {
+        if (passenger.age >= 12) {
+            summary.adults.count++;
+            summary.adults.base += PRICES.ADULT.base;
+            summary.adults.taxes += PRICES.ADULT.taxes;
+            summary.adults.total += PRICES.ADULT.base + PRICES.ADULT.taxes;
+        } else if (passenger.age >= 2) {
+            summary.children.count++;
+            summary.children.base += PRICES.CHILD.base;
+            summary.children.taxes += PRICES.CHILD.taxes;
+            summary.children.total += PRICES.CHILD.base + PRICES.CHILD.taxes;
+        } else {
+            summary.infants.count++;
+            summary.infants.base += PRICES.INFANT.base;
+            summary.infants.taxes += PRICES.INFANT.taxes;
+            summary.infants.total += PRICES.INFANT.base + PRICES.INFANT.taxes;
+        }
+    });
+    
+    summary.grandTotal = summary.adults.total + summary.children.total + summary.infants.total;
+    return summary;
+  }, [watchedPassengers]);
+  
   useEffect(() => {
     if (isAuthenticated && user) {
       form.setValue('contactEmail', user.email || '');
@@ -72,7 +111,7 @@ export default function BookPage() {
 
   useEffect(() => {
     if (!bookingOption) {
-      router.push('/');
+        router.push('/');
     }
   }, [bookingOption, router]);
 
@@ -123,12 +162,6 @@ export default function BookPage() {
         </Card>
     )
   }
-
-  const adultPrice = 6833;
-  const taxes = 1355;
-  const totalPerAdult = adultPrice + taxes;
-  const grandTotal = totalPerAdult * fields.length;
-
 
   return (
     <>
@@ -198,7 +231,7 @@ export default function BookPage() {
                                     </Button>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <FormField
                                             control={form.control}
                                             name={`passengers.${index}.title`}
@@ -247,11 +280,24 @@ export default function BookPage() {
                                             </FormItem>
                                             )}
                                         />
+                                        <FormField
+                                            control={form.control}
+                                            name={`passengers.${index}.age`}
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Age</FormLabel>
+                                                <FormControl>
+                                                <Input type="number" placeholder="30" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
                                     </div>
                                 </CardContent>
                             </Card>
                         ))}
-                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '' })}>
+                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '', age: 30 })}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
                         </Button>
                     
@@ -350,18 +396,44 @@ export default function BookPage() {
               <CardTitle>Price Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Adult x{fields.length}</span>
-                <span className="font-semibold">₹{(adultPrice * fields.length).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Taxes & Fees</span>
-                <span className="font-semibold">₹{(taxes * fields.length).toLocaleString('en-IN')}</span>
-              </div>
+               {priceSummary.adults.count > 0 && (
+                <div>
+                  <div className="flex justify-between items-center font-semibold">
+                    <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
+                    <span>₹{priceSummary.adults.total.toLocaleString('en-IN')}</span>
+                  </div>
+                   <div className="text-xs text-muted-foreground pl-7">
+                    <span>Base Fare: ₹{priceSummary.adults.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.adults.taxes.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+              {priceSummary.children.count > 0 && (
+                 <div>
+                  <div className="flex justify-between items-center font-semibold">
+                    <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
+                    <span>₹{priceSummary.children.total.toLocaleString('en-IN')}</span>
+                  </div>
+                   <div className="text-xs text-muted-foreground pl-7">
+                    <span>Base Fare: ₹{priceSummary.children.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.children.taxes.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+               {priceSummary.infants.count > 0 && (
+                 <div>
+                  <div className="flex justify-between items-center font-semibold">
+                    <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
+                    <span>₹{priceSummary.infants.total.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground pl-7">
+                    <span>Base Fare: ₹{priceSummary.infants.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.infants.taxes.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+
               <Separator />
               <div className="flex justify-between font-bold text-xl">
                 <span>Grand Total</span>
-                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+                <span>₹{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
               </div>
             </CardContent>
           </Card>
@@ -383,5 +455,4 @@ export default function BookPage() {
   </>
   );
 }
-
     

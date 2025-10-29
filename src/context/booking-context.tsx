@@ -16,6 +16,7 @@ type PassengerDetails = {
     passengers: {
       firstName: string;
       lastName: string;
+      age: number;
     }[];
     email: string;
     phone: string;
@@ -82,3 +83,5 @@ export function useBooking() {
   }
   return context;
 }
+
+    
