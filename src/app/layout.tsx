@@ -1,6 +1,9 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from '@/context/auth-context';
+import { Header } from '@/components/header';
+import { BookingProvider } from '@/context/booking-context';
 
 export const metadata: Metadata = {
   title: 'WanderGenie',
@@ -21,8 +24,13 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v9.2.4/ol.css" />
       </head>
       <body className="font-body antialiased">
-        {children}
-        <Toaster />
+        <BookingProvider>
+          <AuthProvider>
+            <Header />
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </BookingProvider>
       </body>
     </html>
   );

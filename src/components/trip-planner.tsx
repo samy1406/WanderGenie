@@ -14,6 +14,7 @@ import type { z } from "zod";
 import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
+import { AuthModal } from "./auth-modal";
 
 export type TripType = "oneway" | "roundtrip";
 
@@ -200,6 +201,7 @@ export function TripPlanner() {
                 {error && <p className="text-destructive text-sm mt-4 text-center">{error}</p>}
             </div>
         </main>
+        <AuthModal />
     </div>
   );
 }
