@@ -14,12 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 
@@ -32,13 +33,29 @@ const passengerSchema = z.object({
   contactNumber: z.string().optional(),
 });
 
+const gstDetailsSchema = z.object({
+    companyName: z.string().min(1, "Company name is required"),
+    gstNumber: z.string().length(15, "GST number must be 15 characters"),
+    companyEmail: z.string().email("Invalid email for company"),
+    companyContact: z.string().min(10, "Invalid contact for company"),
+});
+
 const bookingFormSchema = z.object({
   passengers: z.array(passengerSchema).min(1, 'At least one passenger is required'),
   contactEmail: z.string().email('A valid contact email is required'),
   contactPhone: z.string().min(10, 'A valid contact phone number is required'),
   agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions." }),
   useGST: z.boolean().default(false),
+  gstDetails: gstDetailsSchema.optional(),
   insurance: z.enum(['yes', 'no']).default('no'),
+}).refine(data => {
+    if (data.useGST && !data.gstDetails) {
+      return false;
+    }
+    return true;
+}, {
+    message: "GST Details are required when Use GST is checked.",
+    path: ["gstDetails"],
 });
 
 // Pricing constants based on Indian standards
@@ -48,10 +65,20 @@ const PRICES = {
     INFANT: { base: 1500, taxes: 500 },
 };
 
+const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number } } = {
+    "WANDER10": { type: 'percentage', value: 10 },
+    "FLYHIGH": { type: 'fixed', value: 500 },
+    "TRAVELNOW": { type: 'fixed', value: 1200 },
+};
+
 export default function BookPage() {
   const router = useRouter();
   const { bookingOption, addBooking, setPendingBooking } = useBooking();
   const { isAuthenticated, user, openAuthModal } = useAuth();
+  const { toast } = useToast();
+
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
   
   const form = useForm<z.infer<typeof bookingFormSchema>>({
     resolver: zodResolver(bookingFormSchema),
@@ -71,13 +98,18 @@ export default function BookPage() {
   });
   
   const watchedPassengers = form.watch('passengers');
+  const useGST = form.watch('useGST');
 
   const priceSummary = useMemo(() => {
     const summary = {
       adults: { count: 0, total: 0, base: 0, taxes: 0 },
       children: { count: 0, total: 0, base: 0, taxes: 0 },
       infants: { count: 0, total: 0, base: 0, taxes: 0 },
-      grandTotal: 0
+      baseFare: 0,
+      totalTaxes: 0,
+      subTotal: 0,
+      discount: appliedDiscount,
+      grandTotal: 0,
     };
 
     watchedPassengers.forEach(passenger => {
@@ -85,23 +117,28 @@ export default function BookPage() {
             summary.adults.count++;
             summary.adults.base += PRICES.ADULT.base;
             summary.adults.taxes += PRICES.ADULT.taxes;
-            summary.adults.total += PRICES.ADULT.base + PRICES.ADULT.taxes;
         } else if (passenger.age >= 2) {
             summary.children.count++;
             summary.children.base += PRICES.CHILD.base;
             summary.children.taxes += PRICES.CHILD.taxes;
-            summary.children.total += PRICES.CHILD.base + PRICES.CHILD.taxes;
         } else {
             summary.infants.count++;
             summary.infants.base += PRICES.INFANT.base;
             summary.infants.taxes += PRICES.INFANT.taxes;
-            summary.infants.total += PRICES.INFANT.base + PRICES.INFANT.taxes;
         }
     });
+
+    summary.adults.total = summary.adults.base + summary.adults.taxes;
+    summary.children.total = summary.children.base + summary.children.taxes;
+    summary.infants.total = summary.infants.base + summary.infants.taxes;
     
-    summary.grandTotal = summary.adults.total + summary.children.total + summary.infants.total;
+    summary.baseFare = summary.adults.base + summary.children.base + summary.infants.base;
+    summary.totalTaxes = summary.adults.taxes + summary.children.taxes + summary.infants.taxes;
+    summary.subTotal = summary.baseFare + summary.totalTaxes;
+    summary.grandTotal = summary.subTotal - summary.discount;
+
     return summary;
-  }, [watchedPassengers]);
+  }, [watchedPassengers, appliedDiscount]);
   
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -139,6 +176,31 @@ export default function BookPage() {
       openAuthModal('signup');
     }
   };
+
+  const handleApplyCoupon = () => {
+    const coupon = DUMMY_COUPONS[couponCode.toUpperCase()];
+    if(coupon) {
+        let discount = 0;
+        if(coupon.type === 'fixed') {
+            discount = coupon.value;
+        } else { // percentage
+            discount = (priceSummary.subTotal * coupon.value) / 100;
+        }
+        setAppliedDiscount(discount);
+        toast({
+            title: "Coupon Applied!",
+            description: `You've saved ₹${discount.toFixed(2)} with coupon ${couponCode.toUpperCase()}.`
+        });
+    } else {
+        setAppliedDiscount(0);
+        toast({
+            title: "Invalid Coupon",
+            description: "The coupon code you entered is not valid.",
+            variant: "destructive",
+        });
+    }
+  };
+
 
   const { item, type } = bookingOption;
 
@@ -219,7 +281,7 @@ export default function BookPage() {
                         {fields.map((field, index) => (
                             <Card key={field.id}>
                                 <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle className="flex items-center"><User className="mr-2"/> Adult {index + 1}</CardTitle>
+                                    <CardTitle className="flex items-center"><User className="mr-2"/> Passenger {index + 1}</CardTitle>
                                     <Button
                                         type="button"
                                         variant="destructive"
@@ -301,7 +363,6 @@ export default function BookPage() {
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
                         </Button>
                     
-
                     <Card>
                         <CardHeader>
                         <CardTitle>Contact Information</CardTitle>
@@ -338,48 +399,101 @@ export default function BookPage() {
                     </Card>
 
                     <Card>
-                            <CardContent className="pt-6 space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="agreeToTerms"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                            <div className="space-y-1 leading-none">
-                                                <FormLabel>
-                                                I understand and agree to the rules, Privacy Policy, User Agreement and Terms & Conditions of WanderGenie.
-                                                </FormLabel>
-                                                <FormMessage />
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="useGST"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                            <div className="space-y-1 leading-none">
-                                                <FormLabel>
-                                                    Use GST for this booking (Optional)
-                                                </FormLabel>
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
-                            </CardContent>
-                        </Card>
+                        <CardContent className="pt-6 space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="useGST"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base flex items-center"><Building className="mr-2 h-4 w-4"/> Use GST for this booking</FormLabel>
+                                            <FormDescription>Select this to claim tax credit on your business travel.</FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                           {useGST && (
+                                <div className="p-4 border-t space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="gstDetails.companyName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Company Name</FormLabel>
+                                                    <FormControl><Input placeholder="Wander Inc." {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="gstDetails.gstNumber"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>GST Number</FormLabel>
+                                                    <FormControl><Input placeholder="15-character GSTIN" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                         <FormField
+                                            control={form.control}
+                                            name="gstDetails.companyEmail"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Company Email</FormLabel>
+                                                    <FormControl><Input type="email" placeholder="billing@company.com" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                         <FormField
+                                            control={form.control}
+                                            name="gstDetails.companyContact"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Company Contact</FormLabel>
+                                                    <FormControl><Input type="tel" placeholder="022-12345678" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <Separator />
+
+                            <FormField
+                                control={form.control}
+                                name="agreeToTerms"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md pt-4">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                            I understand and agree to the rules, Privacy Policy, User Agreement and Terms & Conditions of WanderGenie.
+                                            </FormLabel>
+                                            <FormMessage />
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
                     
                     <div className="flex justify-end">
                         <Button type="submit" size="lg" className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -395,46 +509,51 @@ export default function BookPage() {
             <CardHeader>
               <CardTitle>Price Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 text-sm">
+                <div className="flex justify-between">
+                    <span>Base Fare</span>
+                    <span>₹{priceSummary.baseFare.toLocaleString('en-IN')}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span>Taxes & Surcharges</span>
+                    <span>₹{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
+                </div>
+                {appliedDiscount > 0 && (
+                     <div className="flex justify-between text-green-600">
+                        <span>Discount</span>
+                        <span>- ₹{appliedDiscount.toLocaleString('en-IN')}</span>
+                    </div>
+                )}
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                    <span>Grand Total</span>
+                    <span>₹{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
+                </div>
+                <Separator />
                {priceSummary.adults.count > 0 && (
                 <div>
-                  <div className="flex justify-between items-center font-semibold">
+                  <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
                     <span>₹{priceSummary.adults.total.toLocaleString('en-IN')}</span>
-                  </div>
-                   <div className="text-xs text-muted-foreground pl-7">
-                    <span>Base Fare: ₹{priceSummary.adults.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.adults.taxes.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
               {priceSummary.children.count > 0 && (
                  <div>
-                  <div className="flex justify-between items-center font-semibold">
+                  <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
                     <span>₹{priceSummary.children.total.toLocaleString('en-IN')}</span>
-                  </div>
-                   <div className="text-xs text-muted-foreground pl-7">
-                    <span>Base Fare: ₹{priceSummary.children.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.children.taxes.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
                {priceSummary.infants.count > 0 && (
                  <div>
-                  <div className="flex justify-between items-center font-semibold">
+                  <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
                     <span>₹{priceSummary.infants.total.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground pl-7">
-                    <span>Base Fare: ₹{priceSummary.infants.base.toLocaleString('en-IN')}</span> | <span>Taxes: ₹{priceSummary.infants.taxes.toLocaleString('en-IN')}</span>
-                  </div>
                 </div>
               )}
-
-              <Separator />
-              <div className="flex justify-between font-bold text-xl">
-                <span>Grand Total</span>
-                <span>₹{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
-              </div>
             </CardContent>
           </Card>
           <Card>
@@ -443,8 +562,12 @@ export default function BookPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center space-x-2">
-                    <Input placeholder="Enter Coupon Code" />
-                    <Button variant="outline">Apply</Button>
+                    <Input 
+                        placeholder="Enter Coupon Code" 
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        />
+                    <Button variant="outline" onClick={handleApplyCoupon}>Apply</Button>
                 </div>
             </CardContent>
           </Card>
