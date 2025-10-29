@@ -15,6 +15,7 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 import { AuthModal } from "./auth-modal";
+import { differenceInDays } from 'date-fns';
 
 export type TripType = "oneway" | "roundtrip";
 
@@ -34,8 +35,7 @@ export function TripPlanner() {
     defaultValues: {
       origin: "",
       destination: "",
-      tripDuration: 3,
-      interests: "",
+      interests: "Historical sites and local food",
       travelPreference: "budget",
       departureTime: "any",
       arrivalTime: "any",
@@ -46,7 +46,22 @@ export function TripPlanner() {
   // Update tripType in form when it changes using useEffect
   useEffect(() => {
     form.setValue("tripType", tripType);
+    if(tripType === 'oneway') {
+      form.setValue('returnDate', undefined);
+    }
   }, [tripType, form]);
+
+  const departureDate = form.watch("departureDate");
+  const returnDate = form.watch("returnDate");
+
+  useEffect(() => {
+    if (departureDate && returnDate && tripType === 'roundtrip') {
+      const duration = differenceInDays(returnDate, departureDate);
+      form.setValue('tripDuration', duration > 0 ? duration : 1);
+    } else if (tripType === 'oneway') {
+        form.setValue('tripDuration', 3); // Reset to a default for one-way
+    }
+  }, [departureDate, returnDate, tripType, form]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -205,5 +220,3 @@ export function TripPlanner() {
     </div>
   );
 }
-
-    

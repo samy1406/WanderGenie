@@ -1,3 +1,4 @@
+
 // src/context/auth-context.tsx
 'use client';
 
@@ -103,7 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = (email: string, password?: string) => {
-    const foundUser = MOCK_USERS.find(u => u.email === email);
+    syncUsers(); // Make sure we have the latest user list
+    const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+    
     if (foundUser && foundUser.password === password) {
         setUser(foundUser);
         localStorage.setItem('wandergenie-user', JSON.stringify(foundUser));
@@ -115,12 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = (data: SignupData) => {
-    if (MOCK_USERS.some(u => u.email === data.email)) {
+    if (MOCK_USERS.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
         toast({ title: "Signup Failed", description: "An account with this email already exists.", variant: "destructive" });
         return;
     }
     const newUser: User = {
-      id: `${MOCK_USERS.length + 1}`,
+      id: `${Date.now()}`,
       name: data.name,
       email: data.email,
       password: data.password,

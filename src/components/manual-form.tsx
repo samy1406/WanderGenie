@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon } from "lucide-react";
+import { Users, CalendarIcon, ArrowRight } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -38,7 +39,7 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
 
     return (
         <div className="space-y-4">
-        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-[1fr_1fr_1fr_auto] items-end">
+        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] items-end">
             {/* From */}
             <FormField
             control={form.control}
@@ -67,13 +68,12 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                 )}
             />
             
-            {tripType === 'roundtrip' && (
-                <FormField
+            <FormField
                 control={form.control}
-                name="returnDate"
+                name="departureDate"
                 render={({ field }) => (
                   <FormItem className="p-4 border-l flex flex-col">
-                    <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
+                    <FormLabel className="text-xs text-gray-500">DEPARTURE</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -108,19 +108,61 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                   </FormItem>
                 )}
               />
+
+            {tripType === 'roundtrip' && (
+                <FormField
+                control={form.control}
+                name="returnDate"
+                render={({ field }) => (
+                  <FormItem className="p-4 border-l flex flex-col">
+                    <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span className="text-2xl font-bold text-gray-400">Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < (form.getValues("departureDate") || new Date())
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </FormItem>
+                )}
+              />
             )}
 
-            {tripType !== 'roundtrip' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 col-span-1 md:col-span-2 lg:col-span-1">
                  <FormField
                     control={form.control}
                     name="travelPreference"
                     render={({ field }) => (
                     <FormItem className="p-4 border-l">
-                        <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/> TRAVELLER & PREFERENCE</FormLabel>
+                        <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>Travel Preferences</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left">
-                            <SelectValue placeholder="Select your travel priority" />
+                            <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left text-lg font-semibold">
+                            <SelectValue placeholder="Select" />
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -132,17 +174,17 @@ export function ManualForm({ isLoading, form, tripType }: ManualFormProps) {
                     </FormItem>
                     )}
                 />
-            )}
+            </div>
 
 
             {/* Search Button */}
-            <Button type="submit" size="lg" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-full rounded-l-none rounded-r-md text-xl font-bold">
+            <Button type="submit" size="lg" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-full rounded-l-none rounded-r-md text-xl font-bold md:col-span-full lg:col-span-1">
                 {isLoading ? (
                 <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>
                     SEARCH
                 </>
-                ) : "SEARCH"}
+                ) : <div className="flex items-center">SEARCH <ArrowRight className="ml-2"/></div>}
             </Button>
         </div>
 
