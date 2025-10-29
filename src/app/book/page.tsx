@@ -21,6 +21,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { handleBookingRequest, handlePaymentRequest } from '@/app/actions';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 
@@ -77,6 +78,7 @@ export default function BookPage() {
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
 
+  const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   
@@ -143,6 +145,7 @@ export default function BookPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       form.setValue('contactEmail', user.email || '');
+      form.setValue('contactPhone', user.contact || '');
     }
   }, [isAuthenticated, user, form]);
 
@@ -157,26 +160,71 @@ export default function BookPage() {
     return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
   }
   
-  const onSubmit = (data: z.infer<typeof bookingFormSchema>) => {
-    const newBooking = {
-      ...bookingOption,
-      passengerDetails: {
-        passengers: data.passengers,
-        email: data.contactEmail,
-        phone: data.contactPhone
-      },
-      bookingDate: new Date().toISOString(),
-      id: `booking_${Date.now()}`
-    };
+  const onSubmit = async (data: z.infer<typeof bookingFormSchema>) => {
+     if (!isAuthenticated) {
+        setPendingBooking({
+             ...bookingOption,
+            passengerDetails: {
+                passengers: data.passengers,
+                email: data.contactEmail,
+                phone: data.contactPhone
+            },
+            bookingDate: new Date().toISOString(),
+            id: `pending_${Date.now()}`
+        });
+        openAuthModal('signup');
+        return;
+    }
 
-    if (isAuthenticated) {
-      addBooking(newBooking);
-      router.push('/my-bookings');
-    } else {
-      setPendingBooking(newBooking);
-      openAuthModal('signup');
+    setIsProcessing(true);
+    toast({ title: "Processing Booking...", description: "Please wait while we confirm your booking." });
+
+    try {
+        const bookingReq = await handleBookingRequest({ item: 'Flight', details: (bookingOption.item as TravelOption).details });
+        
+        if (!bookingReq.success) {
+            throw new Error("Failed to initiate booking with the provider.");
+        }
+        
+        const paymentReq = await handlePaymentRequest({
+            bookingId: bookingReq.bookingId,
+            cardholderName: user?.name || "Wander Genie",
+            amount: priceSummary.grandTotal
+        });
+
+        if (!paymentReq.success) {
+             throw new Error("Payment failed. Please try again.");
+        }
+
+        const newBooking = {
+            ...bookingOption,
+            id: bookingReq.bookingId,
+            transactionId: paymentReq.transactionId,
+            passengerDetails: {
+                passengers: data.passengers,
+                email: data.contactEmail,
+                phone: data.contactPhone
+            },
+            bookingDate: new Date().toISOString(),
+            amountPaid: priceSummary.grandTotal
+        };
+
+        addBooking(newBooking);
+        router.push(`/payment-confirmation?bookingId=${newBooking.id}`);
+
+    } catch (error) {
+        console.error("Booking process failed:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        toast({
+            title: "Booking Failed",
+            description: errorMessage,
+            variant: "destructive",
+        });
+    } finally {
+        setIsProcessing(false);
     }
   };
+
 
   const applyCoupon = (code: string) => {
     const coupon = DUMMY_COUPONS[code.toUpperCase()];
@@ -190,7 +238,7 @@ export default function BookPage() {
         setAppliedDiscount(discount);
         toast({
             title: "Coupon Applied!",
-            description: <>You've saved ₹{discount.toFixed(2)} with coupon {code.toUpperCase()}.</>
+            description: <>You've saved &#8377;{discount.toFixed(2)} with coupon {code.toUpperCase()}.</>
         });
     } else {
         setAppliedDiscount(0);
@@ -501,8 +549,15 @@ export default function BookPage() {
                     </Card>
                     
                     <div className="flex justify-end">
-                        <Button type="submit" size="lg" className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-                        Continue Booking <ArrowRight className="ml-2 h-4 w-4" />
+                         <Button type="submit" size="lg" disabled={isProcessing} className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
+                            {isProcessing ? (
+                                <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>
+                                Processing...
+                                </>
+                            ) : (
+                                <>Pay Securely <ArrowRight className="ml-2 h-4 w-4" /></>
+                            )}
                         </Button>
                     </div>
                 </form>
@@ -517,29 +572,29 @@ export default function BookPage() {
             <CardContent className="space-y-4 text-sm">
                 <div className="flex justify-between">
                     <span>Base Fare</span>
-                    <span>₹{priceSummary.baseFare.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.baseFare.toLocaleString('en-IN')}</span>
                 </div>
                  <div className="flex justify-between">
                     <span>Taxes & Surcharges</span>
-                    <span>₹{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
                 </div>
                 {appliedDiscount > 0 && (
                      <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span>- ₹{appliedDiscount.toLocaleString('en-IN')}</span>
+                        <span>- &#8377;{appliedDiscount.toLocaleString('en-IN')}</span>
                     </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                     <span>Grand Total</span>
-                    <span>₹{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
                 </div>
                 <Separator />
                {priceSummary.adults.count > 0 && (
                 <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
-                    <span>₹{priceSummary.adults.total.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.adults.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -547,7 +602,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
-                    <span>₹{priceSummary.children.total.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.children.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -555,7 +610,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
-                    <span>₹{priceSummary.infants.total.toLocaleString('en-IN')}</span>
+                    <span>&#8377;{priceSummary.infants.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -595,5 +650,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    

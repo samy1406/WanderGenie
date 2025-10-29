@@ -13,13 +13,15 @@ type BookingItem = {
     type: 'travel' | 'hotel';
 }
 
+export type Passenger = {
+    title: string;
+    firstName: string;
+    lastName: string;
+    age: number;
+};
+
 type PassengerDetails = {
-    passengers: {
-      title: string;
-      firstName: string;
-      lastName: string;
-      age: number;
-    }[];
+    passengers: Passenger[];
     email: string;
     phone: string;
 };
@@ -28,7 +30,8 @@ export type Booking = BookingItem & {
     id: string;
     passengerDetails: PassengerDetails;
     bookingDate: string;
-    transactionId?: string; // Added for admin view
+    transactionId?: string;
+    amountPaid?: number;
 };
 
 
@@ -38,6 +41,7 @@ type BookingContextType = {
   bookings: Booking[];
   addBooking: (booking: Booking) => void;
   updateBookingInList: (updatedBooking: Booking) => void;
+  getBookingById: (bookingId: string) => Booking | undefined;
   pendingBooking: Booking | null;
   setPendingBooking: (booking: Booking | null) => void;
   clearPendingBooking: () => void;
@@ -51,16 +55,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [pendingBooking, setPendingBooking] = useState<Booking | null>(null);
   
   useEffect(() => {
-    const storedBookings = localStorage.getItem('wandergenie-bookings');
-    if (storedBookings) {
-      setBookings(JSON.parse(storedBookings));
+    try {
+        const storedBookings = localStorage.getItem('wandergenie-bookings');
+        if (storedBookings) {
+          setBookings(JSON.parse(storedBookings));
+        }
+    } catch (error) {
+        console.error("Could not load bookings from localStorage", error);
     }
   }, []);
 
   const addBooking = (booking: Booking) => {
-    // Add a mock transaction ID
-    const bookingWithTxn = { ...booking, transactionId: `TRN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`};
-    const newBookings = [...bookings, bookingWithTxn];
+    const newBookings = [...bookings, booking];
     setBookings(newBookings);
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
   };
@@ -75,6 +81,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getBookingById = (bookingId: string) => {
+    return bookings.find(b => b.id === bookingId);
+  }
+
   const clearPendingBooking = () => {
     setPendingBooking(null);
   };
@@ -85,6 +95,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     bookings,
     addBooking,
     updateBookingInList,
+    getBookingById,
     pendingBooking,
     setPendingBooking,
     clearPendingBooking

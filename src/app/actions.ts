@@ -1,3 +1,4 @@
+
 "use server";
 
 import { generatePersonalizedItinerary, type GeneratePersonalizedItineraryInput } from "@/ai/flows/generate-personalized-itinerary";
@@ -69,7 +70,7 @@ export async function handleBookingRequest(bookingDetails: { item: string, detai
 }
 
 // Mock function to simulate a payment request
-export async function handlePaymentRequest(paymentDetails: { bookingId: string, cardholderName: string }) {
+export async function handlePaymentRequest(paymentDetails: { bookingId: string, cardholderName: string, amount: number }) {
     console.log("Payment request received for:", paymentDetails);
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 2000));

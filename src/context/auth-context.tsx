@@ -7,7 +7,7 @@ import { useBooking } from './booking-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
-type User = {
+export type User = {
   id: string;
   name: string;
   email: string;
@@ -55,29 +55,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
   const syncUsers = () => {
-    const storedUsers = localStorage.getItem('wandergenie-users');
-    if (storedUsers) {
-        const parsedUsers = JSON.parse(storedUsers);
-        // This ensures the initial admin user is always present
-        const combinedUsers = [...MOCK_USERS];
-        parsedUsers.forEach((su: User) => {
-            if (!combinedUsers.some(u => u.email === su.email)) {
-                combinedUsers.push(su);
-            }
-        });
-        MOCK_USERS = combinedUsers;
-    } else {
-        localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+    try {
+        const storedUsers = localStorage.getItem('wandergenie-users');
+        if (storedUsers) {
+            const parsedUsers = JSON.parse(storedUsers);
+            const combinedUsers = [...MOCK_USERS];
+            parsedUsers.forEach((su: User) => {
+                if (!combinedUsers.some(u => u.email === su.email)) {
+                    combinedUsers.push(su);
+                }
+            });
+            MOCK_USERS = combinedUsers;
+        } else {
+            localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+        }
+    } catch (error) {
+        console.error("Could not sync users from localStorage", error);
     }
   }
 
   useEffect(() => {
-    syncUsers();
-    const storedUser = localStorage.getItem('wandergenie-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+        syncUsers();
+        const storedUser = localStorage.getItem('wandergenie-user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+    } catch (error) {
+        console.error("Could not load user from localStorage", error);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const updateUser = (updatedUserDetails: Partial<User>) => {
@@ -150,10 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handlePostAuth = () => {
     if (pendingBooking) {
-      addBooking(pendingBooking);
-      clearPendingBooking();
+      // This is a simplified flow. A real app would re-trigger the submission.
+      // For now, we'll just inform the user to continue.
+      toast({
+        title: "You're logged in!",
+        description: "Please click 'Pay Securely' again to complete your booking.",
+      });
       closeAuthModal();
-      router.push('/my-bookings');
+      clearPendingBooking(); // Clear it as we are not auto-submitting
     } else {
       closeAuthModal();
     }
