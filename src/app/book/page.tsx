@@ -121,6 +121,12 @@ export default function BookPage() {
     )
   }
 
+  const adultPrice = 6833;
+  const taxes = 1355;
+  const totalPerAdult = adultPrice + taxes;
+  const grandTotal = totalPerAdult * fields.length;
+
+
   return (
     <>
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50">
@@ -343,18 +349,17 @@ export default function BookPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>Adult x{fields.length}</span>
-                <span className="font-semibold">₹{6833 * fields.length}</span>
+                <span className="font-semibold">₹{(adultPrice * fields.length).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Total Taxes</span>
-                <span className="font-semibold">₹{1355 * fields.length}</span>
+                <span>Taxes & Fees</span>
+                <span className="font-semibold">₹{(taxes * fields.length).toLocaleString('en-IN')}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-xl">
                 <span>Grand Total</span>
-                <span>₹{(6833 + 1355) * fields.length}</span>
+                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
               </div>
-              <p className="text-xs text-muted-foreground text-center">Taxes and fees may apply.</p>
             </CardContent>
           </Card>
           <Card>
@@ -375,3 +380,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    
