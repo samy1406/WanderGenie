@@ -70,10 +70,13 @@ export default function BookPage() {
     }
   }, [isAuthenticated, user, form]);
 
-  if (!bookingOption) {
-    useEffect(() => {
+  useEffect(() => {
+    if (!bookingOption) {
       router.push('/');
-    }, [router]);
+    }
+  }, [bookingOption, router]);
+
+  if (!bookingOption) {
     return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
   }
   
