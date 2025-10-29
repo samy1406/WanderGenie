@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
@@ -578,4 +578,6 @@ export default function BookPage() {
   </>
   );
 }
+    
+
     
