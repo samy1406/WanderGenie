@@ -31,7 +31,7 @@ export const formSchema = z.object({
     message: "Return date is required for a round trip",
     path: ["returnDate"],
 }).refine(data => {
-    if(data.returnDate) {
+    if(data.returnDate && data.departureDate) {
         return data.returnDate > data.departureDate;
     }
     return true;

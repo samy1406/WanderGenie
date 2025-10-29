@@ -15,7 +15,7 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 import { AuthModal } from "./auth-modal";
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, addDays } from 'date-fns';
 
 export type TripType = "oneway" | "roundtrip";
 
@@ -35,6 +35,9 @@ export function TripPlanner() {
     defaultValues: {
       origin: "",
       destination: "",
+      departureDate: new Date(),
+      returnDate: undefined,
+      tripDuration: 3,
       interests: "Historical sites and local food",
       travelPreference: "budget",
       departureTime: "any",
@@ -48,6 +51,12 @@ export function TripPlanner() {
     form.setValue("tripType", tripType);
     if(tripType === 'oneway') {
       form.setValue('returnDate', undefined);
+    } else {
+        // When switching to roundtrip, set a default return date if not already set
+        if (!form.getValues('returnDate')) {
+            const departure = form.getValues('departureDate');
+            form.setValue('returnDate', addDays(departure || new Date(), 3));
+        }
     }
   }, [tripType, form]);
 
@@ -59,7 +68,11 @@ export function TripPlanner() {
       const duration = differenceInDays(returnDate, departureDate);
       form.setValue('tripDuration', duration > 0 ? duration : 1);
     } else if (tripType === 'oneway') {
-        form.setValue('tripDuration', 3); // Reset to a default for one-way
+        // You can set a default or leave it as is.
+        // Let's ensure it has a default if not set.
+        if (!form.getValues('tripDuration')) {
+             form.setValue('tripDuration', 3);
+        }
     }
   }, [departureDate, returnDate, tripType, form]);
 
