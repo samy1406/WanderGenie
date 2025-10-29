@@ -1,24 +1,31 @@
+
 // src/context/auth-context.tsx
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useBooking } from './booking-context';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 type User = {
   id: string;
   name: string;
   email: string;
+  age?: number;
+  contact?: string;
   avatar?: string;
+  password?: string; // In a real app, this would be a hash
 };
+
+type SignupData = Omit<User, 'id' | 'avatar'>;
 
 type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (email: string, name?: string) => void;
+  login: (email: string, password?: string) => void;
   logout: () => void;
-  signup: (name: string, email: string) => void;
+  signup: (data: SignupData) => void;
   openAuthModal: (view?: 'login' | 'signup') => void;
   closeAuthModal: () => void;
   isAuthModalOpen: boolean;
@@ -29,7 +36,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user data - in a real app, this would be fetched from a database
 const MOCK_USERS: User[] = [
-    { id: '1', name: 'Wanderer', email: 'test@example.com', avatar: `https://i.pravatar.cc/150?u=test@example.com` },
+    { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', avatar: `https://i.pravatar.cc/150?u=test@example.com` },
 ];
 
 
@@ -38,12 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { addBooking, pendingBooking, clearPendingBooking } = useBooking();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     // Simulate checking for a logged-in user in localStorage
+    const storedUsers = localStorage.getItem('wandergenie-users');
+    if (storedUsers) {
+        MOCK_USERS.push(...JSON.parse(storedUsers).filter((su: User) => !MOCK_USERS.some(u => u.email === su.email)));
+    }
     const storedUser = localStorage.getItem('wandergenie-user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -51,28 +63,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (email: string) => {
+  const login = (email: string, password?: string) => {
     const foundUser = MOCK_USERS.find(u => u.email === email);
-    if (foundUser) {
+    if (foundUser && foundUser.password === password) {
         setUser(foundUser);
         localStorage.setItem('wandergenie-user', JSON.stringify(foundUser));
+        toast({ title: "Login Successful", description: `Welcome back, ${foundUser.name}!` });
         handlePostAuth();
     } else {
-        // For this demo, if user not found, create them.
-        signup(`User ${MOCK_USERS.length + 1}`, email);
+        toast({ title: "Login Failed", description: "Invalid email or password.", variant: "destructive" });
     }
   };
 
-  const signup = (name: string, email: string) => {
+  const signup = (data: SignupData) => {
+    if (MOCK_USERS.some(u => u.email === data.email)) {
+        toast({ title: "Signup Failed", description: "An account with this email already exists.", variant: "destructive" });
+        return;
+    }
     const newUser: User = {
       id: `${MOCK_USERS.length + 1}`,
-      name,
-      email,
-      avatar: `https://i.pravatar.cc/150?u=${email}`
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      age: data.age,
+      contact: data.contact,
+      avatar: `https://i.pravatar.cc/150?u=${data.email}`
     };
+    
+    // In a local-only setup, we need to persist the new user to our mock list
+    const storedUsers = JSON.parse(localStorage.getItem('wandergenie-users') || '[]');
+    storedUsers.push(newUser);
+    localStorage.setItem('wandergenie-users', JSON.stringify(storedUsers));
     MOCK_USERS.push(newUser);
+
     setUser(newUser);
     localStorage.setItem('wandergenie-user', JSON.stringify(newUser));
+    toast({ title: "Account Created!", description: `Welcome to WanderGenie, ${newUser.name}!` });
     handlePostAuth();
   };
 
@@ -80,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem('wandergenie-user');
     router.push('/');
+    toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
 
   const handlePostAuth = () => {
@@ -126,3 +153,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
