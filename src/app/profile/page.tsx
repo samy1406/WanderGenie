@@ -63,7 +63,7 @@ export default function ProfilePage() {
   
   const handleRemovePhoto = () => {
     if(user) {
-        updateUser({ avatar: '' });
+        updateUser({ avatar: undefined });
         toast({ title: "Photo Removed", description: "Your profile picture has been removed." });
     }
   }
@@ -93,7 +93,7 @@ export default function ProfilePage() {
           <Card>
             <CardContent className="pt-6 flex flex-col items-center text-center">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar || undefined} alt={user.name} />
                 <AvatarFallback className="text-4xl">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <h2 className="text-2xl font-bold">{user.name}</h2>
