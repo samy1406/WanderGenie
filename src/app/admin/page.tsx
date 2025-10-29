@@ -122,6 +122,7 @@ export default function AdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Booking ID</TableHead>
+                      <TableHead>Txn ID</TableHead>
                       <TableHead>User Email</TableHead>
                       <TableHead>Booking Date</TableHead>
                       <TableHead>Type</TableHead>
@@ -132,6 +133,7 @@ export default function AdminPage() {
                      {allBookings.map((booking) => (
                       <TableRow key={booking.id}>
                         <TableCell className="font-mono text-xs">{booking.id}</TableCell>
+                        <TableCell className="font-mono text-xs">{booking.transactionId || 'N/A'}</TableCell>
                         <TableCell>{booking.passengerDetails.email}</TableCell>
                         <TableCell>{new Date(booking.bookingDate).toLocaleDateString()}</TableCell>
                         <TableCell className="capitalize">{booking.type}</TableCell>
@@ -155,6 +157,7 @@ export default function AdminPage() {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Edit User</DialogTitle>
+                <DialogDescription>ID: {editingUser?.id}</DialogDescription>
             </DialogHeader>
             {editingUser && (
                  <div className="grid gap-4 py-4">
@@ -194,12 +197,21 @@ export default function AdminPage() {
             </DialogHeader>
             {editingBooking && (
                  <div className="grid gap-4 py-4">
-                    <p>Editing booking details is not fully implemented in this mock setup. This is a placeholder.</p>
+                     <p>Booking details for: <strong>{editingBooking.passengerDetails.email}</strong></p>
+                     <p className="text-sm text-muted-foreground">This is a simplified view. All details are editable in a real application.</p>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="booking-type" className="text-right">Type</Label>
+                        <Input id="booking-type" value={editingBooking.type} disabled className="col-span-3"/>
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="booking-date" className="text-right">Date</Label>
+                        <Input id="booking-date" value={new Date(editingBooking.bookingDate).toLocaleString()} disabled className="col-span-3"/>
+                    </div>
                 </div>
             )}
              <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={handleBookingUpdate} disabled>Save Changes</Button>
+                <Button onClick={handleBookingUpdate}>Save Changes</Button>
              </DialogFooter>
         </DialogContent>
     </Dialog>

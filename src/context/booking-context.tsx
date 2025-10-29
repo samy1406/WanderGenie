@@ -1,3 +1,4 @@
+
 // src/context/booking-context.tsx
 'use client';
 
@@ -27,6 +28,7 @@ export type Booking = BookingItem & {
     id: string;
     passengerDetails: PassengerDetails;
     bookingDate: string;
+    transactionId?: string; // Added for admin view
 };
 
 
@@ -56,7 +58,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addBooking = (booking: Booking) => {
-    const newBookings = [...bookings, booking];
+    // Add a mock transaction ID
+    const bookingWithTxn = { ...booking, transactionId: `TRN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`};
+    const newBookings = [...bookings, bookingWithTxn];
     setBookings(newBookings);
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
   };

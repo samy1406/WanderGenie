@@ -2,7 +2,7 @@
 // src/components/trip-planner.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ItineraryForm, { formSchema } from "@/components/itinerary-form";
 import ItineraryDisplay from "@/components/itinerary-display";
 import TravelOptions from "@/components/travel-options";
@@ -15,7 +15,7 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 import { AuthModal } from "./auth-modal";
-import { differenceInDays, addDays } from 'date-fns';
+import { differenceInDays, addDays, isSameDay } from 'date-fns';
 
 export type TripType = "oneway" | "roundtrip";
 
@@ -30,11 +30,13 @@ export function TripPlanner() {
   const [tripType, setTripType] = useState<TripType>("oneway");
   const { toast } = useToast();
 
+  const isInitialRender = useRef(true);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      origin: "",
-      destination: "",
+      origin: "Ahmedabad",
+      destination: "Mumbai",
       departureDate: new Date(),
       returnDate: undefined,
       tripDuration: 3,
@@ -64,24 +66,30 @@ export function TripPlanner() {
   const departureDate = form.watch("departureDate");
   const returnDate = form.watch("returnDate");
   const tripDuration = form.watch("tripDuration");
-
+  
   // Effect to update trip duration when dates change in roundtrip mode
   useEffect(() => {
     if (departureDate && returnDate && tripType === 'roundtrip') {
       const duration = differenceInDays(returnDate, departureDate);
       if (duration !== form.getValues('tripDuration')) {
-          form.setValue('tripDuration', duration > 0 ? duration : 1);
+          form.setValue('tripDuration', duration > 0 ? duration : 1, { shouldValidate: true });
       }
     }
   }, [departureDate, returnDate, tripType, form]);
 
   // Effect to update return date when duration changes in roundtrip mode
   useEffect(() => {
+      // Don't run this on initial render to allow default values to settle.
+      if (isInitialRender.current) {
+          isInitialRender.current = false;
+          return;
+      }
       if (departureDate && tripDuration && tripType === 'roundtrip') {
           const newReturnDate = addDays(departureDate, tripDuration);
           const currentReturnDate = form.getValues('returnDate');
-          if (!currentReturnDate || differenceInDays(newReturnDate, currentReturnDate) !== 0) {
-              form.setValue('returnDate', newReturnDate);
+          
+          if (!currentReturnDate || !isSameDay(newReturnDate, currentReturnDate)) {
+              form.setValue('returnDate', newReturnDate, { shouldValidate: true });
           }
       }
   }, [departureDate, tripDuration, tripType, form]);

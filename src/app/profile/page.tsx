@@ -1,3 +1,4 @@
+
 // src/app/profile/page.tsx
 'use client';
 
@@ -12,7 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Phone, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Upload, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -24,6 +26,7 @@ const profileSchema = z.object({
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, updateUser } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -51,8 +54,28 @@ export default function ProfilePage() {
 
   const getInitials = (name = '') => {
     if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase();
+    }
     return name.charAt(0).toUpperCase();
   };
+  
+  const handleRemovePhoto = () => {
+    if(user) {
+        updateUser({ avatar: '' });
+        toast({ title: "Photo Removed", description: "Your profile picture has been removed." });
+    }
+  }
+  
+  const handleUploadPhoto = () => {
+    // This is a mock function. In a real app, this would open a file picker.
+    if(user) {
+        const newAvatar = `https://i.pravatar.cc/150?u=${user.email}&t=${Date.now()}`;
+        updateUser({ avatar: newAvatar });
+        toast({ title: "Photo Updated", description: "Your profile picture has been updated." });
+    }
+  }
 
   const onSubmit = (data: z.infer<typeof profileSchema>) => {
     updateUser(data);
@@ -75,6 +98,14 @@ export default function ProfilePage() {
               </Avatar>
               <h2 className="text-2xl font-bold">{user.name}</h2>
               <p className="text-muted-foreground">{user.email}</p>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={handleUploadPhoto}>
+                    <Upload className="mr-2 h-4 w-4"/> Upload
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleRemovePhoto}>
+                    <Trash2 className="mr-2 h-4 w-4"/> Remove
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -40,13 +40,13 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
 
     return (
         <div className="space-y-4">
-        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] items-end">
+        <div className="rounded-lg shadow-lg bg-white text-gray-700 grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_1fr_auto] items-end">
             {/* From */}
             <FormField
             control={form.control}
             name="origin"
             render={({ field }) => (
-                <FormItem className="p-4 relative lg:col-span-1">
+                <FormItem className="p-4 relative">
                 <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -60,7 +60,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                 control={form.control}
                 name="destination"
                 render={({ field }) => (
-                <FormItem className="p-4 border-l lg:col-span-1">
+                <FormItem className="p-4 border-l">
                     <FormLabel className="text-xs text-gray-500">TO</FormLabel>
                     <FormControl>
                     <Input placeholder="e.g., Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -73,7 +73,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                 control={form.control}
                 name="departureDate"
                 render={({ field }) => (
-                  <FormItem className="p-4 border-l flex flex-col lg:col-span-1">
+                  <FormItem className="p-4 border-l flex flex-col">
                     <FormLabel className="text-xs text-gray-500">DEPARTURE</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -114,7 +114,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                 control={form.control}
                 name="returnDate"
                 render={({ field }) => (
-                  <FormItem className="p-4 border-l flex flex-col lg:col-span-1" onClick={() => { if (tripType === 'oneway') setTripType('roundtrip')}}>
+                  <FormItem className="p-4 border-l flex flex-col" onClick={() => { if (tripType === 'oneway') setTripType('roundtrip')}}>
                     <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -124,7 +124,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                             disabled={tripType === 'oneway'}
                             className={cn(
                               "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold disabled:opacity-100",
-                              !field.value && "text-muted-foreground"
+                              !field.value && tripType === 'roundtrip' && "text-muted-foreground"
                             )}
                           >
                             {field.value && tripType === 'roundtrip' ? (
@@ -156,7 +156,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                 control={form.control}
                 name="travelPreference"
                 render={({ field }) => (
-                <FormItem className="p-4 border-l lg:col-span-1">
+                <FormItem className="p-4 border-l">
                     <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>Travel Preferences</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
@@ -176,7 +176,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
 
 
             {/* Search Button */}
-            <Button type="submit" size="lg" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-full rounded-l-none rounded-r-md text-xl font-bold md:col-span-full lg:col-span-1">
+            <Button type="submit" size="lg" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-full rounded-l-none rounded-r-md text-xl font-bold">
                 {isLoading ? (
                 <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>
