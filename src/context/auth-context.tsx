@@ -1,4 +1,3 @@
-
 // src/context/auth-context.tsx
 'use client';
 
@@ -22,6 +21,9 @@ type SignupData = Omit<User, 'id' | 'avatar'>;
 type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
+  updateUser: (updatedUser: Partial<User>) => void;
+  getAllUsers: () => User[];
+  updateUserInList: (updatedUser: User) => void;
   isLoading: boolean;
   login: (email: string, password?: string) => void;
   logout: () => void;
@@ -35,7 +37,8 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user data - in a real app, this would be fetched from a database
-const MOCK_USERS: User[] = [
+let MOCK_USERS: User[] = [
+    { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123', avatar: `https://i.pravatar.cc/150?u=admin@wandergenie.com` },
     { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', avatar: `https://i.pravatar.cc/150?u=test@example.com` },
 ];
 
@@ -50,18 +53,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
-  useEffect(() => {
-    // Simulate checking for a logged-in user in localStorage
+  const syncUsers = () => {
     const storedUsers = localStorage.getItem('wandergenie-users');
     if (storedUsers) {
-        MOCK_USERS.push(...JSON.parse(storedUsers).filter((su: User) => !MOCK_USERS.some(u => u.email === su.email)));
+        const parsedUsers = JSON.parse(storedUsers);
+        // This ensures the initial admin user is always present
+        const combinedUsers = [...MOCK_USERS];
+        parsedUsers.forEach((su: User) => {
+            if (!combinedUsers.some(u => u.email === su.email)) {
+                combinedUsers.push(su);
+            }
+        });
+        MOCK_USERS = combinedUsers;
+    } else {
+        localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
     }
+  }
+
+  useEffect(() => {
+    syncUsers();
     const storedUser = localStorage.getItem('wandergenie-user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
   }, []);
+
+  const updateUser = (updatedUserDetails: Partial<User>) => {
+    if (user) {
+        const updatedUser = { ...user, ...updatedUserDetails };
+        setUser(updatedUser);
+        localStorage.setItem('wandergenie-user', JSON.stringify(updatedUser));
+        updateUserInList(updatedUser);
+        toast({ title: "Profile Updated", description: "Your details have been successfully updated." });
+    }
+  }
+
+  const getAllUsers = () => {
+    syncUsers();
+    return MOCK_USERS;
+  }
+
+  const updateUserInList = (updatedUser: User) => {
+    const userIndex = MOCK_USERS.findIndex(u => u.id === updatedUser.id);
+    if(userIndex !== -1) {
+        MOCK_USERS[userIndex] = updatedUser;
+        localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+    }
+  }
 
   const login = (email: string, password?: string) => {
     const foundUser = MOCK_USERS.find(u => u.email === email);
@@ -90,12 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatar: `https://i.pravatar.cc/150?u=${data.email}`
     };
     
-    // In a local-only setup, we need to persist the new user to our mock list
-    const storedUsers = JSON.parse(localStorage.getItem('wandergenie-users') || '[]');
-    storedUsers.push(newUser);
-    localStorage.setItem('wandergenie-users', JSON.stringify(storedUsers));
     MOCK_USERS.push(newUser);
-
+    localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+    
     setUser(newUser);
     localStorage.setItem('wandergenie-user', JSON.stringify(newUser));
     toast({ title: "Account Created!", description: `Welcome to WanderGenie, ${newUser.name}!` });
@@ -133,6 +169,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     isAuthenticated: !!user,
     user,
+    updateUser,
+    getAllUsers,
+    updateUserInList,
     isLoading,
     login,
     logout,
@@ -153,5 +192,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

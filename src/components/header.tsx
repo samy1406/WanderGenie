@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { LayoutGrid, LogOut, Briefcase, User } from 'lucide-react';
+import { LayoutGrid, LogOut, Briefcase, User, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function Header() {
@@ -21,11 +21,20 @@ export function Header() {
   const router = useRouter();
 
   const getInitials = (name = '') => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (!name) return '';
+    return name.charAt(0).toUpperCase();
   };
 
   const handleMyBookingsClick = () => {
     router.push('/my-bookings');
+  }
+
+  const handleProfileClick = () => {
+    router.push('/profile');
+  }
+
+  const handleAdminClick = () => {
+    router.push('/admin');
   }
 
   return (
@@ -57,11 +66,17 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {user?.email === 'admin@wandergenie.com' && (
+                  <DropdownMenuItem onClick={handleAdminClick}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleMyBookingsClick}>
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>My Bookings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
+                <DropdownMenuItem onClick={handleProfileClick}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
