@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -572,29 +572,29 @@ export default function BookPage() {
             <CardContent className="space-y-4 text-sm">
                 <div className="flex justify-between">
                     <span>Base Fare</span>
-                    <span>&#8377;{priceSummary.baseFare.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.baseFare.toLocaleString('en-IN')}</span>
                 </div>
                  <div className="flex justify-between">
                     <span>Taxes & Surcharges</span>
-                    <span>&#8377;{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
                 </div>
                 {appliedDiscount > 0 && (
                      <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span>- &#8377;{appliedDiscount.toLocaleString('en-IN')}</span>
+                        <span className="flex items-center">-<IndianRupee className="h-4 w-4 mx-1" />{appliedDiscount.toLocaleString('en-IN')}</span>
                     </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                     <span>Grand Total</span>
-                    <span>&#8377;{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-5 w-5 mr-1" />{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
                 </div>
                 <Separator />
                {priceSummary.adults.count > 0 && (
                 <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
-                    <span>&#8377;{priceSummary.adults.total.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.adults.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -602,7 +602,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
-                    <span>&#8377;{priceSummary.children.total.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.children.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -610,7 +610,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
-                    <span>&#8377;{priceSummary.infants.total.toLocaleString('en-IN')}</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.infants.total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               )}
@@ -650,3 +650,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    
