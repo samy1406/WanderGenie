@@ -152,11 +152,12 @@ export default function BookPage() {
     }
   }, [bookingOption, router]);
 
+
   if (!bookingOption) {
     return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
   }
   
-  const onSubmit = (data: z.infer<typeof bookingFormSchema>>) => {
+  const onSubmit = (data: z.infer<typeof bookingFormSchema>) => {
     const newBooking = {
       ...bookingOption,
       passengerDetails: {
@@ -594,3 +595,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    
