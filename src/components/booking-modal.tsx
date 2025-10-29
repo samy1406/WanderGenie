@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,15 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { handleBookingRequest, handlePaymentRequest } from "@/app/actions";
-import { Loader2, CheckCircle, CreditCard, PartyPopper } from "lucide-react";
-import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
-import { FormatBoldText } from "./format-bold-text";
 import { useRouter } from "next/navigation";
 import { useBooking } from "@/context/booking-context";
+import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
