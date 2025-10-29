@@ -65,10 +65,10 @@ const PRICES = {
     INFANT: { base: 1500, taxes: 500 },
 };
 
-const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number } } = {
-    "WANDER10": { type: 'percentage', value: 10 },
-    "FLYHIGH": { type: 'fixed', value: 500 },
-    "TRAVELNOW": { type: 'fixed', value: 1200 },
+const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number, description: string } } = {
+    "WANDER10": { type: 'percentage', value: 10, description: "Get 10% off your booking." },
+    "FLYHIGH": { type: 'fixed', value: 500, description: "Get flat ₹500 off." },
+    "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off." },
 };
 
 export default function BookPage() {
@@ -156,7 +156,7 @@ export default function BookPage() {
     return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
   }
   
-  const onSubmit = (data: z.infer<typeof bookingFormSchema>) => {
+  const onSubmit = (data: z.infer<typeof bookingFormSchema>>) => {
     const newBooking = {
       ...bookingOption,
       passengerDetails: {
@@ -177,8 +177,8 @@ export default function BookPage() {
     }
   };
 
-  const handleApplyCoupon = () => {
-    const coupon = DUMMY_COUPONS[couponCode.toUpperCase()];
+  const applyCoupon = (code: string) => {
+    const coupon = DUMMY_COUPONS[code.toUpperCase()];
     if(coupon) {
         let discount = 0;
         if(coupon.type === 'fixed') {
@@ -189,7 +189,7 @@ export default function BookPage() {
         setAppliedDiscount(discount);
         toast({
             title: "Coupon Applied!",
-            description: <>You've saved &#8377;{discount.toFixed(2)} with coupon {couponCode.toUpperCase()}.</>
+            description: <>You've saved ₹{discount.toFixed(2)} with coupon {code.toUpperCase()}.</>
         });
     } else {
         setAppliedDiscount(0);
@@ -199,6 +199,10 @@ export default function BookPage() {
             variant: "destructive",
         });
     }
+  }
+
+  const handleApplyCouponFromInput = () => {
+    applyCoupon(couponCode);
   };
 
 
@@ -560,14 +564,26 @@ export default function BookPage() {
             <CardHeader>
                 <CardTitle className="flex items-center"><Tag className="mr-2"/> Offers & Promo Code</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="flex items-center space-x-2">
+            <CardContent className="space-y-4">
+                 <div className="flex items-center space-x-2">
                     <Input 
                         placeholder="Enter Coupon Code" 
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         />
-                    <Button variant="outline" onClick={handleApplyCoupon}>Apply</Button>
+                    <Button variant="outline" onClick={handleApplyCouponFromInput}>Apply</Button>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                    {Object.entries(DUMMY_COUPONS).map(([code, { description }]) => (
+                        <div key={code} className="flex justify-between items-center text-sm p-2 bg-secondary/50 rounded-md">
+                            <div>
+                                <p className="font-semibold">{code}</p>
+                                <p className="text-muted-foreground">{description}</p>
+                            </div>
+                            <Button variant="link" size="sm" onClick={() => applyCoupon(code)}>Apply</Button>
+                        </div>
+                    ))}
                 </div>
             </CardContent>
           </Card>

@@ -57,42 +57,10 @@ export function TripPlanner() {
         // When switching to roundtrip, set a default return date if not already set
         if (!form.getValues('returnDate')) {
             const departure = form.getValues('departureDate');
-            const duration = form.getValues('tripDuration');
-            form.setValue('returnDate', addDays(departure || new Date(), duration || 3));
+            form.setValue('returnDate', addDays(departure || new Date(), 3));
         }
     }
   }, [tripType, form]);
-
-  const departureDate = form.watch("departureDate");
-  const returnDate = form.watch("returnDate");
-  const tripDuration = form.watch("tripDuration");
-  
-  // Effect to update trip duration when dates change in roundtrip mode
-  useEffect(() => {
-    if (departureDate && returnDate && tripType === 'roundtrip') {
-      const duration = differenceInDays(returnDate, departureDate);
-      if (duration !== form.getValues('tripDuration')) {
-          form.setValue('tripDuration', duration > 0 ? duration : 1, { shouldValidate: true });
-      }
-    }
-  }, [departureDate, returnDate, tripType, form]);
-
-  // Effect to update return date when duration changes in roundtrip mode
-  useEffect(() => {
-      // Don't run this on initial render to allow default values to settle.
-      if (isInitialRender.current) {
-          isInitialRender.current = false;
-          return;
-      }
-      if (departureDate && tripDuration && tripType === 'roundtrip') {
-          const newReturnDate = addDays(departureDate, tripDuration);
-          const currentReturnDate = form.getValues('returnDate');
-          
-          if (!currentReturnDate || !isSameDay(newReturnDate, currentReturnDate)) {
-              form.setValue('returnDate', newReturnDate, { shouldValidate: true });
-          }
-      }
-  }, [departureDate, tripDuration, tripType, form]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
