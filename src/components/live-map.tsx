@@ -76,20 +76,17 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
     const originCoords = await fetchCoords(origin);
     if (originCoords) checkpoints.push({ name: `Source: ${origin}`, lat: originCoords[1], lng: originCoords[0] });
 
-    itineraryData.dailyPlan.forEach(day => {
-        day.activities.forEach(async (activity, index) => {
+    for (const day of itineraryData.dailyPlan) {
+        for (const activity of day.activities) {
             const activityCoords = await fetchCoords(`${activity.location}, ${destination}`);
             if (activityCoords) {
-                checkpoints.push({ name: `Day ${day.day}, Act ${index+1}: ${activity.location}`, lat: activityCoords[1], lng: activityCoords[0]});
+                checkpoints.push({ name: `Day ${day.day}: ${activity.location}`, lat: activityCoords[1], lng: activityCoords[0]});
             }
-        });
-    });
+        }
+    }
 
     const destCoords = await fetchCoords(destination);
     if (destCoords) checkpoints.push({ name: `Destination: ${destination}`, lat: destCoords[1], lng: destCoords[0] });
-
-    // Await all coordinate fetches
-    await Promise.all(itineraryData.dailyPlan.flatMap(day => day.activities.map(activity => fetchCoords(`${activity.location}, ${destination}`))));
 
 
     const panel = document.createElement("div");
