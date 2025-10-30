@@ -285,7 +285,11 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         source.removeFeature(prevActivityMarker);
       }
       
-      const activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
+      let activityCoords = await fetchCoords(selectedActivity.location);
+      if (!activityCoords) {
+        // Fallback to a broader search if the specific one fails
+        activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
+      }
       
       if (activityCoords) {
             const activityPosition = fromLonLat(activityCoords);
@@ -327,3 +331,5 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
+
+    
