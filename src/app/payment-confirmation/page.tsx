@@ -9,7 +9,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, User, Home, Plane, Building } from 'lucide-react';
+import { CheckCircle2, User, Home, Plane, Building, IndianRupee } from 'lucide-react';
 import type { Booking, Passenger } from '@/context/booking-context';
 import { FormatBoldText } from '@/components/format-bold-text';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
@@ -106,7 +106,7 @@ function ConfirmationContent() {
                            <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span>Total Amount Paid:</span>
-                                    <span className="font-bold text-xl">&#8377;{amountPaid?.toLocaleString('en-IN')}</span>
+                                    <span className="font-bold text-xl flex items-center"><IndianRupee className="h-5 w-5 mr-1" />{amountPaid?.toLocaleString('en-IN')}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right">via Mock Payment Gateway</p>
                            </div>

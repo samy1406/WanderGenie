@@ -26,10 +26,10 @@ const DayPlanSchema = z.object({
 });
 
 const EstimatedCostSchema = z.object({
-  total: z.string().describe("The estimated total cost of the trip."),
-  accommodation: z.string().describe("Estimated cost for accommodation."),
-  food: z.string().describe("Estimated cost for food."),
-  localTransport: z.string().describe("Estimated cost for local transportation."),
+  total: z.string().describe("The estimated total cost of the trip, formatted with the Rupee symbol (e.g., '₹50,000')."),
+  accommodation: z.string().describe("Estimated cost for accommodation, formatted with the Rupee symbol (e.g., '₹20,000')."),
+  food: z.string().describe("Estimated cost for food, formatted with the Rupee symbol (e.g., '₹15,000')."),
+  localTransport: z.string().describe("Estimated cost for local transportation, formatted with the Rupee symbol (e.g., '₹5,000')."),
 });
 
 const GeneratePersonalizedItineraryInputSchema = z.object({
@@ -69,7 +69,7 @@ For the very first activity on Day 1, create a generic "Check into your accommod
 
 For all other activities, you MUST provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
-Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference.
+Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference. ALL COSTS MUST BE FORMATTED AS STRINGS WITH THE RUPEE SYMBOL (e.g., '₹50,000').
 
 IMPORTANT: In the activity descriptions and must-do list, wrap any specific place names or landmarks in double asterisks to mark them as bold (e.g., 'Visit the **Eiffel Tower**' or '**Golden Gate Bridge**').
 
@@ -89,6 +89,7 @@ const generatePersonalizedItineraryFlow = ai.defineFlow(
     return output!;
   }
 );
+
 
 
 

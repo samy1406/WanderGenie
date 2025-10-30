@@ -152,7 +152,7 @@ export default function ProfilePage() {
                         <FormItem>
                           <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4" />Contact Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+91 1234567890" {...field} />
+                            <Input type="number" placeholder="1234567890" {...field} />
                           </FormControl>
                            <FormMessage />
                         </FormItem>

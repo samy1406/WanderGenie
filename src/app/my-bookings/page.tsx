@@ -4,13 +4,14 @@
 import { useAuth } from '@/context/auth-context';
 import { useBooking } from '@/context/booking-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
-import { User, Calendar, Plane, Hotel } from 'lucide-react';
+import { User, Calendar, Plane, Hotel, IndianRupee } from 'lucide-react';
+import type { Booking } from '@/context/booking-context';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -19,12 +20,16 @@ export default function MyBookingsPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { bookings } = useBooking();
   const router = useRouter();
+  const [userBookings, setUserBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/');
+    } else if (user) {
+      const filteredBookings = bookings.filter(booking => booking.passengerDetails.email === user.email);
+      setUserBookings(filteredBookings);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, user, bookings]);
 
   if (isLoading || !isAuthenticated) {
     return <div className="text-center p-8">Loading...</div>;
@@ -35,9 +40,9 @@ export default function MyBookingsPage() {
       <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
       <p className="text-muted-foreground mb-6">Welcome back, {user?.name}! Here are your trip details.</p>
 
-      {bookings.length > 0 ? (
+      {userBookings.length > 0 ? (
         <div className="space-y-6">
-          {bookings.map((booking) => {
+          {userBookings.map((booking) => {
             const { item, type } = booking;
             return (
               <Card key={booking.id}>
@@ -53,7 +58,10 @@ export default function MyBookingsPage() {
                       </CardDescription>
                     </div>
                     <div className="text-right">
-                        <p className="text-xl font-bold">{type === 'hotel' ? (item as HotelOption).pricePerNight : (item as TravelOption).cost}</p>
+                        <p className="flex items-center justify-end text-xl font-bold">
+                          <IndianRupee className="h-5 w-5 mr-1" />
+                          {booking.amountPaid?.toLocaleString('en-IN') || (type === 'hotel' ? (item as HotelOption).pricePerNight : (item as TravelOption).cost)}
+                        </p>
                         <p className="text-xs text-muted-foreground">Total Price</p>
                     </div>
                   </div>
