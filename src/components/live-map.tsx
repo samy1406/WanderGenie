@@ -35,40 +35,44 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
   const [isAdminPanelBuilt, setIsAdminPanelBuilt] = useState(false);
 
   const fetchCoords = async (location: string): Promise<[number, number] | null> => {
-    try {
-      let response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
-      );
-      if (!response.ok) {
-          console.error(`Failed to fetch from Nominatim: ${response.statusText}`);
-          return null;
-      };
-      let data = await response.json();
-
-      // Fallback logic
-      if (data.length === 0) {
-        const fallbackLocation = `${location}, ${destination}`;
-        response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fallbackLocation)}&format=json&limit=1`
-        );
-         if (!response.ok) {
-          console.error(`Failed to fetch from Nominatim on fallback: ${response.statusText}`);
-          return null;
-        };
-        data = await response.json();
-      }
-
-      if (data.length === 0) {
-          console.error(`No coordinates for "${location}"`);
-          return null;
-      };
-      const { lat, lon } = data[0];
-      return [parseFloat(lon), parseFloat(lat)];
-    } catch (err: any) {
-      console.error(`Error fetching coordinates for "${location}":`, err.message);
-      return null;
+    const search = async (query: string) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
+            );
+            if (!response.ok) {
+                console.error(`Failed to fetch from Nominatim for "${query}": ${response.statusText}`);
+                return null;
+            }
+            return await response.json();
+        } catch (err: any) {
+            console.error(`Error fetching coordinates for "${query}":`, err.message);
+            return null;
+        }
     }
+
+    // 1. Try the location as is
+    let data = await search(location);
+
+    // 2. If that fails, try adding the destination
+    if (!data || data.length === 0) {
+        data = await search(`${location}, ${destination}`);
+    }
+    
+    // 3. If that still fails, try adding ", India"
+    if (!data || data.length === 0) {
+        data = await search(`${location}, India`);
+    }
+
+    if (!data || data.length === 0) {
+        console.error(`No coordinates found for "${location}" after all fallbacks.`);
+        return null;
+    }
+
+    const { lat, lon } = data[0];
+    return [parseFloat(lon), parseFloat(lat)];
   };
+
 
   const handlePositionUpdate = (position: GeolocationPosition) => {
     const coords = fromLonLat([position.coords.longitude, position.coords.latitude]);
@@ -340,3 +344,5 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
+
+    
