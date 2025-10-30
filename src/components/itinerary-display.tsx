@@ -9,28 +9,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link } from "lucide-react";
+import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
+import type { User } from '@/context/auth-context';
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
-const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate }: { 
+const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, user }: { 
   itineraryData: GeneratePersonalizedItineraryOutput, 
   destination: string, 
   origin: string,
-  onItineraryUpdate: (newItinerary: GeneratePersonalizedItineraryOutput) => void 
+  onItineraryUpdate: (newItinerary: GeneratePersonalizedItineraryOutput) => void,
+  user: User | null
 }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
   
   const [journeyStarted, setJourneyStarted] = useState(false);
+  const [simulationStarted, setSimulationStarted] = useState(false);
   const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-
 
   const handleToggleJourney = () => {
     const isStarting = !journeyStarted;
@@ -39,7 +41,6 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
     if (isStarting) {
       if (dailyPlan.length > 0) {
         setActiveDay("day-0");
-        // Select the first activity of the first day
         if (dailyPlan[0].activities.length > 0) {
             setSelectedActivity(dailyPlan[0].activities[0]);
         }
@@ -52,23 +53,23 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
     }
   };
 
+  const handleToggleSimulation = () => {
+    setSimulationStarted(prev => !prev);
+  }
+
   const handleSuggestionAccepted = (newActivityDescription: string) => {
     const newItinerary = JSON.parse(JSON.stringify(itineraryData));
     
     if (newItinerary.dailyPlan.length > 0 && newItinerary.dailyPlan[0].activities.length > 0) {
       const firstDayActivities = newItinerary.dailyPlan[0].activities;
-      
-      // Assuming the suggestion always updates the first activity of the first day
       const updatedActivity = {
         ...firstDayActivities[0],
         description: newActivityDescription,
-        // Also update location for the map. A simple approach is to extract from bolded text.
         location: newActivityDescription.split('**')[1] || newActivityDescription
       };
       
       firstDayActivities[0] = updatedActivity;
       
-      // If the currently selected activity was the one that got updated, update it too
       if (selectedActivity?.description === firstActivity) {
         setSelectedActivity(updatedActivity);
       }
@@ -87,6 +88,12 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
+                {user?.email === 'admin@wandergenie.com' && (
+                  <Button variant="secondary" onClick={handleToggleSimulation}>
+                    <Bot className="mr-2 h-4 w-4" />
+                    {simulationStarted ? "End Simulation" : "Simulate Journey"}
+                  </Button>
+                )}
                 {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} onSuggestionAccepted={handleSuggestionAccepted} />}
                 <Button onClick={handleToggleJourney}>
                     {journeyStarted ? (
@@ -104,6 +111,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 destination={destination} 
                 origin={origin} 
                 journeyStarted={journeyStarted} 
+                simulationStarted={simulationStarted}
                 selectedActivity={selectedActivity}
                 itineraryData={itineraryData}
             />

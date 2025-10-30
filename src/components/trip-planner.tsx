@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 import { AuthModal } from "./auth-modal";
 import { differenceInDays, addDays, isSameDay } from 'date-fns';
+import { useAuth } from "@/context/auth-context";
 
 export type TripType = "oneway" | "roundtrip";
 
@@ -29,6 +30,7 @@ export function TripPlanner() {
   const [error, setError] = useState<string | null>(null);
   const [tripType, setTripType] = useState<TripType>("oneway");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const isInitialRender = useRef(true);
 
@@ -196,7 +198,8 @@ export function TripPlanner() {
                           itineraryData={itinerary} 
                           destination={destination} 
                           origin={origin}
-                          onItineraryUpdate={setItinerary} 
+                          onItineraryUpdate={setItinerary}
+                          user={user}
                         />
                         <TravelOptions 
                             outboundTravelOptions={outboundTravelOptions} 

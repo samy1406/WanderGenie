@@ -19,10 +19,11 @@ import { useAuth } from '@/context/auth-context';
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
-const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itineraryData }: { 
+const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selectedActivity, itineraryData }: { 
     destination: string, 
     origin: string, 
     journeyStarted: boolean,
+    simulationStarted: boolean,
     selectedActivity: Activity | null;
     itineraryData: GeneratePersonalizedItineraryOutput;
 }) => {
@@ -54,10 +55,8 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 
     let data;
 
-    // Series of fallbacks
     const queries = [
         location,
-        location.split(',')[0].trim(),
         `${location}, ${destination}`,
         `${location.split(',')[0].trim()}, ${destination}`,
         `${location}, India`,
@@ -65,6 +64,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
     ];
     
     if (location.includes(',')) {
+        queries.unshift(location.split(',')[0].trim()); // Higher priority for simplified name
         queries.push(location.substring(location.lastIndexOf(',') + 1).trim());
     }
 
@@ -119,6 +119,8 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
     const destCoords = await fetchCoords(destination);
     if (destCoords) checkpoints.push({ name: `Destination: ${destination}`, lat: destCoords[1], lng: destCoords[0] });
 
+    const existingPanel = document.getElementById("admin-test-panel");
+    if (existingPanel) document.body.removeChild(existingPanel);
 
     const panel = document.createElement("div");
     panel.id = "admin-test-panel";
@@ -250,7 +252,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         view.animate({ center: to, zoom: 10, duration: 1000 });
       }
       
-      // Start location watching
       AppLocationService.watch(handlePositionUpdate, handleGpsError);
     };
 
@@ -273,6 +274,10 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         if (!isAdminPanelBuilt) {
             buildAdminPanel();
         }
+    }
+    const adminPanel = document.getElementById("admin-test-panel");
+    if(adminPanel) {
+        adminPanel.style.display = user?.email === 'admin@wandergenie.com' ? 'block' : 'none';
     }
   }, [user, isAdminPanelBuilt, itineraryData]);
 
@@ -309,40 +314,56 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
   }, [journeyStarted, origin, destination]);
 
 
-  // Update markers for selected activity
+  // Update markers for selected activity OR simulate journey
   useEffect(() => {
     const map = mapInstanceRef.current;
     const source = vectorSourceRef.current;
     
-    if (!map || !source || !journeyStarted) {
-        if (source) {
-            const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
-            if (prevActivityMarker) {
-                source.removeFeature(prevActivityMarker);
+    if (!map || !source) return;
+
+    const clearActivityMarkers = () => {
+      const activityMarkers = source.getFeatures().filter(f => f.get('type') === 'activity' || f.get('type') === 'checkpoint');
+      activityMarkers.forEach(marker => source.removeFeature(marker));
+    }
+
+    const showAllCheckpoints = async () => {
+        clearActivityMarkers();
+        const allCoords = [];
+
+        for (const day of itineraryData.dailyPlan) {
+            for (const activity of day.activities) {
+                const coords = await fetchCoords(activity.location);
+                if (coords) {
+                    allCoords.push(coords);
+                    const feature = new Feature({ geometry: new Point(fromLonLat(coords)) });
+                    feature.set('type', 'checkpoint');
+                    feature.setStyle(new Style({
+                        image: new CircleStyle({
+                            radius: 6,
+                            fill: new Fill({ color: 'rgba(52, 149, 219, 0.7)' }),
+                            stroke: new Stroke({ color: '#FFFFFF', width: 1.5 })
+                        })
+                    }));
+                    source.addFeature(feature);
+                }
             }
         }
-        return;
+        if (allCoords.length > 0) {
+            const lineString = new LineString(allCoords.map(c => fromLonLat(c)));
+            map.getView().fit(lineString.getExtent(), { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
+        }
     };
     
-    if (!selectedActivity) {
-        const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
-        if (prevActivityMarker) source.removeFeature(prevActivityMarker);
-        return;
-    }
-    
-    const updateMarkers = async () => {
-      const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
-      if (prevActivityMarker) {
-        source.removeFeature(prevActivityMarker);
-      }
+    const updateSingleMarker = async () => {
+      clearActivityMarkers();
+      
+      if (!selectedActivity) return;
       
       const activityCoords = await fetchCoords(selectedActivity.location);
       
       if (activityCoords) {
             const activityPosition = fromLonLat(activityCoords);
-            const activityFeature = new Feature({
-                geometry: new Point(activityPosition),
-            });
+            const activityFeature = new Feature({ geometry: new Point(activityPosition) });
             activityFeature.set('type', 'activity');
             activityFeature.setStyle(new Style({
                 image: new CircleStyle({
@@ -353,17 +374,24 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
             }));
             source.addFeature(activityFeature);
             
-            const view = map.getView();
-            view.animate({ center: activityPosition, zoom: 15, duration: 1000 });
+            map.getView().animate({ center: activityPosition, zoom: 15, duration: 1000 });
       } else {
           setError(`Could not find location: ${selectedActivity.location}`);
           setTimeout(() => setError(null), 3000);
       }
     };
-    
-    updateMarkers();
 
-  }, [selectedActivity, journeyStarted, destination]);
+    if (simulationStarted) {
+        showAllCheckpoints();
+    } else {
+        if (journeyStarted) {
+            updateSingleMarker();
+        } else {
+            clearActivityMarkers();
+        }
+    }
+
+  }, [selectedActivity, journeyStarted, simulationStarted, destination, itineraryData]);
 
   return (
     <div className="relative w-full h-full">
@@ -378,5 +406,3 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
-
-    
