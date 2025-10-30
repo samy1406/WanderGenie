@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon, ArrowRight } from "lucide-react";
+import { Users, CalendarIcon, ArrowRight, Clock } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -175,8 +175,6 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   )}
               />
 
-
-              {/* Search Button */}
               <Button type="submit" size="lg" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground h-full rounded-l-none rounded-r-lg text-xl font-bold">
                   {isLoading ? (
                   <>
@@ -188,40 +186,82 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 border-t">
-              <div className="grid md:grid-cols-2 gap-6">
-                  <FormField
-                      control={form.control}
-                      name="tripDuration"
-                      render={({ field }) => (
-                          <FormItem>
-                          <FormLabel>Duration (in days)</FormLabel>
-                          <FormControl>
-                              <Input type="number" {...field} />
-                          </FormControl>
-                          </FormItem>
-                      )}
-                      />
-                  <FormField
-                      control={form.control}
-                      name="interests"
-                      render={({ field }) => (
-                          <FormItem>
-                          <FormLabel>What are your interests?</FormLabel>
-                          <FormControl>
-                              <Textarea
-                              placeholder="e.g., A relaxing trip focused on beaches and local food"
-                              className="resize-none"
-                              {...field}
-                              />
-                          </FormControl>
-                          </FormItem>
-                      )}
-                      />
-              </div>
-        </div>
-      </CardContent>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <FormField
+                    control={form.control}
+                    name="tripDuration"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Duration (in days)</FormLabel>
+                        <FormControl>
+                            <Input type="number" {...field} />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                <FormField
+                    control={form.control}
+                    name="interests"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>What are your interests?</FormLabel>
+                        <FormControl>
+                            <Textarea
+                            placeholder="e.g., A relaxing trip focused on beaches and local food"
+                            className="resize-none"
+                            {...field}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                <FormField
+                    control={form.control}
+                    name="departureTime"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Any time" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="any">Anytime</SelectItem>
+                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="arrivalTime"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Any time" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="any">Anytime</SelectItem>
+                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+            </div>
+          </div>
+        </CardContent>
     </Card>
     );
 }
-
-    
