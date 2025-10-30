@@ -19,28 +19,6 @@ import { useAuth } from '@/context/auth-context';
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
-const fetchCoords = async (location: string): Promise<[number, number] | null> => {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
-    );
-    if (!response.ok) {
-        console.error(`Failed to fetch from Nominatim: ${response.statusText}`);
-        return null;
-    };
-    const data = await response.json();
-    if (data.length === 0) {
-        console.error(`No coordinates for "${location}"`);
-        return null;
-    };
-    const { lat, lon } = data[0];
-    return [parseFloat(lon), parseFloat(lat)];
-  } catch (err: any) {
-    console.error(`Error fetching coordinates for "${location}":`, err.message);
-    return null;
-  }
-};
-
 const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itineraryData }: { 
     destination: string, 
     origin: string, 
@@ -56,6 +34,41 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
   const [error, setError] = useState<string | null>(null);
   const [isAdminPanelBuilt, setIsAdminPanelBuilt] = useState(false);
 
+  const fetchCoords = async (location: string): Promise<[number, number] | null> => {
+    try {
+      let response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
+      );
+      if (!response.ok) {
+          console.error(`Failed to fetch from Nominatim: ${response.statusText}`);
+          return null;
+      };
+      let data = await response.json();
+
+      // Fallback logic
+      if (data.length === 0) {
+        const fallbackLocation = `${location}, ${destination}`;
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fallbackLocation)}&format=json&limit=1`
+        );
+         if (!response.ok) {
+          console.error(`Failed to fetch from Nominatim on fallback: ${response.statusText}`);
+          return null;
+        };
+        data = await response.json();
+      }
+
+      if (data.length === 0) {
+          console.error(`No coordinates for "${location}"`);
+          return null;
+      };
+      const { lat, lon } = data[0];
+      return [parseFloat(lon), parseFloat(lat)];
+    } catch (err: any) {
+      console.error(`Error fetching coordinates for "${location}":`, err.message);
+      return null;
+    }
+  };
 
   const handlePositionUpdate = (position: GeolocationPosition) => {
     const coords = fromLonLat([position.coords.longitude, position.coords.latitude]);
@@ -285,11 +298,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         source.removeFeature(prevActivityMarker);
       }
       
-      let activityCoords = await fetchCoords(selectedActivity.location);
-      if (!activityCoords) {
-        // Fallback to a broader search if the specific one fails
-        activityCoords = await fetchCoords(`${selectedActivity.location}, ${destination}`);
-      }
+      const activityCoords = await fetchCoords(selectedActivity.location);
       
       if (activityCoords) {
             const activityPosition = fromLonLat(activityCoords);
@@ -331,5 +340,3 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
-
-    
