@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const TravelOptionSchema = z.object({
     mode: z.string().describe("The mode of travel (e.g., Flight, Train, Bus)."),
     details: z.string().describe("Specific details like airline or train number."),
-    cost: z.string().describe("Estimated cost of the travel option, formatted with the Rupee symbol (e.g., '₹5,000')."),
+    cost: z.number().describe("Estimated cost of the travel option in Indian Rupees (INR)."),
     duration: z.string().describe("Estimated travel time."),
     comfort: z.string().describe("A brief description of the comfort level."),
     bookingLink: z.string().url().describe("A Google search link for booking options."),
@@ -24,7 +24,7 @@ const TravelOptionSchema = z.object({
 const HotelOptionSchema = z.object({
     name: z.string().describe("The name of the hotel. This should be wrapped in double asterisks (e.g., '**Grand Hyatt**')."),
     rating: z.number().min(1).max(5).describe("The star rating of the hotel (1-5)."),
-    pricePerNight: z.string().describe("The estimated price per night, formatted with the Rupee symbol (e.g., '₹8,000')."),
+    pricePerNight: z.number().describe("The estimated price per night in Indian Rupees (INR)."),
     bookingLink: z.string().url().describe("A Google search link for booking the hotel."),
 });
 
@@ -45,7 +45,14 @@ const GetTravelOptionsOutputSchema = z.object({
 export type GetTravelOptionsOutput = z.infer<typeof GetTravelOptionsOutputSchema>;
 
 export async function getTravelOptions(input: GetTravelOptionsInput): Promise<GetTravelOptionsOutput> {
-  return getTravelOptionsFlow(input);
+    try {
+        const result = await getTravelOptionsFlow(input);
+        return result;
+    } catch (error) {
+        console.error("Error in getTravelOptions, returning empty options.", error);
+        // Return a default empty state if the flow fails
+        return { travelOptions: [], hotelOptions: [] };
+    }
 }
 
 const prompt = ai.definePrompt({
@@ -60,14 +67,14 @@ Preference: {{{travelPreference}}}
 Preferred Departure Time: {{#if departureTime}} {{{departureTime}}} {{else}} any time {{/if}}
 Preferred Arrival Time: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} any time {{/if}}
 
-1.  **Travel Options**: Provide up to three distinct and realistic options for each feasible mode of travel (Flight, Train, Bus). Prioritize options based on the user's preference (budget, comfort, or speed). For each option, include the mode, specific details (like a fictional airline or train name), estimated cost, duration, and comfort level. ALL COSTS MUST BE FORMATTED AS STRINGS WITH THE RUPEE SYMBOL (e.g., '₹5,000'). For the 'bookingLink', create a specific Google search URL.
+1.  **Travel Options**: Provide up to three distinct and realistic options for each feasible mode of travel (Flight, Train, Bus). Prioritize options based on the user's preference (budget, comfort, or speed). For each option, include the mode, specific details (like a fictional airline or train name), estimated cost, duration, and comfort level. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR). For the 'bookingLink', create a specific Google search URL.
     - For **Flights**, create a Google Flights search URL. Example: 'https://www.google.com/travel/flights?q=Flights+from+{{{origin}}}+to+{{{destination}}}'.
     - For **Trains**, create a detailed Google search query including the train details. Example for a 'Vistara Express' train: 'https://www.google.com/search?q=Vistara+Express+train+from+{{{origin}}}+to+{{{destination}}}'.
     - For **Buses**, create a detailed Google search query including the bus line. Example for a 'Red Bus' line: 'https://www.google.com/search?q=Red+Bus+from+{{{origin}}}+to+{{{destination}}}'.
     - If the origin and destination are in different countries and far apart, suggest only 'Flight' as a travel mode.
     - For a 'budget' preference, you MUST include 'Train' and 'Bus' options if the route is feasible.
 
-2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. ALL COSTS MUST BE FORMATTED AS STRINGS WITH THE RUPEE SYMBOL (e.g., '₹8,000'). For the 'bookingLink', create a specific Google search URL for that hotel in the destination city. Example for 'Grand Hyatt' in '{{{destination}}}': 'https://www.google.com/search?q=Grand+Hyatt+{{{destination}}}'. IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
+2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR). For the 'bookingLink', create a specific Google search URL for that hotel in the destination city. Example for 'Grand Hyatt' in '{{{destination}}}': 'https://www.google.com/search?q=Grand+Hyatt+{{{destination}}}'. IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
 
 Structure the entire output as a single JSON object. If a travel mode is not feasible, do not include any options for it in the 'travelOptions' array.
 `,

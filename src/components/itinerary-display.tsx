@@ -14,6 +14,7 @@ import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/formatters";
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
@@ -164,31 +165,31 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 <CardContent>
                   <div className="space-y-4 text-sm">
                     <div className="text-center pb-4">
-                      <p className="text-2xl font-bold text-primary">{estimatedCost.total}</p>
+                      <p className="text-2xl font-bold text-primary">{formatCurrency(estimatedCost.total)}</p>
                       <p className="text-xs text-muted-foreground">(approx. for your preferences)</p>
                     </div>
                     <Separator />
                     <div className="space-y-3 text-muted-foreground pt-2">
-                        <div className="flex gap-4">
-                            <Building className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
-                            <div>
+                        <div className="flex justify-between items-center">
+                            <div className="flex gap-4">
+                                <Building className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Accommodation</p>
-                                <p>{estimatedCost.accommodation}</p>
                             </div>
+                            <p>{formatCurrency(estimatedCost.accommodation)}</p>
                         </div>
-                         <div className="flex gap-4">
-                            <Utensils className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
-                            <div>
+                         <div className="flex justify-between items-center">
+                            <div className="flex gap-4">
+                                <Utensils className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Food</p>
-                                <p>{estimatedCost.food}</p>
                             </div>
+                            <p>{formatCurrency(estimatedCost.food)}</p>
                         </div>
-                         <div className="flex gap-4">
-                            <BusFront className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
-                            <div>
+                         <div className="flex justify-between items-center">
+                             <div className="flex gap-4">
+                                <BusFront className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Local Transport</p>
-                                <p>{estimatedCost.localTransport}</p>
                             </div>
+                            <p>{formatCurrency(estimatedCost.localTransport)}</p>
                         </div>
                     </div>
                   </div>

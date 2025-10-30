@@ -26,10 +26,10 @@ const DayPlanSchema = z.object({
 });
 
 const EstimatedCostSchema = z.object({
-  total: z.string().describe("The estimated total cost of the trip, formatted with the Rupee symbol (e.g., '₹50,000')."),
-  accommodation: z.string().describe("Estimated cost for accommodation, formatted with the Rupee symbol (e.g., '₹20,000')."),
-  food: z.string().describe("Estimated cost for food, formatted with the Rupee symbol (e.g., '₹15,000')."),
-  localTransport: z.string().describe("Estimated cost for local transportation, formatted with the Rupee symbol (e.g., '₹5,000')."),
+  total: z.number().describe("The estimated total cost of the trip in Indian Rupees (INR)."),
+  accommodation: z.number().describe("Estimated cost for accommodation in Indian Rupees (INR)."),
+  food: z.number().describe("Estimated cost for food in Indian Rupees (INR)."),
+  localTransport: z.number().describe("Estimated cost for local transportation in Indian Rupees (INR)."),
 });
 
 const GeneratePersonalizedItineraryInputSchema = z.object({
@@ -45,7 +45,7 @@ const GeneratePersonalizedItineraryOutputSchema = z.object({
   thingsToCarry: z.array(z.string()).describe("A list of essential items to carry for the trip."),
   mustDo: z.array(z.string()).describe("A list of must-do activities or must-visit places at the destination. Wrap place names in double asterisks."),
   travelTips: z.string().describe("General travel tips for the destination."),
-  estimatedCost: EstimatedCostSchema.describe("An estimated cost breakdown for the trip."),
+  estimatedCost: EstimatedCostSchema.describe("An estimated cost breakdown for the trip in Indian Rupees (INR)."),
 });
 export type GeneratePersonalizedItineraryOutput = z.infer<typeof GeneratePersonalizedItineraryOutputSchema>;
 
@@ -69,7 +69,7 @@ For the very first activity on Day 1, create a generic "Check into your accommod
 
 For all other activities, you MUST provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
 Also include a list of "things to carry", "must-do" activities, and general "travel tips".
-Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference. ALL COSTS MUST BE FORMATTED AS STRINGS WITH THE RUPEE SYMBOL (e.g., '₹50,000').
+Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR).
 
 IMPORTANT: In the activity descriptions and must-do list, wrap any specific place names or landmarks in double asterisks to mark them as bold (e.g., 'Visit the **Eiffel Tower**' or '**Golden Gate Bridge**').
 
