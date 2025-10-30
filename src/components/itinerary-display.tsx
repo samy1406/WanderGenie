@@ -105,6 +105,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 origin={origin} 
                 journeyStarted={journeyStarted} 
                 selectedActivity={selectedActivity}
+                itineraryData={itineraryData}
             />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">

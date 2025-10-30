@@ -14,6 +14,8 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import { Vector as VectorSource } from 'ol/source.js';
 import { Style, Icon, Stroke, Fill, Circle as CircleStyle } from 'ol/style.js';
 import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
+import { AppLocationService } from '@/lib/location-service';
+import { useAuth } from '@/context/auth-context';
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
@@ -39,17 +41,74 @@ const fetchCoords = async (location: string): Promise<[number, number] | null> =
   }
 };
 
-const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: { 
+const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itineraryData }: { 
     destination: string, 
     origin: string, 
     journeyStarted: boolean,
     selectedActivity: Activity | null;
+    itineraryData: GeneratePersonalizedItineraryOutput;
 }) => {
+  const { user } = useAuth();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource<Point | LineString> | null>(null);
   const userLocationFeatureRef = useRef<Feature<Point> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAdminPanelBuilt, setIsAdminPanelBuilt] = useState(false);
+
+
+  const handlePositionUpdate = (position: GeolocationPosition) => {
+    const coords = fromLonLat([position.coords.longitude, position.coords.latitude]);
+    if (userLocationFeatureRef.current) {
+        userLocationFeatureRef.current.getGeometry()?.setCoordinates(coords);
+    }
+  };
+
+  const handleGpsError = (error: GeolocationPositionError) => {
+    setError(`GPS Error: ${error.message}`);
+    setTimeout(() => setError(null), 5000);
+  };
+
+  // Admin panel builder
+  const buildAdminPanel = async () => {
+    const checkpoints = [];
+    
+    const originCoords = await fetchCoords(origin);
+    if (originCoords) checkpoints.push({ name: `Source: ${origin}`, lat: originCoords[1], lng: originCoords[0] });
+
+    itineraryData.dailyPlan.forEach(day => {
+        day.activities.forEach(async (activity, index) => {
+            const activityCoords = await fetchCoords(`${activity.location}, ${destination}`);
+            if (activityCoords) {
+                checkpoints.push({ name: `Day ${day.day}, Act ${index+1}: ${activity.location}`, lat: activityCoords[1], lng: activityCoords[0]});
+            }
+        });
+    });
+
+    const destCoords = await fetchCoords(destination);
+    if (destCoords) checkpoints.push({ name: `Destination: ${destination}`, lat: destCoords[1], lng: destCoords[0] });
+
+    // Await all coordinate fetches
+    await Promise.all(itineraryData.dailyPlan.flatMap(day => day.activities.map(activity => fetchCoords(`${activity.location}, ${destination}`))));
+
+
+    const panel = document.createElement("div");
+    panel.id = "admin-test-panel";
+    panel.innerHTML = '<h3>Simulate Location</h3>';
+
+    checkpoints.forEach(point => {
+        const btn = document.createElement("button");
+        btn.innerText = `Move to: ${point.name}`;
+        btn.onclick = () => {
+            AppLocationService.simulateNewLocation(point.lat, point.lng);
+        };
+        panel.appendChild(btn);
+    });
+
+    document.body.appendChild(panel);
+    setIsAdminPanelBuilt(true);
+  };
+
 
   // Initialize map effect
   useEffect(() => {
@@ -67,7 +126,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 
       if (!originCoords && !destCoords) {
         setError(`Could not find coordinates for origin or destination.`);
-        // Don't initialize map if neither can be found
         if (mapRef.current) mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground">Map data unavailable.</div>';
         return;
       }
@@ -82,7 +140,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       const features = [];
 
       if(from) {
-        // User location marker (blue dot)
         const userLocationFeature = new Feature({
             geometry: new Point(from),
         });
@@ -103,14 +160,13 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       }
 
       if(to) {
-        // Destination marker (red circle)
         const destinationFeature = new Feature({
             geometry: new Point(to),
         });
         destinationFeature.setStyle(new Style({
             image: new CircleStyle({
                 radius: 8,
-                fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}), // Red color for destination
+                fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}),
                 stroke: new Stroke({ color: '#FFFFFF', width: 2 })
             })
         }));
@@ -138,7 +194,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       mapInstanceRef.current = map;
       
       if (from && to) {
-        // Fit map to show both origin and destination
         const routeForExtent = new LineString([from, to]);
         view.fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
       } else if (from) {
@@ -146,6 +201,9 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
       } else if (to) {
         view.animate({ center: to, zoom: 10, duration: 1000 });
       }
+      
+      // Start location watching
+      AppLocationService.watch(handlePositionUpdate, handleGpsError);
     };
 
     initializeMap();
@@ -153,8 +211,22 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
     return () => {
       isMounted = false;
       mapInstanceRef.current?.setTarget(undefined);
+      const adminPanel = document.getElementById("admin-test-panel");
+      if (adminPanel) {
+        document.body.removeChild(adminPanel);
+      }
     };
   }, [origin, destination]);
+
+  // Admin logic effect
+  useEffect(() => {
+    if (user?.email === 'admin@wandergenie.com') {
+        AppLocationService.startSimulation();
+        if (!isAdminPanelBuilt) {
+            buildAdminPanel();
+        }
+    }
+  }, [user, isAdminPanelBuilt]);
 
 
   // Handle journey state change
@@ -164,14 +236,12 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 
     const handleJourneyState = async () => {
         if (journeyStarted) {
-            // When journey starts, pan to the destination
             const destCoords = await fetchCoords(destination);
             if (destCoords) {
                 const to = fromLonLat(destCoords);
                 map.getView().animate({ center: to, zoom: 14, duration: 1500 });
             }
         } else {
-            // When journey ends, fit map back to origin and destination
             const [originCoords, destCoords] = await Promise.all([
                 fetchCoords(origin),
                 fetchCoords(destination)
@@ -195,11 +265,8 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   useEffect(() => {
     const map = mapInstanceRef.current;
     const source = vectorSourceRef.current;
-    const userFeature = userLocationFeatureRef.current;
-
-    // Only run this logic if the journey has started
+    
     if (!map || !source || !journeyStarted) {
-        // If journey has not started, remove any existing activity markers
         if (source) {
             const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
             if (prevActivityMarker) {
@@ -209,7 +276,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
         return;
     };
     
-    // If no activity is selected, just remove previous markers
     if (!selectedActivity) {
         const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
         if (prevActivityMarker) source.removeFeature(prevActivityMarker);
@@ -217,7 +283,6 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
     }
     
     const updateMarkers = async () => {
-      // Find and remove previous activity marker
       const prevActivityMarker = source.getFeatures().find(f => f.get('type') === 'activity');
       if (prevActivityMarker) {
         source.removeFeature(prevActivityMarker);
@@ -230,22 +295,21 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
             const activityFeature = new Feature({
                 geometry: new Point(activityPosition),
             });
-            activityFeature.set('type', 'activity'); // Tag for easy removal
+            activityFeature.set('type', 'activity');
             activityFeature.setStyle(new Style({
                 image: new CircleStyle({
                     radius: 8,
-                    fill: new Fill({ color: 'rgba(255, 138, 91, 0.7)'}), // Accent color
+                    fill: new Fill({ color: 'rgba(255, 138, 91, 0.7)'}),
                     stroke: new Stroke({ color: '#FFFFFF', width: 2 })
                 })
             }));
             source.addFeature(activityFeature);
             
-            // Pan to the activity
             const view = map.getView();
             view.animate({ center: activityPosition, zoom: 15, duration: 1000 });
       } else {
           setError(`Could not find location: ${selectedActivity.location}`);
-          setTimeout(() => setError(null), 3000); // Clear error after 3s
+          setTimeout(() => setError(null), 3000);
       }
     };
     
