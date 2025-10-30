@@ -115,6 +115,9 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
     const panel = document.createElement("div");
     panel.id = "admin-test-panel";
     panel.innerHTML = '<h3>Simulate Location</h3>';
+    
+    const buttonContainer = document.createElement("div");
+    buttonContainer.id = "admin-panel-buttons";
 
     checkpoints.forEach(point => {
         const btn = document.createElement("button");
@@ -122,8 +125,25 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         btn.onclick = () => {
             AppLocationService.simulateNewLocation(point.lat, point.lng);
         };
-        panel.appendChild(btn);
+        buttonContainer.appendChild(btn);
     });
+
+    panel.appendChild(buttonContainer);
+    
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = "admin-panel-toggle";
+    toggleBtn.innerText = "Hide";
+    toggleBtn.onclick = () => {
+        if (buttonContainer.style.display === "none") {
+            buttonContainer.style.display = "block";
+            toggleBtn.innerText = "Hide";
+        } else {
+            buttonContainer.style.display = "none";
+            toggleBtn.innerText = "Show";
+        }
+    };
+    panel.appendChild(toggleBtn);
+
 
     document.body.appendChild(panel);
     setIsAdminPanelBuilt(true);
@@ -240,13 +260,13 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 
   // Admin logic effect
   useEffect(() => {
-    if (user?.email === 'admin@wandergenie.com') {
+    if (user?.email === 'admin@wandergenie.com' && itineraryData) {
         AppLocationService.startSimulation();
         if (!isAdminPanelBuilt) {
             buildAdminPanel();
         }
     }
-  }, [user, isAdminPanelBuilt]);
+  }, [user, isAdminPanelBuilt, itineraryData]);
 
 
   // Handle journey state change
@@ -350,5 +370,3 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
-
-    
