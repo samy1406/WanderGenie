@@ -53,7 +53,7 @@ export async function generatePersonalizedItinerary(input: GeneratePersonalizedI
   return generatePersonalizedItineraryFlow(input);
 }
 
-const prompt = ai.definePrompt({
+const generatePersonalizedItineraryPrompt = ai.definePrompt({
   name: 'generatePersonalizedItineraryPrompt',
   input: {schema: GeneratePersonalizedItineraryInputSchema},
   output: {schema: GeneratePersonalizedItineraryOutputSchema},
@@ -75,7 +75,7 @@ IMPORTANT: In the activity descriptions and must-do list, wrap any specific plac
 
 Structure the output as a JSON object.
 The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of objects. Each activity object must have a 'description', a 'location', and a 'link'.
-`, 
+`,
 });
 
 const generatePersonalizedItineraryFlow = ai.defineFlow(
@@ -85,11 +85,7 @@ const generatePersonalizedItineraryFlow = ai.defineFlow(
     outputSchema: GeneratePersonalizedItineraryOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await generatePersonalizedItineraryPrompt(input);
     return output!;
   }
 );
-
-
-
-
