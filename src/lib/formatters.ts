@@ -1,3 +1,4 @@
+
 // src/lib/formatters.ts
 
 export const formatCurrency = (amount: number | string | undefined) => {

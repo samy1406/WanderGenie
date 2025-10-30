@@ -165,7 +165,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 <CardContent>
                   <div className="space-y-4 text-sm">
                     <div className="text-center pb-4">
-                      <p className="text-2xl font-bold text-primary">₹{estimatedCost.total}</p>
+                      <p className="text-2xl font-bold text-primary">{formatCurrency(estimatedCost.total)}</p>
                       <p className="text-xs text-muted-foreground">(approx. for your preferences)</p>
                     </div>
                     <Separator />
@@ -175,21 +175,21 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                                 <Building className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Accommodation</p>
                             </div>
-                            <p>₹{estimatedCost.accommodation}</p>
+                            <p>{formatCurrency(estimatedCost.accommodation)}</p>
                         </div>
                          <div className="flex justify-between items-center">
                             <div className="flex gap-4">
                                 <Utensils className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Food</p>
                             </div>
-                            <p>₹{estimatedCost.food}</p>
+                            <p>{formatCurrency(estimatedCost.food)}</p>
                         </div>
                          <div className="flex justify-between items-center">
                              <div className="flex gap-4">
                                 <BusFront className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Local Transport</p>
                             </div>
-                            <p>₹{estimatedCost.localTransport}</p>
+                            <p>{formatCurrency(estimatedCost.localTransport)}</p>
                         </div>
                     </div>
                   </div>
