@@ -13,6 +13,7 @@ import { CheckCircle2, User, Home, Plane, Building, IndianRupee } from 'lucide-r
 import type { Booking, Passenger } from '@/context/booking-context';
 import { FormatBoldText } from '@/components/format-bold-text';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
+import { formatCurrency } from '@/lib/formatters';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -106,7 +107,7 @@ function ConfirmationContent() {
                            <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span>Total Amount Paid:</span>
-                                    <span className="font-bold text-xl flex items-center"><IndianRupee className="h-5 w-5 mr-1" />{amountPaid?.toLocaleString('en-IN')}</span>
+                                    <span className="font-bold text-xl">{formatCurrency(amountPaid)}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right">via Mock Payment Gateway</p>
                            </div>

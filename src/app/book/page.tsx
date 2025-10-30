@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { handleBookingRequest, handlePaymentRequest } from '@/app/actions';
+import { formatCurrency } from '@/lib/formatters';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 
@@ -238,7 +239,7 @@ export default function BookPage() {
         setAppliedDiscount(discount);
         toast({
             title: "Coupon Applied!",
-            description: <>You've saved &#8377;{discount.toFixed(2)} with coupon {code.toUpperCase()}.</>
+            description: <>You've saved {formatCurrency(discount)} with coupon {code.toUpperCase()}.</>
         });
     } else {
         setAppliedDiscount(0);
@@ -572,29 +573,29 @@ export default function BookPage() {
             <CardContent className="space-y-4 text-sm">
                 <div className="flex justify-between">
                     <span>Base Fare</span>
-                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.baseFare.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.baseFare)}</span>
                 </div>
                  <div className="flex justify-between">
                     <span>Taxes & Surcharges</span>
-                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.totalTaxes.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.totalTaxes)}</span>
                 </div>
                 {appliedDiscount > 0 && (
                      <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span className="flex items-center">-<IndianRupee className="h-4 w-4 mx-1" />{appliedDiscount.toLocaleString('en-IN')}</span>
+                        <span>-{formatCurrency(appliedDiscount)}</span>
                     </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                     <span>Grand Total</span>
-                    <span className="flex items-center"><IndianRupee className="h-5 w-5 mr-1" />{priceSummary.grandTotal.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.grandTotal)}</span>
                 </div>
                 <Separator />
                {priceSummary.adults.count > 0 && (
                 <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
-                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.adults.total.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.adults.total)}</span>
                   </div>
                 </div>
               )}
@@ -602,7 +603,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
-                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.children.total.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.children.total)}</span>
                   </div>
                 </div>
               )}
@@ -610,7 +611,7 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
-                    <span className="flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{priceSummary.infants.total.toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(priceSummary.infants.total)}</span>
                   </div>
                 </div>
               )}
@@ -650,5 +651,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    

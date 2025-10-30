@@ -12,6 +12,7 @@ import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
 import { User, Calendar, Plane, Hotel, IndianRupee } from 'lucide-react';
 import type { Booking } from '@/context/booking-context';
+import { formatCurrency } from '@/lib/formatters';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -58,9 +59,8 @@ export default function MyBookingsPage() {
                       </CardDescription>
                     </div>
                     <div className="text-right">
-                        <p className="flex items-center justify-end text-xl font-bold">
-                          <IndianRupee className="h-5 w-5 mr-1" />
-                          {booking.amountPaid?.toLocaleString('en-IN') || (type === 'hotel' ? (item as HotelOption).pricePerNight : (item as TravelOption).cost)}
+                        <p className="text-xl font-bold">
+                          {formatCurrency(booking.amountPaid)}
                         </p>
                         <p className="text-xs text-muted-foreground">Total Price</p>
                     </div>
