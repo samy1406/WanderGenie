@@ -54,12 +54,18 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
     // 1. Try the location as is
     let data = await search(location);
 
-    // 2. If that fails, try adding the destination
+    // 2. If it fails and contains a comma, try simplifying it
+    if ((!data || data.length === 0) && location.includes(',')) {
+        const simplifiedLocation = location.split(',')[0].trim();
+        data = await search(simplifiedLocation);
+    }
+    
+    // 3. If that still fails, try adding the destination city
     if (!data || data.length === 0) {
         data = await search(`${location}, ${destination}`);
     }
     
-    // 3. If that still fails, try adding ", India"
+    // 4. If that still fails, try adding ", India"
     if (!data || data.length === 0) {
         data = await search(`${location}, India`);
     }
