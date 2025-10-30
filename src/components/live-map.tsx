@@ -37,6 +37,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
   const fetchCoords = async (location: string): Promise<[number, number] | null> => {
     const search = async (query: string) => {
         try {
+            if (!query) return null;
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
             );
@@ -51,24 +52,31 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
         }
     }
 
-    // 1. Try the location as is
-    let data = await search(location);
+    let data;
 
-    // 2. If it fails and contains a comma, try simplifying it
-    if ((!data || data.length === 0) && location.includes(',')) {
-        const simplifiedLocation = location.split(',')[0].trim();
-        data = await search(simplifiedLocation);
+    // Series of fallbacks
+    const queries = [
+        location,
+        location.split(',')[0].trim(),
+        `${location}, ${destination}`,
+        `${location.split(',')[0].trim()}, ${destination}`,
+        `${location}, India`,
+        `${location.split(',')[0].trim()}, India`,
+    ];
+    
+    if (location.includes(',')) {
+        queries.push(location.substring(location.lastIndexOf(',') + 1).trim());
+    }
+
+    const uniqueQueries = [...new Set(queries.filter(q => q))];
+
+    for (const query of uniqueQueries) {
+        data = await search(query);
+        if (data && data.length > 0) {
+            break; 
+        }
     }
     
-    // 3. If that still fails, try adding the destination city
-    if (!data || data.length === 0) {
-        data = await search(`${location}, ${destination}`);
-    }
-    
-    // 4. If that still fails, try adding ", India"
-    if (!data || data.length === 0) {
-        data = await search(`${location}, India`);
-    }
 
     if (!data || data.length === 0) {
         console.error(`No coordinates found for "${location}" after all fallbacks.`);
@@ -370,3 +378,5 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 };
 
 export default LiveMap;
+
+    
