@@ -5,7 +5,7 @@ import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
-import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble } from "lucide-react";
+import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble, IndianRupee } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import React, from "react";
 import { FormatBoldText } from "./format-bold-text";
@@ -46,7 +46,7 @@ const TravelModeSection = ({ options, showAll }: { options: TravelOptionType[], 
                                             <h4 className="font-semibold text-lg">{option.mode}: <span className="text-primary">{option.details}</span></h4>
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                                                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {option.duration}</span>
-                                                <span className="flex items-center gap-1.5"><Wallet className="h-4 w-4" /> {formatCurrency(option.cost)}</span>
+                                                <span className="flex items-center gap-1.5"><IndianRupee className="h-4 w-4" /> {formatCurrency(option.cost)}</span>
                                                 <span className="flex items-center gap-1.5"><Armchair className="h-4 w-4" /> {option.comfort}</span>
                                             </div>
                                         </div>
@@ -147,7 +147,7 @@ const TravelOptions = ({
                                                             <Star key={i} className={`h-4 w-4 ${i < option.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
                                                         ))}
                                                     </div>
-                                                    <span className="flex items-center gap-1.5"><Wallet className="h-4 w-4" /> {formatCurrency(option.pricePerNight)}</span>
+                                                    <span className="flex items-center gap-1.5"><IndianRupee className="h-4 w-4" /> {formatCurrency(option.pricePerNight)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -174,3 +174,5 @@ const TravelOptions = ({
 }
 
 export default TravelOptions;
+
+    

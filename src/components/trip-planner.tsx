@@ -209,7 +209,7 @@ export function TripPlanner() {
                         />
                     </div>
                 ) : (
-                    <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh]">
+                    <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh] mt-8">
                         <div className="text-center">
                             <h2 className="text-2xl font-semibold text-primary">Let's Plan Your Next Trip</h2>
                             <p className="text-muted-foreground mt-2">Fill out the form above to generate your personalized travel itinerary and booking options.</p>
@@ -223,3 +223,5 @@ export function TripPlanner() {
     </div>
   );
 }
+
+    

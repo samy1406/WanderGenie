@@ -60,13 +60,6 @@ const bookingFormSchema = z.object({
     path: ["gstDetails"],
 });
 
-// Pricing constants based on Indian standards
-const PRICES = {
-    ADULT: { base: 6833, taxes: 1355 },
-    CHILD: { base: 5100, taxes: 1100 },
-    INFANT: { base: 1500, taxes: 500 },
-};
-
 const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number, description: string } } = {
     "WANDER10": { type: 'percentage', value: 10, description: "Get 10% off your booking." },
     "FLYHIGH": { type: 'fixed', value: 500, description: "Get flat ₹500 off." },
@@ -105,43 +98,40 @@ export default function BookPage() {
 
   const priceSummary = useMemo(() => {
     const summary = {
-      adults: { count: 0, total: 0, base: 0, taxes: 0 },
-      children: { count: 0, total: 0, base: 0, taxes: 0 },
-      infants: { count: 0, total: 0, base: 0, taxes: 0 },
-      baseFare: 0,
-      totalTaxes: 0,
-      subTotal: 0,
-      discount: appliedDiscount,
-      grandTotal: 0,
+        adults: { count: 0, total: 0 },
+        children: { count: 0, total: 0 },
+        infants: { count: 0, total: 0 },
+        baseFare: 0,
+        totalTaxes: 0,
+        subTotal: 0,
+        discount: appliedDiscount,
+        grandTotal: 0,
     };
 
+    const baseCost = bookingOption?.type === 'travel' ? (bookingOption.item as TravelOption).cost : 0;
+    const taxes = baseCost * 0.18; // Assume 18% tax
+
     watchedPassengers.forEach(passenger => {
+        let passengerCost = 0;
         if (passenger.age >= 12) {
             summary.adults.count++;
-            summary.adults.base += PRICES.ADULT.base;
-            summary.adults.taxes += PRICES.ADULT.taxes;
+            passengerCost = baseCost;
         } else if (passenger.age >= 2) {
             summary.children.count++;
-            summary.children.base += PRICES.CHILD.base;
-            summary.children.taxes += PRICES.CHILD.taxes;
+            passengerCost = baseCost * 0.75; // 75% of adult fare for children
         } else {
             summary.infants.count++;
-            summary.infants.base += PRICES.INFANT.base;
-            summary.infants.taxes += PRICES.INFANT.taxes;
+            passengerCost = baseCost * 0.1; // 10% of adult fare for infants
         }
+        summary.baseFare += passengerCost;
     });
 
-    summary.adults.total = summary.adults.base + summary.adults.taxes;
-    summary.children.total = summary.children.base + summary.children.taxes;
-    summary.infants.total = summary.infants.base + summary.infants.taxes;
-    
-    summary.baseFare = summary.adults.base + summary.children.base + summary.infants.base;
-    summary.totalTaxes = summary.adults.taxes + summary.children.taxes + summary.infants.taxes;
+    summary.totalTaxes = summary.baseFare * 0.18; // 18% tax on total base fare
     summary.subTotal = summary.baseFare + summary.totalTaxes;
     summary.grandTotal = summary.subTotal - summary.discount;
 
     return summary;
-  }, [watchedPassengers, appliedDiscount]);
+}, [watchedPassengers, appliedDiscount, bookingOption]);
   
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -239,7 +229,7 @@ export default function BookPage() {
         setAppliedDiscount(discount);
         toast({
             title: "Coupon Applied!",
-            description: <>You've saved {formatCurrency(discount)} with coupon {code.toUpperCase()}.</>
+            description: <>You've saved <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(discount)} with coupon {code.toUpperCase()}.</>
         });
     } else {
         setAppliedDiscount(0);
@@ -573,29 +563,28 @@ export default function BookPage() {
             <CardContent className="space-y-4 text-sm">
                 <div className="flex justify-between">
                     <span>Base Fare</span>
-                    <span>{formatCurrency(priceSummary.baseFare)}</span>
+                     <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.baseFare)}</span>
                 </div>
                  <div className="flex justify-between">
                     <span>Taxes & Surcharges</span>
-                    <span>{formatCurrency(priceSummary.totalTaxes)}</span>
+                     <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.totalTaxes)}</span>
                 </div>
                 {appliedDiscount > 0 && (
                      <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span>-{formatCurrency(appliedDiscount)}</span>
+                        <span className='flex items-center'>-<IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(appliedDiscount)}</span>
                     </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                     <span>Grand Total</span>
-                    <span>{formatCurrency(priceSummary.grandTotal)}</span>
+                    <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1"/>{formatCurrency(priceSummary.grandTotal)}</span>
                 </div>
                 <Separator />
                {priceSummary.adults.count > 0 && (
                 <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><PersonStanding className="mr-2 h-5 w-5" /> Adult x{priceSummary.adults.count}</span>
-                    <span>{formatCurrency(priceSummary.adults.total)}</span>
                   </div>
                 </div>
               )}
@@ -603,7 +592,6 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><User className="mr-2 h-5 w-5" /> Child x{priceSummary.children.count}</span>
-                    <span>{formatCurrency(priceSummary.children.total)}</span>
                   </div>
                 </div>
               )}
@@ -611,7 +599,6 @@ export default function BookPage() {
                  <div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span className="flex items-center"><Baby className="mr-2 h-5 w-5" /> Infant x{priceSummary.infants.count}</span>
-                    <span>{formatCurrency(priceSummary.infants.total)}</span>
                   </div>
                 </div>
               )}
@@ -651,3 +638,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    

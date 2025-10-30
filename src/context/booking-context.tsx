@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
+import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -32,6 +33,7 @@ export type Booking = BookingItem & {
     bookingDate: string;
     transactionId?: string;
     amountPaid?: number;
+    itinerary?: GeneratePersonalizedItineraryOutput;
 };
 
 
@@ -111,3 +113,5 @@ export function useBooking() {
   }
   return context;
 }
+
+    

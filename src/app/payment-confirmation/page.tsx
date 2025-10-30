@@ -101,13 +101,15 @@ function ConfirmationContent() {
                      </Card>
                       <Card className="bg-secondary/50">
                         <CardHeader>
-                            <CardTitle className="text-lg">Payment Summary</CardTitle>
+                            <CardTitle className="flex items-center text-lg">
+                                <IndianRupee className="mr-2 h-5 w-5"/>Payment Summary
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                            <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span>Total Amount Paid:</span>
-                                    <span className="font-bold text-xl">{formatCurrency(amountPaid)}</span>
+                                    <span className="font-bold text-xl flex items-center"><IndianRupee className="h-5 w-5 mr-1"/>{formatCurrency(amountPaid)}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right">via Mock Payment Gateway</p>
                            </div>
@@ -135,3 +137,5 @@ export default function PaymentConfirmationPage() {
         </Suspense>
     )
 }
+
+    

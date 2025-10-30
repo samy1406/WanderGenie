@@ -173,10 +173,11 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4 text-sm">
-                    <div className="text-center pb-4">
+                    <div className="text-center pb-4 flex items-center justify-center">
+                      <IndianRupee className="h-6 w-6 mr-1 text-primary"/>
                       <p className="text-2xl font-bold text-primary">{formatCurrency(estimatedCost.total)}</p>
-                      <p className="text-xs text-muted-foreground">(approx. for your preferences)</p>
                     </div>
+                     <p className="text-xs text-muted-foreground text-center -mt-4 mb-2">(approx. for your preferences)</p>
                     <Separator />
                     <div className="space-y-3 text-muted-foreground pt-2">
                         <div className="flex justify-between items-center">
@@ -184,21 +185,30 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                                 <Building className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Accommodation</p>
                             </div>
-                            <p>{formatCurrency(estimatedCost.accommodation)}</p>
+                            <div className="flex items-center">
+                               <IndianRupee className="h-4 w-4 mr-1"/>
+                               <p>{formatCurrency(estimatedCost.accommodation)}</p>
+                            </div>
                         </div>
                          <div className="flex justify-between items-center">
                             <div className="flex gap-4">
                                 <Utensils className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Food</p>
                             </div>
-                            <p>{formatCurrency(estimatedCost.food)}</p>
+                            <div className="flex items-center">
+                               <IndianRupee className="h-4 w-4 mr-1"/>
+                               <p>{formatCurrency(estimatedCost.food)}</p>
+                            </div>
                         </div>
                          <div className="flex justify-between items-center">
                              <div className="flex gap-4">
                                 <BusFront className="h-5 w-5 mt-1 text-primary/70 flex-shrink-0" /> 
                                 <p className="font-semibold text-foreground">Local Transport</p>
                             </div>
-                            <p>{formatCurrency(estimatedCost.localTransport)}</p>
+                             <div className="flex items-center">
+                               <IndianRupee className="h-4 w-4 mr-1"/>
+                               <p>{formatCurrency(estimatedCost.localTransport)}</p>
+                            </div>
                         </div>
                     </div>
                   </div>
@@ -256,3 +266,5 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
 };
 
 export default ItineraryDisplay;
+
+    
