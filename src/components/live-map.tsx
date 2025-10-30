@@ -270,16 +270,16 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
   // Admin logic effect
   useEffect(() => {
     if (user?.email === 'admin@wandergenie.com' && itineraryData) {
-        AppLocationService.startSimulation();
-        if (!isAdminPanelBuilt) {
-            buildAdminPanel();
-        }
+      AppLocationService.startSimulation();
+      if (!isAdminPanelBuilt) {
+        buildAdminPanel();
+      }
     }
-    const adminPanel = document.getElementById("admin-test-panel");
-    if(adminPanel) {
-        adminPanel.style.display = user?.email === 'admin@wandergenie.com' ? 'block' : 'none';
+    const adminPanel = document.getElementById('admin-test-panel');
+    if (adminPanel) {
+      adminPanel.style.display = simulationStarted ? 'block' : 'none';
     }
-  }, [user, isAdminPanelBuilt, itineraryData]);
+  }, [user, isAdminPanelBuilt, itineraryData, simulationStarted]);
 
 
   // Handle journey state change
