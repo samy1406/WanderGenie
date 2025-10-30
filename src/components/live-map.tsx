@@ -78,7 +78,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity, itiner
 
     for (const day of itineraryData.dailyPlan) {
         for (const activity of day.activities) {
-            const activityCoords = await fetchCoords(`${activity.location}, ${destination}`);
+            const activityCoords = await fetchCoords(activity.location);
             if (activityCoords) {
                 checkpoints.push({ name: `Day ${day.day}: ${activity.location}`, lat: activityCoords[1], lng: activityCoords[0]});
             }
