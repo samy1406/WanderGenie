@@ -184,7 +184,7 @@ export function TripPlanner() {
             />
         </HeroSection>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-background p-4 md:p-8 flex flex-col rounded-lg -mt-32 relative z-10 shadow-lg">
+            <div className="bg-background p-4 md:p-8 flex flex-col rounded-lg -mt-20 relative z-10 shadow-lg space-y-8">
                 {isLoading ? (
                     <div className="w-full h-96 flex items-center justify-center">
                         <div className="flex flex-col items-center gap-4">
@@ -209,7 +209,7 @@ export function TripPlanner() {
                         />
                     </div>
                 ) : (
-                    <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8">
+                    <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh]">
                         <div className="text-center">
                             <h2 className="text-2xl font-semibold text-primary">Let's Plan Your Next Trip</h2>
                             <p className="text-muted-foreground mt-2">Fill out the form above to generate your personalized travel itinerary and booking options.</p>

@@ -186,8 +186,8 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
             </Button>
         </div>
 
-        <Card>
-            <CardContent className="grid md:grid-cols-2 gap-6 pt-6">
+        <div className="bg-white text-gray-700 p-4 rounded-lg shadow-lg">
+            <div className="grid md:grid-cols-2 gap-6">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -216,8 +216,8 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         </FormItem>
                     )}
                     />
-            </CardContent>
-      </Card>
+            </div>
+      </div>
     </div>
     );
 }
