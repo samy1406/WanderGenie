@@ -46,20 +46,14 @@ const GetTravelOptionsOutputSchema = z.object({
 export type GetTravelOptionsOutput = z.infer<typeof GetTravelOptionsOutputSchema>;
 
 export async function getTravelOptions(input: GetTravelOptionsInput): Promise<GetTravelOptionsOutput> {
-    try {
-        const result = await getTravelOptionsFlow(input);
-        return result;
-    } catch (error) {
-        console.error("Error in getTravelOptions, returning empty options.", error);
-        // Return a default empty state if the flow fails
-        return { travelOptions: [], hotelOptions: [] };
-    }
+    return getTravelOptionsFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'getTravelOptionsPrompt',
   input: {schema: GetTravelOptionsInputSchema},
-  output: {schema: GetTravelOptionsOutputSchema},
+  output: {schema: GetTravelOptionsOutputSchema, format: 'json'},
+  model: 'googleai/gemini-2.5-flash',
   prompt: `You are a travel agent. Based on the user's origin, destination, and travel preferences, provide a comprehensive list of travel and accommodation options.
 
 Origin: {{{origin}}}
