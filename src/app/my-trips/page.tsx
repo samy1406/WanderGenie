@@ -18,7 +18,7 @@ function TripCard({ trip, onDelete, onView }: { trip: Trip, onDelete: (id: strin
         <CardDescription>Created on: {new Date(trip.createdAt).toLocaleDateString()}</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">{trip.itinerary.dailyPlan.length}-day trip from {trip.origin}</p>
+        <p className="text-sm text-muted-foreground">{trip.itinerary.dailyPlan.length}-day trip to {trip.destination}</p>
         <div className="flex gap-2">
             <Button variant="ghost" size="icon" onClick={() => onDelete(trip.id)}>
                 <Trash2 className="h-4 w-4" />
@@ -34,7 +34,7 @@ function TripCard({ trip, onDelete, onView }: { trip: Trip, onDelete: (id: strin
 
 export default function MyTripsPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
-  const { trips, deleteTrip, setSelectedTrip } = useTrip();
+  const { trips, deleteTrip, setCurrentTrip } = useTrip();
   const router = useRouter();
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function MyTripsPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const handleViewTrip = (trip: Trip) => {
-    setSelectedTrip(trip);
+    setCurrentTrip(trip);
     router.push('/');
   }
 

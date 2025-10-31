@@ -9,11 +9,12 @@ import { useEffect, useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, User, Home, Plane, Building, IndianRupee } from 'lucide-react';
+import { CheckCircle2, User, Home, Plane, Building, IndianRupee, ArrowLeft } from 'lucide-react';
 import type { Booking, Passenger } from '@/context/booking-context';
 import { FormatBoldText } from '@/components/format-bold-text';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { formatCurrency } from '@/lib/formatters';
+import { useTrip } from '@/context/trip-context';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -24,6 +25,7 @@ function ConfirmationContent() {
   const bookingId = searchParams.get('bookingId');
   const { getBookingById } = useBooking();
   const { user } = useAuth();
+  const { clearCurrentTrip } = useTrip();
   
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
@@ -40,6 +42,11 @@ function ConfirmationContent() {
        router.push('/');
     }
   }, [bookingId, getBookingById, router]);
+
+  const handleReturnToTrip = () => {
+    clearCurrentTrip(false); // don't clear the selected trip, just go back
+    router.push('/');
+  }
 
   if (!confirmedBooking) {
     return <div className="text-center p-8">Loading booking confirmation...</div>;
@@ -118,7 +125,8 @@ function ConfirmationContent() {
                 </div>
 
                 <div className="mt-8 text-center flex flex-col sm:flex-row justify-center gap-4">
-                    <Button onClick={() => router.push('/my-bookings')}>View All Bookings</Button>
+                    <Button onClick={handleReturnToTrip}><ArrowLeft className="mr-2 h-4 w-4"/> Return to Trip Plan</Button>
+                    <Button variant="outline" onClick={() => router.push('/my-bookings')}>View All Bookings</Button>
                     <Button variant="outline" onClick={() => router.push('/')}><Home className="mr-2"/>Plan Another Trip</Button>
                 </div>
 
@@ -137,5 +145,3 @@ export default function PaymentConfirmationPage() {
         </Suspense>
     )
 }
-
-    

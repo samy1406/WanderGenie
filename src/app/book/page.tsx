@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { handleBookingRequest, handlePaymentRequest } from '@/app/actions';
 import { formatCurrency } from '@/lib/formatters';
+import { useTrip } from '@/context/trip-context';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -69,7 +70,8 @@ const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: num
 
 export default function BookPage() {
   const router = useRouter();
-  const { bookingOption, addBooking, setPendingBooking } = useBooking();
+  const { bookingOption, addBookingAndSaveTrip, setPendingBooking } = useBooking();
+  const { currentTrip } = useTrip();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
 
@@ -153,15 +155,10 @@ export default function BookPage() {
     }
   }, [bookingOption, router]);
 
-
-  if (!bookingOption) {
-    return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
-  }
-  
-  const onSubmit = async (data: z.infer<typeof bookingFormSchema>) => {
-     if (!isAuthenticated) {
+  const onFormSubmit = async (data: z.infer<typeof bookingFormSchema>) => {
+    if (!isAuthenticated) {
         setPendingBooking({
-             ...bookingOption,
+             ...(bookingOption!),
             passengerDetails: {
                 passengers: data.passengers,
                 email: data.contactEmail,
@@ -171,6 +168,24 @@ export default function BookPage() {
             id: `pending_${Date.now()}`
         });
         openAuthModal('signup');
+        return;
+    }
+    
+    await processBooking(data);
+  }
+
+  const processBooking = async (data: z.infer<typeof bookingFormSchema>) => {
+     if (!bookingOption) {
+        toast({ title: "Error", description: "No booking option selected.", variant: "destructive" });
+        return;
+     }
+
+    if (!currentTrip) {
+        toast({
+            title: "Trip Not Found",
+            description: "Cannot complete booking without an active trip.",
+            variant: "destructive",
+        });
         return;
     }
 
@@ -207,7 +222,7 @@ export default function BookPage() {
             amountPaid: priceSummary.grandTotal
         };
 
-        addBooking(newBooking);
+        addBookingAndSaveTrip(newBooking, currentTrip);
         router.push(`/payment-confirmation?bookingId=${newBooking.id}`);
 
     } catch (error) {
@@ -253,6 +268,10 @@ export default function BookPage() {
   };
 
 
+  if (!bookingOption) {
+    return <div className="text-center p-8">No booking option selected. Redirecting...</div>;
+  }
+  
   const { item, type } = bookingOption;
 
   const renderBookingItemDetails = () => {
@@ -283,7 +302,7 @@ export default function BookPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
                     {renderBookingItemDetails()}
 
                     <Card>

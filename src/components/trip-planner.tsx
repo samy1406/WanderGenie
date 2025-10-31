@@ -20,6 +20,7 @@ import { useAuth } from "@/context/auth-context";
 import { useTrip } from "@/context/trip-context";
 import { Button } from "./ui/button";
 import { Ticket } from "lucide-react";
+import { useBooking } from "@/context/booking-context";
 
 export type TripType = "oneway" | "roundtrip";
 type ViewState = 'PLAN' | 'BOOK';
@@ -27,13 +28,9 @@ type ViewState = 'PLAN' | 'BOOK';
 export function TripPlanner() {
   const { toast } = useToast();
   const { isAuthenticated, user, openAuthModal } = useAuth();
-  const { trips, addTrip, getTrip, selectedTrip, setSelectedTrip } = useTrip();
+  const { currentTrip, setCurrentTrip, addTrip, isCurrentTripSaved, clearCurrentTrip } = useTrip();
+  const { addBookingAndSaveTrip } = useBooking();
 
-  const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
-  const [outboundTravelOptions, setOutboundTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
-  const [returnTravelOptions, setReturnTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
-  const [destination, setDestination] = useState<string | null>(null);
-  const [origin, setOrigin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tripType, setTripType] = useState<TripType>("oneway");
@@ -58,34 +55,25 @@ export function TripPlanner() {
   });
 
   useEffect(() => {
-    if (selectedTrip) {
-        setItinerary(selectedTrip.itinerary);
-        setDestination(selectedTrip.destination);
-        setOrigin(selectedTrip.origin);
-
-        const departureDate = new Date(selectedTrip.createdAt);
-        const isRoundTrip = selectedTrip.itinerary.dailyPlan.length > 1;
-
+    if (currentTrip) {
+        // When a trip is loaded or set, update the form
         form.reset({
-            origin: selectedTrip.origin,
-            destination: selectedTrip.destination,
-            tripDuration: selectedTrip.itinerary.dailyPlan.length,
-            interests: selectedTrip.itinerary.travelTips,
-            travelPreference: selectedTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
-            departureDate: departureDate,
-            returnDate: isRoundTrip ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined,
-            tripType: isRoundTrip ? 'roundtrip' : 'oneway',
+            origin: currentTrip.origin,
+            destination: currentTrip.destination,
+            tripDuration: currentTrip.itinerary.dailyPlan.length,
+            interests: currentTrip.itinerary.travelTips, // Or find a better field
+            travelPreference: currentTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
+            departureDate: currentTrip.departureDate ? new Date(currentTrip.departureDate) : new Date(),
+            returnDate: currentTrip.returnDate ? new Date(currentTrip.returnDate) : undefined,
+            tripType: currentTrip.returnDate ? 'roundtrip' : 'oneway',
         });
-        setTripType(isRoundTrip ? 'roundtrip' : 'oneway');
-
-        // Since we are loading a plan, reset booking options and view
-        setOutboundTravelOptions(null);
-        setReturnTravelOptions(null);
-        setViewState('PLAN');
-
-        setSelectedTrip(null);
+        setTripType(currentTrip.returnDate ? 'roundtrip' : 'oneway');
+        setViewState('PLAN'); // Always default to the plan view when a trip is loaded
+    } else {
+        // Optional: Reset form to defaults if there's no current trip
+        // form.reset();
     }
-}, [selectedTrip, setSelectedTrip, form]);
+  }, [currentTrip, form]);
 
 
   // Update tripType in form when it changes using useEffect
@@ -106,13 +94,8 @@ export function TripPlanner() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setError(null);
-    setItinerary(null);
-    setOutboundTravelOptions(null);
-    setReturnTravelOptions(null);
+    clearCurrentTrip(); // Clear any existing trip before generating a new one
     setViewState('PLAN'); // Default to plan view first
-    
-    setDestination(values.destination);
-    setOrigin(values.origin);
     
     try {
       const itineraryPromise = handleGenerateItinerary({
@@ -133,34 +116,35 @@ export function TripPlanner() {
       
       const promises: Promise<any>[] = [itineraryPromise, outboundOptionsPromise];
 
-      if (values.tripType === 'roundtrip') {
+      if (values.tripType === 'roundtrip' && values.returnDate) {
           const returnOptionsPromise = handleGetTravelOptions({
               origin: values.destination, // Swap origin and destination
               destination: values.origin,
               travelPreference: values.travelPreference,
-              departureTime: values.departureTime,
-              arrivalTime: values.arrivalTime
+              departureTime: values.departureTime, // This could be made specific for return
+              arrivalTime: values.arrivalTime // This could be made specific for return
           });
           promises.push(returnOptionsPromise);
+      } else {
+          promises.push(Promise.resolve(null)); // Ensure there's always a third element
       }
 
       const [itineraryResult, outboundOptionsResult, returnOptionsResult] = await Promise.all(promises);
 
-      if (itineraryResult) {
-        setItinerary(itineraryResult);
-      } else {
-        throw new Error("The generated itinerary was empty.");
-      }
+      if (!itineraryResult) throw new Error("The generated itinerary was empty.");
+      if (!outboundOptionsResult) throw new Error("Could not get outbound travel options.");
 
-      if (outboundOptionsResult) {
-        setOutboundTravelOptions(outboundOptionsResult);
-      } else {
-        throw new Error("Could not get outbound travel options.");
-      }
-
-      if (values.tripType === 'roundtrip' && returnOptionsResult) {
-          setReturnTravelOptions(returnOptionsResult as GetTravelOptionsOutput);
-      }
+      setCurrentTrip({
+        id: `trip_${Date.now()}`,
+        name: `Trip to ${values.destination}`,
+        origin: values.origin,
+        destination: values.destination,
+        departureDate: values.departureDate.toISOString(),
+        returnDate: values.returnDate ? values.returnDate.toISOString() : undefined,
+        itinerary: itineraryResult,
+        outboundTravelOptions: outboundOptionsResult,
+        returnTravelOptions: returnOptionsResult,
+      });
 
     } catch (error) {
       console.error("Failed during generation:", error);
@@ -180,55 +164,11 @@ export function TripPlanner() {
     }
   }
 
-  const handleHotelBooking = (hotelName: string) => {
-    if (!itinerary || !destination) return;
-  
-    // Create a deep copy to avoid direct state mutation
-    const newItinerary = JSON.parse(JSON.stringify(itinerary));
-  
-    // Smartly find and replace or add the check-in activity
-    let activityReplaced = false;
-
-    for (const day of newItinerary.dailyPlan) {
-        for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
-            if (day[timeSlot]) {
-                const accommodationActivityIndex = day[timeSlot].findIndex((activity: any) =>
-                    activity.description.toLowerCase().includes('accommodation') ||
-                    activity.description.toLowerCase().includes('hotel')
-                );
-                
-                if (accommodationActivityIndex !== -1) {
-                    day[timeSlot][accommodationActivityIndex].description = `Check into **${hotelName}**`;
-                    day[timeSlot][accommodationActivityIndex].location = `${hotelName}, ${destination}`;
-                    day[timeSlot][accommodationActivityIndex].link = `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`;
-                    activityReplaced = true;
-                    break;
-                }
-            }
-        }
-        if(activityReplaced) break;
-    }
-
-    if (!activityReplaced && newItinerary.dailyPlan[0]) {
-        // If no check-in activity was found, prepend it to the first day's morning activities
-        const dayOneMorning = newItinerary.dailyPlan[0].morning || [];
-        dayOneMorning.unshift({
-            startTime: "2:00 PM",
-            endTime: "3:00 PM",
-            description: `Check into **${hotelName}**`,
-            location: `${hotelName}, ${destination}`,
-            link: `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`,
-            travelInfo: "Welcome to your hotel!"
-        });
-        newItinerary.dailyPlan[0].morning = dayOneMorning;
-    }
-  
-    setItinerary(newItinerary);
-    toast({
-      title: "Itinerary Updated",
-      description: `${hotelName} has been added to your plan.`,
-    });
-  };
+  const handleItineraryUpdate = (newItinerary: GeneratePersonalizedItineraryOutput) => {
+      if (currentTrip) {
+          setCurrentTrip({ ...currentTrip, itinerary: newItinerary });
+      }
+  }
 
   const handleSaveTrip = () => {
     if (!isAuthenticated) {
@@ -240,25 +180,9 @@ export function TripPlanner() {
         });
         return;
     }
-    if (itinerary && destination && origin) {
-        addTrip({
-            id: `trip_${Date.now()}`,
-            name: `Trip to ${destination}`,
-            itinerary,
-            destination,
-            origin,
-            createdAt: new Date().toISOString(),
-        });
+    if (currentTrip) {
+        addTrip(currentTrip);
     }
-  };
-
-  const isCurrentTripSaved = () => {
-    if (!itinerary || trips.length === 0) return false;
-    // A simple check: if a trip with the same destination and very similar plan exists.
-    return trips.some(trip => 
-        trip.destination === destination &&
-        trip.itinerary.dailyPlan[0]?.title === itinerary.dailyPlan[0]?.title
-    );
   };
   
   return (
@@ -281,7 +205,7 @@ export function TripPlanner() {
                             <p className="text-muted-foreground text-lg">Generating your adventure...</p>
                         </div>
                     </div>
-                ) : itinerary && destination && origin ? (
+                ) : currentTrip ? (
                     <div className="space-y-8 h-full flex flex-col">
                       {viewState === 'PLAN' ? (
                         <>
@@ -291,20 +215,27 @@ export function TripPlanner() {
                             </Button>
                           </div>
                           <ItineraryDisplay 
-                            itineraryData={itinerary} 
-                            destination={destination} 
-                            origin={origin}
-                            onItineraryUpdate={setItinerary}
+                            itineraryData={currentTrip.itinerary} 
+                            destination={currentTrip.destination} 
+                            origin={currentTrip.origin}
+                            onItineraryUpdate={handleItineraryUpdate}
                             onSaveTrip={handleSaveTrip}
                             isSaved={isCurrentTripSaved()}
                           />
                         </>
                       ) : (
                         <TravelOptions 
-                            outboundTravelOptions={outboundTravelOptions!} 
-                            returnTravelOptions={returnTravelOptions}
-                            hotelOptions={outboundTravelOptions!.hotelOptions}
-                            onHotelBooked={handleHotelBooking}
+                            outboundTravelOptions={currentTrip.outboundTravelOptions!} 
+                            returnTravelOptions={currentTrip.returnTravelOptions}
+                            hotelOptions={currentTrip.outboundTravelOptions!.hotelOptions}
+                            onHotelBooked={(hotelName) => {
+                                // This callback is now mainly for UI feedback if needed
+                                // The itinerary update is handled within the context
+                                toast({
+                                    title: "Itinerary Updated",
+                                    description: `${hotelName} has been added to your plan.`,
+                                });
+                            }}
                             onBackToPlan={() => setViewState('PLAN')}
                         />
                       )}

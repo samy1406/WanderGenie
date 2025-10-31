@@ -3,9 +3,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useBooking } from './booking-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import type { Booking } from './booking-context';
 
 export type User = {
   id: string;
@@ -33,6 +33,7 @@ type AuthContextType = {
   closeAuthModal: () => void;
   isAuthModalOpen: boolean;
   authModalView: 'login' | 'signup';
+  handlePostAuth: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,7 +48,6 @@ let MOCK_USERS: User[] = [
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { addBooking, pendingBooking, clearPendingBooking } = useBooking();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -110,6 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
     }
   }
+  
+  const handlePostAuth = () => {
+    // This function will be called by the booking context if there's a pending booking.
+    // For now, it just closes the modal.
+    // The `useBooking` hook will have logic to check for `isAuthenticated` and complete the action.
+    closeAuthModal();
+  };
 
   const login = (email: string, password?: string) => {
     syncUsers(); // Make sure we have the latest user list
@@ -156,21 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
 
-  const handlePostAuth = () => {
-    if (pendingBooking) {
-      // This is a simplified flow. A real app would re-trigger the submission.
-      // For now, we'll just inform the user to continue.
-      toast({
-        title: "You're logged in!",
-        description: "Please click 'Pay Securely' again to complete your booking.",
-      });
-      closeAuthModal();
-      clearPendingBooking(); // Clear it as we are not auto-submitting
-    } else {
-      closeAuthModal();
-    }
-  };
-
   const openAuthModal = (view: 'login' | 'signup' = 'login') => {
     setAuthModalView(view);
     setIsAuthModalOpen(true);
@@ -195,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     closeAuthModal,
     isAuthModalOpen,
     authModalView,
+    handlePostAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

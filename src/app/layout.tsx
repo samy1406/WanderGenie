@@ -26,15 +26,15 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v9.2.4/ol.css" />
       </head>
       <body className="font-body antialiased">
-        <BookingProvider>
-          <AuthProvider>
-            <TripProvider>
+        <AuthProvider>
+          <TripProvider>
+            <BookingProvider>
               <Header />
               {children}
               <Toaster />
-            </TripProvider>
-          </AuthProvider>
-        </BookingProvider>
+            </BookingProvider>
+          </TripProvider>
+        </AuthProvider>
       </body>
     </html>
   );
