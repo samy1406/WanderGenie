@@ -32,6 +32,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
   const mapInstanceRef = useRef<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource<Point | LineString> | null>(null);
   const userLocationFeatureRef = useRef<Feature<Point> | null>(null);
+  const nextDestinationFeatureRef = useRef<Feature<Point> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAdminPanelBuilt, setIsAdminPanelBuilt] = useState(false);
 
@@ -58,15 +59,15 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     const queries = [
         location,
         `${location}, ${destination}`,
-        `${location.split(',')[0].trim()}, ${destination}`,
-        `${location}, India`,
-        `${location.split(',')[0].trim()}, India`,
     ];
     
     if (location.includes(',')) {
         queries.unshift(location.split(',')[0].trim()); // Higher priority for simplified name
-        queries.push(location.substring(location.lastIndexOf(',') + 1).trim());
+        const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
+        if (cityPart) queries.push(cityPart);
     }
+    
+    queries.push(`${location}, India`)
 
     const uniqueQueries = [...new Set(queries.filter(q => q))];
 
@@ -167,72 +168,58 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     let isMounted = true;
     
     const initializeMap = async () => {
-      const [originCoords, destCoords] = await Promise.all([
-        fetchCoords(origin),
-        fetchCoords(destination)
+      const [originCoords] = await Promise.all([
+        fetchCoords(origin)
       ]);
 
       if (!isMounted) return;
 
-      if (!originCoords && !destCoords) {
-        setError(`Could not find coordinates for origin or destination.`);
+      if (!originCoords) {
+        setError(`Could not find coordinates for origin.`);
         if (mapRef.current) mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground">Map data unavailable.</div>';
         return;
       }
       
-      const centerCoords = destCoords || originCoords;
-      const from = originCoords ? fromLonLat(originCoords) : null;
-      const to = destCoords ? fromLonLat(destCoords) : null;
+      const from = fromLonLat(originCoords);
 
       const vectorSource = new VectorSource();
       vectorSourceRef.current = vectorSource;
       
-      const features = [];
-
-      if(from) {
-        const userLocationFeature = new Feature({
-            geometry: new Point(from),
-        });
-        userLocationFeature.setStyle(new Style({
-            image: new Icon({
-                color: '#3B82F6',
-                crossOrigin: 'anonymous',
-                src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
-                imgSize: [20, 20],
-                anchor: [0.5, 0.5],
-            }),
-        }));
-        userLocationFeature.set('type', 'user');
-        userLocationFeatureRef.current = userLocationFeature;
-        features.push(userLocationFeature);
-      } else {
-        setError(`Could not find origin: ${origin}`);
-      }
-
-      if(to) {
-        const destinationFeature = new Feature({
-            geometry: new Point(to),
-        });
-        destinationFeature.setStyle(new Style({
-            image: new CircleStyle({
-                radius: 8,
-                fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}),
-                stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-            })
-        }));
-        destinationFeature.set('type', 'destination');
-        features.push(destinationFeature);
-      } else {
-         setError(`Could not find destination: ${destination}`);
-      }
+      const userLocationFeature = new Feature({
+          geometry: new Point(from),
+      });
+      userLocationFeature.setStyle(new Style({
+          image: new Icon({
+              color: '#3B82F6',
+              crossOrigin: 'anonymous',
+              src: 'https://openlayers.org/en/latest/examples/data/dot.svg',
+              imgSize: [20, 20],
+              anchor: [0.5, 0.5],
+          }),
+      }));
+      userLocationFeature.set('type', 'user');
+      userLocationFeatureRef.current = userLocationFeature;
       
-      vectorSource.addFeatures(features);
+      const nextDestinationFeature = new Feature({
+          geometry: new Point(from), // Initially same as user
+      });
+      nextDestinationFeature.setStyle(new Style({
+          image: new CircleStyle({
+              radius: 8,
+              fill: new Fill({ color: 'rgba(239, 68, 68, 0.7)'}),
+              stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+          })
+      }));
+      nextDestinationFeature.set('type', 'destination');
+      nextDestinationFeatureRef.current = nextDestinationFeature;
+
+      vectorSource.addFeatures([userLocationFeature, nextDestinationFeature]);
 
       const vectorLayer = new VectorLayer({ source: vectorSource });
       
       const view = new View({
-        center: from || to || fromLonLat([0, 0]),
-        zoom: 5,
+        center: from,
+        zoom: 10,
       });
       
       const map = new Map({
@@ -242,15 +229,6 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
       });
       
       mapInstanceRef.current = map;
-      
-      if (from && to) {
-        const routeForExtent = new LineString([from, to]);
-        view.fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100,100,100,100] });
-      } else if (from) {
-        view.animate({ center: from, zoom: 10, duration: 1000 });
-      } else if (to) {
-        view.animate({ center: to, zoom: 10, duration: 1000 });
-      }
       
       AppLocationService.watch(handlePositionUpdate, handleGpsError);
     };
@@ -265,7 +243,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         document.body.removeChild(adminPanel);
       }
     };
-  }, [origin, destination]);
+  }, []); // Only run on initial mount
 
   // Admin logic effect
   useEffect(() => {
@@ -279,55 +257,63 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     if (adminPanel) {
       adminPanel.style.display = simulationStarted ? 'block' : 'none';
     }
-  }, [user, isAdminPanelBuilt, itineraryData, simulationStarted]);
+  }, [user, isAdminPanelBuilt, itineraryData, simulationStarted, origin, destination]);
 
 
-  // Handle journey state change
+  // Update map view and "next destination" marker based on journey state
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const nextDestFeature = nextDestinationFeatureRef.current;
+    const userLocationFeature = userLocationFeatureRef.current;
 
-    const handleJourneyState = async () => {
-        if (journeyStarted) {
-            const destCoords = await fetchCoords(destination);
-            if (destCoords) {
-                const to = fromLonLat(destCoords);
-                map.getView().animate({ center: to, zoom: 14, duration: 1500 });
+    if (!map || !nextDestFeature || !userLocationFeature) return;
+
+    const updateUserAndNextDest = async (nextLocationName: string) => {
+        const nextDestCoords = await fetchCoords(nextLocationName);
+
+        if (nextDestCoords) {
+            const nextDestPoint = fromLonLat(nextDestCoords);
+            nextDestFeature.getGeometry()?.setCoordinates(nextDestPoint);
+            
+            const userCoords = userLocationFeature.getGeometry()?.getCoordinates();
+            if(userCoords) {
+                 const view = map.getView();
+                 const extent = new LineString([userCoords, nextDestPoint]).getExtent();
+                 view.fit(extent, { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
             }
         } else {
-            const [originCoords, destCoords] = await Promise.all([
-                fetchCoords(origin),
-                fetchCoords(destination)
-            ]);
-
-            if (originCoords && destCoords) {
-                const from = fromLonLat(originCoords);
-                const to = fromLonLat(destCoords);
-                const routeForExtent = new LineString([from, to]);
-                map.getView().fit(routeForExtent.getExtent(), { duration: 1000, maxZoom: 12, padding: [100, 100, 100, 100] });
-            }
+            setError(`Could not find location: ${nextLocationName}`);
+            setTimeout(() => setError(null), 3000);
         }
+    };
+    
+    if (journeyStarted) {
+        if(selectedActivity){
+            // Journey started and an activity is selected: point to the activity
+            updateUserAndNextDest(selectedActivity.location);
+        } else if (itineraryData.dailyPlan.length > 0 && itineraryData.dailyPlan[0].activities.length > 0) {
+            // Journey started, no activity selected yet: point to the first activity
+            updateUserAndNextDest(itineraryData.dailyPlan[0].activities[0].location);
+        } else {
+            // Journey started but no activities: point to the main destination
+            updateUserAndNextDest(destination);
+        }
+    } else {
+        // Journey not started: point to the main destination city
+        updateUserAndNextDest(destination);
     }
     
-    handleJourneyState();
-
-  }, [journeyStarted, origin, destination]);
-
-
-  // Update markers for selected activity OR simulate journey
-  useEffect(() => {
-    const map = mapInstanceRef.current;
+    // Logic for simulation mode checkpoints
     const source = vectorSourceRef.current;
-    
-    if (!map || !source) return;
+    if (!source) return;
 
-    const clearActivityMarkers = () => {
-      const activityMarkers = source.getFeatures().filter(f => f.get('type') === 'activity' || f.get('type') === 'checkpoint');
-      activityMarkers.forEach(marker => source.removeFeature(marker));
-    }
+    const clearCheckpoints = () => {
+        const checkpoints = source.getFeatures().filter(f => f.get('type') === 'checkpoint');
+        checkpoints.forEach(marker => source.removeFeature(marker));
+    };
 
     const showAllCheckpoints = async () => {
-        clearActivityMarkers();
+        clearCheckpoints();
         const allCoords = [];
 
         for (const day of itineraryData.dailyPlan) {
@@ -348,47 +334,12 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
                 }
             }
         }
-        if (allCoords.length > 0) {
-            const lineString = new LineString(allCoords.map(c => fromLonLat(c)));
-            map.getView().fit(lineString.getExtent(), { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
-        }
-    };
-    
-    const updateSingleMarker = async () => {
-      clearActivityMarkers();
-      
-      if (!selectedActivity) return;
-      
-      const activityCoords = await fetchCoords(selectedActivity.location);
-      
-      if (activityCoords) {
-            const activityPosition = fromLonLat(activityCoords);
-            const activityFeature = new Feature({ geometry: new Point(activityPosition) });
-            activityFeature.set('type', 'activity');
-            activityFeature.setStyle(new Style({
-                image: new CircleStyle({
-                    radius: 8,
-                    fill: new Fill({ color: 'rgba(255, 138, 91, 0.7)'}),
-                    stroke: new Stroke({ color: '#FFFFFF', width: 2 })
-                })
-            }));
-            source.addFeature(activityFeature);
-            
-            map.getView().animate({ center: activityPosition, zoom: 15, duration: 1000 });
-      } else {
-          setError(`Could not find location: ${selectedActivity.location}`);
-          setTimeout(() => setError(null), 3000);
-      }
     };
 
     if (simulationStarted) {
         showAllCheckpoints();
     } else {
-        if (journeyStarted) {
-            updateSingleMarker();
-        } else {
-            clearActivityMarkers();
-        }
+        clearCheckpoints();
     }
 
   }, [selectedActivity, journeyStarted, simulationStarted, destination, itineraryData]);
@@ -406,3 +357,5 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
+
+    
