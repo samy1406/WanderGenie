@@ -18,6 +18,8 @@ import { AuthModal } from "./auth-modal";
 import { addDays } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { useTrip } from "@/context/trip-context";
+import { Button } from "./ui/button";
+import { Ticket } from "lucide-react";
 
 export type TripType = "oneway" | "roundtrip";
 type ViewState = 'PLAN' | 'BOOK';
@@ -57,30 +59,33 @@ export function TripPlanner() {
 
   useEffect(() => {
     if (selectedTrip) {
-      setItinerary(selectedTrip.itinerary);
-      setDestination(selectedTrip.destination);
-      setOrigin(selectedTrip.origin);
-      
-      const departureDate = new Date(selectedTrip.createdAt);
+        setItinerary(selectedTrip.itinerary);
+        setDestination(selectedTrip.destination);
+        setOrigin(selectedTrip.origin);
 
-      form.reset({
-        origin: selectedTrip.origin,
-        destination: selectedTrip.destination,
-        tripDuration: selectedTrip.itinerary.dailyPlan.length,
-        interests: selectedTrip.itinerary.travelTips, 
-        travelPreference: selectedTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
-        departureDate: departureDate,
-        returnDate: selectedTrip.itinerary.dailyPlan.length > 1 ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined,
-        tripType: selectedTrip.itinerary.dailyPlan.length > 1 ? 'roundtrip' : 'oneway'
-      });
-      setTripType(selectedTrip.itinerary.dailyPlan.length > 1 ? 'roundtrip' : 'oneway');
-      
-      setOutboundTravelOptions(null);
-      setReturnTravelOptions(null);
-      
-      setSelectedTrip(null); 
+        const departureDate = new Date(selectedTrip.createdAt);
+        const isRoundTrip = selectedTrip.itinerary.dailyPlan.length > 1;
+
+        form.reset({
+            origin: selectedTrip.origin,
+            destination: selectedTrip.destination,
+            tripDuration: selectedTrip.itinerary.dailyPlan.length,
+            interests: selectedTrip.itinerary.travelTips,
+            travelPreference: selectedTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
+            departureDate: departureDate,
+            returnDate: isRoundTrip ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined,
+            tripType: isRoundTrip ? 'roundtrip' : 'oneway',
+        });
+        setTripType(isRoundTrip ? 'roundtrip' : 'oneway');
+
+        // Since we are loading a plan, reset booking options and view
+        setOutboundTravelOptions(null);
+        setReturnTravelOptions(null);
+        setViewState('PLAN');
+
+        setSelectedTrip(null);
     }
-  }, [selectedTrip, setSelectedTrip, form]);
+}, [selectedTrip, setSelectedTrip, form]);
 
 
   // Update tripType in form when it changes using useEffect
@@ -104,6 +109,7 @@ export function TripPlanner() {
     setItinerary(null);
     setOutboundTravelOptions(null);
     setReturnTravelOptions(null);
+    setViewState('PLAN'); // Default to plan view first
     
     setDestination(values.destination);
     setOrigin(values.origin);
@@ -142,7 +148,6 @@ export function TripPlanner() {
 
       if (itineraryResult) {
         setItinerary(itineraryResult);
-        setViewState('BOOK');
       } else {
         throw new Error("The generated itinerary was empty.");
       }
@@ -278,17 +283,23 @@ export function TripPlanner() {
                     </div>
                 ) : itinerary && destination && origin ? (
                     <div className="space-y-8 h-full flex flex-col">
-                      {viewState === 'PLAN' && 
-                        <ItineraryDisplay 
-                          itineraryData={itinerary} 
-                          destination={destination} 
-                          origin={origin}
-                          onItineraryUpdate={setItinerary}
-                          onSaveTrip={handleSaveTrip}
-                          isSaved={isCurrentTripSaved()}
-                        />
-                      }
-                      {viewState === 'BOOK' && outboundTravelOptions && 
+                      {viewState === 'PLAN' ? (
+                        <>
+                          <div className="text-right">
+                             <Button onClick={() => setViewState('BOOK')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                <Ticket className="mr-2 h-4 w-4" /> Book Travel & Hotels
+                            </Button>
+                          </div>
+                          <ItineraryDisplay 
+                            itineraryData={itinerary} 
+                            destination={destination} 
+                            origin={origin}
+                            onItineraryUpdate={setItinerary}
+                            onSaveTrip={handleSaveTrip}
+                            isSaved={isCurrentTripSaved()}
+                          />
+                        </>
+                      ) : (
                         <TravelOptions 
                             outboundTravelOptions={outboundTravelOptions!} 
                             returnTravelOptions={returnTravelOptions}
@@ -296,7 +307,7 @@ export function TripPlanner() {
                             onHotelBooked={handleHotelBooking}
                             onBackToPlan={() => setViewState('PLAN')}
                         />
-                      }
+                      )}
                     </div>
                 ) : (
                     <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh]">

@@ -42,6 +42,7 @@ type BookingContextType = {
   setBookingOption: (option: BookingItem | null) => void;
   bookings: Booking[];
   addBooking: (booking: Booking) => void;
+  deleteBooking: (bookingId: string) => void;
   updateBookingInList: (updatedBooking: Booking) => void;
   getBookingById: (bookingId: string) => Booking | undefined;
   pendingBooking: Booking | null;
@@ -73,6 +74,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
   };
   
+  const deleteBooking = (bookingId: string) => {
+    const newBookings = bookings.filter(b => b.id !== bookingId);
+    setBookings(newBookings);
+    localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
+  };
+
   const updateBookingInList = (updatedBooking: Booking) => {
     const bookingIndex = bookings.findIndex(b => b.id === updatedBooking.id);
     if(bookingIndex !== -1) {
@@ -96,6 +103,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setBookingOption,
     bookings,
     addBooking,
+    deleteBooking,
     updateBookingInList,
     getBookingById,
     pendingBooking,
@@ -113,5 +121,3 @@ export function useBooking() {
   }
   return context;
 }
-
-    

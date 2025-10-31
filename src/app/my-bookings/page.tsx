@@ -12,16 +12,36 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
-import { User, Calendar, Plane, Hotel, IndianRupee } from 'lucide-react';
+import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle } from 'lucide-react';
 import type { Booking } from '@/context/booking-context';
 import { formatCurrency } from '@/lib/formatters';
 import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
 import { handleGenerateItinerary } from '@/app/actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
 
-function BookingCard({ booking, onItineraryUpdate }: { booking: Booking; onItineraryUpdate: (bookingId: string, itinerary: GeneratePersonalizedItineraryOutput) => void; }) {
+function BookingCard({ 
+  booking, 
+  onItineraryUpdate,
+  onCancelBooking
+}: { 
+  booking: Booking; 
+  onItineraryUpdate: (bookingId: string, itinerary: GeneratePersonalizedItineraryOutput) => void;
+  onCancelBooking: (bookingId: string) => void;
+}) {
   const { item, type } = booking;
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(booking.itinerary || null);
   const [isLoadingItinerary, setIsLoadingItinerary] = useState(false);
@@ -50,13 +70,13 @@ function BookingCard({ booking, onItineraryUpdate }: { booking: Booking; onItine
   if(itinerary) {
      return <ItineraryDisplay 
         itineraryData={itinerary}
-        destination={itinerary.dailyPlan[0]?.activities[0]?.location || 'Destination'}
+        destination={itinerary.dailyPlan[0]?.afternoon?.[0]?.location || 'Destination'}
         origin={'Your Location'} // This might need to be dynamic
         onItineraryUpdate={(newItinerary) => {
             setItinerary(newItinerary);
             onItineraryUpdate(booking.id, newItinerary);
         }}
-        user={null} // Pass user if needed for child components
+        showSaveButton={false}
      />
   }
 
@@ -93,15 +113,37 @@ function BookingCard({ booking, onItineraryUpdate }: { booking: Booking; onItine
                 ))}
                 </ul>
             </div>
-             <div>
+             <div className="flex flex-col items-end h-full justify-center gap-4">
                 {booking.type === 'travel' && !itinerary && (
-                     <div className="flex flex-col items-end h-full justify-center">
-                        <p className="text-sm text-muted-foreground mb-2">Ready to plan the details for this trip?</p>
+                     <>
+                        <p className="text-sm text-muted-foreground">Ready to plan the details for this trip?</p>
                         <Button onClick={generateItineraryForBooking} disabled={isLoadingItinerary}>
                            {isLoadingItinerary ? 'Generating...' : 'Generate Full Itinerary'}
                         </Button>
-                    </div>
+                    </>
                 )}
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" /> Cancel Booking
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center"><AlertTriangle className="mr-2 text-destructive" />Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently cancel your booking. 
+                            Cancellation is free for WanderGenie Beta. In a real app, policies would apply.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
+                            Yes, Cancel It
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
       </CardContent>
@@ -112,8 +154,9 @@ function BookingCard({ booking, onItineraryUpdate }: { booking: Booking; onItine
 
 export default function MyBookingsPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
-  const { bookings, updateBookingInList } = useBooking();
+  const { bookings, updateBookingInList, deleteBooking } = useBooking();
   const router = useRouter();
+  const { toast } = useToast();
   const [userBookings, setUserBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
@@ -132,6 +175,14 @@ export default function MyBookingsPage() {
     }
   }
 
+  const handleCancelBooking = (bookingId: string) => {
+    deleteBooking(bookingId);
+    toast({
+        title: "Booking Cancelled",
+        description: "Your booking has been successfully cancelled."
+    })
+  }
+
   if (isLoading || !isAuthenticated) {
     return <div className="text-center p-8">Loading...</div>;
   }
@@ -144,7 +195,12 @@ export default function MyBookingsPage() {
       {userBookings.length > 0 ? (
         <div className="space-y-6">
           {userBookings.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} onItineraryUpdate={handleItineraryUpdate}/>
+              <BookingCard 
+                key={booking.id} 
+                booking={booking} 
+                onItineraryUpdate={handleItineraryUpdate}
+                onCancelBooking={handleCancelBooking}
+              />
           ))}
         </div>
       ) : (
@@ -157,5 +213,3 @@ export default function MyBookingsPage() {
     </div>
   );
 }
-
-    
