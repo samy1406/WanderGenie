@@ -62,15 +62,11 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         queries.unshift(location.split(',')[0].trim()); 
     }
     
-    // Do not add destination to query, as it causes issues.
-    // queries.push(`${location}, ${destination}`);
     queries.push(`${location}, India`);
     
     if (location.includes(',')) {
         const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
         if (cityPart) queries.push(cityPart);
-    } else {
-        queries.push(destination);
     }
 
     const uniqueQueries = [...new Set(queries.filter(q => q))];
@@ -81,7 +77,6 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
             break; 
         }
     }
-    
 
     if (!data || data.length === 0) {
         console.error(`No coordinates found for "${location}" after all fallbacks.`);
@@ -273,7 +268,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     const nextDestFeature = nextDestinationFeatureRef.current;
     const userLocationFeature = userLocationFeatureRef.current;
 
-    if (!map || !nextDestFeature || !userLocationFeature) return;
+    if (!map || !nextDestFeature || !userLocationFeature || !itineraryData) return;
 
     const updateUserAndNextDest = async (nextLocationName: string) => {
         const nextDestCoords = await fetchCoords(nextLocationName);
@@ -364,5 +359,3 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
-
-    
