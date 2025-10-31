@@ -61,12 +61,16 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     if (location.includes(',')) {
         queries.unshift(location.split(',')[0].trim()); 
     }
-    queries.push(`${location}, ${destination}`);
+    
+    // Do not add destination to query, as it causes issues.
+    // queries.push(`${location}, ${destination}`);
     queries.push(`${location}, India`);
     
     if (location.includes(',')) {
         const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
         if (cityPart) queries.push(cityPart);
+    } else {
+        queries.push(destination);
     }
 
     const uniqueQueries = [...new Set(queries.filter(q => q))];
@@ -360,3 +364,5 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
+
+    
