@@ -56,18 +56,18 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 
     let data;
 
-    const queries = [
-        location,
-        `${location}, ${destination}`,
-    ];
+    const queries: string[] = [location];
     
     if (location.includes(',')) {
-        queries.unshift(location.split(',')[0].trim()); // Higher priority for simplified name
-        const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
-        if (cityPart && cityPart.toLowerCase() !== location.split(',')[0].trim().toLowerCase()) queries.push(cityPart);
+        queries.unshift(location.split(',')[0].trim()); 
     }
+    queries.push(`${location}, ${destination}`);
+    queries.push(`${location}, India`);
     
-    queries.push(`${location}, India`)
+    if (location.includes(',')) {
+        const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
+        if (cityPart) queries.push(cityPart);
+    }
 
     const uniqueQueries = [...new Set(queries.filter(q => q))];
 
@@ -290,19 +290,20 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         }
     };
     
-    let nextStop = destination; // Default to the main destination
+    let nextStop: string;
 
     if (journeyStarted) {
-        // If journey has started, the next stop is the selected activity
-        if (selectedActivity) {
-            nextStop = selectedActivity.location;
-        } else if (itineraryData.dailyPlan.length > 0 && itineraryData.dailyPlan[0].activities.length > 0) {
-            // Or the first activity if none is selected yet
-            nextStop = itineraryData.dailyPlan[0].activities[0].location;
-        }
+      if (selectedActivity) {
+        nextStop = selectedActivity.location;
+      } else if (itineraryData.dailyPlan.length > 0 && itineraryData.dailyPlan[0].activities.length > 0) {
+        nextStop = itineraryData.dailyPlan[0].activities[0].location;
+      } else {
+        nextStop = destination;
+      }
+    } else {
+      nextStop = destination;
     }
-    // If journey has NOT started, nextStop remains the main 'destination'
-
+    
     updateUserAndNextDest(nextStop);
     
     // Logic for simulation mode checkpoints
