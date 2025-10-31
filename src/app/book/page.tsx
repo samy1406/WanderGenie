@@ -25,6 +25,7 @@ import { handleBookingRequest, handlePaymentRequest } from '@/app/actions';
 import { formatCurrency } from '@/lib/formatters';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
+type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
 
 const passengerSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -108,25 +109,31 @@ export default function BookPage() {
         grandTotal: 0,
     };
 
-    const baseCost = bookingOption?.type === 'travel' ? (bookingOption.item as TravelOption).cost : 0;
-    const taxes = baseCost * 0.18; // Assume 18% tax
+    if (!bookingOption) return summary;
 
-    watchedPassengers.forEach(passenger => {
-        let passengerCost = 0;
-        if (passenger.age >= 12) {
-            summary.adults.count++;
-            passengerCost = baseCost;
-        } else if (passenger.age >= 2) {
-            summary.children.count++;
-            passengerCost = baseCost * 0.75; // 75% of adult fare for children
-        } else {
-            summary.infants.count++;
-            passengerCost = baseCost * 0.1; // 10% of adult fare for infants
-        }
-        summary.baseFare += passengerCost;
-    });
+    if (bookingOption.type === 'hotel') {
+        const hotelItem = bookingOption.item as HotelOption;
+        summary.baseFare = hotelItem.pricePerNight * watchedPassengers.length; 
+        summary.adults.count = watchedPassengers.length;
+    } else { // Travel option
+        const baseCost = (bookingOption.item as TravelOption).cost;
+        watchedPassengers.forEach(passenger => {
+            let passengerCost = 0;
+            if (passenger.age >= 12) {
+                summary.adults.count++;
+                passengerCost = baseCost;
+            } else if (passenger.age >= 2) {
+                summary.children.count++;
+                passengerCost = baseCost * 0.75;
+            } else {
+                summary.infants.count++;
+                passengerCost = baseCost * 0.1;
+            }
+            summary.baseFare += passengerCost;
+        });
+    }
 
-    summary.totalTaxes = summary.baseFare * 0.18; // 18% tax on total base fare
+    summary.totalTaxes = summary.baseFare * 0.18;
     summary.subTotal = summary.baseFare + summary.totalTaxes;
     summary.grandTotal = summary.subTotal - summary.discount;
 
@@ -171,7 +178,7 @@ export default function BookPage() {
     toast({ title: "Processing Booking...", description: "Please wait while we confirm your booking." });
 
     try {
-        const bookingReq = await handleBookingRequest({ item: 'Flight', details: (bookingOption.item as TravelOption).details });
+        const bookingReq = await handleBookingRequest({ item: bookingOption.type, details: bookingOption.type === 'travel' ? (bookingOption.item as TravelOption).details : (bookingOption.item as HotelOption).name });
         
         if (!bookingReq.success) {
             throw new Error("Failed to initiate booking with the provider.");
@@ -248,20 +255,21 @@ export default function BookPage() {
 
   const { item, type } = bookingOption;
 
-  const renderFlightDetails = () => {
-    if (type !== 'travel' || (item as TravelOption).mode !== 'Flight') return null;
-    const travelItem = item as TravelOption;
+  const renderBookingItemDetails = () => {
+    const title = type === 'travel' ? 'Flight Detail' : 'Hotel Detail';
+    const details = type === 'travel' 
+        ? `${(item as TravelOption).details} | ${(item as TravelOption).duration} | Economy`
+        : `${(item as HotelOption).name} | ${(item as HotelOption).rating} Stars`;
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Flight Detail</CardTitle>
+                <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="font-bold text-lg">{travelItem.details}</p>
-                        <p className="text-sm text-muted-foreground">{travelItem.duration} | 2+ stops | Economy</p>
+                        <p className="font-bold text-lg">{details}</p>
                     </div>
                 </div>
             </CardContent>
@@ -276,7 +284,7 @@ export default function BookPage() {
         <div className="lg:col-span-2 space-y-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    {renderFlightDetails()}
+                    {renderBookingItemDetails()}
 
                     <Card>
                         <CardHeader className="bg-purple-50 flex items-center gap-4 p-4 rounded-t-lg">
@@ -558,7 +566,7 @@ export default function BookPage() {
         <div className="lg:col-span-1 space-y-6">
           <Card className="sticky top-24">
             <CardHeader>
-              <CardTitle>Price Summary</CardTitle>
+              <CardTitle className="flex items-center"><IndianRupee className="mr-2 h-5 w-5" />Price Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
                 <div className="flex justify-between">
@@ -638,5 +646,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    

@@ -9,25 +9,29 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, CheckSquare, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot } from "lucide-react";
+import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
 import type { User } from '@/context/auth-context';
+import { useAuth } from "@/context/auth-context";
 
 type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
 
-const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, user }: { 
+const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, onSaveTrip, showSaveButton = true, isSaved = false }: { 
   itineraryData: GeneratePersonalizedItineraryOutput, 
   destination: string, 
   origin: string,
   onItineraryUpdate: (newItinerary: GeneratePersonalizedItineraryOutput) => void,
-  user: User | null
+  onSaveTrip?: () => void,
+  showSaveButton?: boolean,
+  isSaved?: boolean
 }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
   const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
+  const { user } = useAuth();
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [simulationStarted, setSimulationStarted] = useState(false);
@@ -88,6 +92,12 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 <CardDescription>A personalized plan for your adventure.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
+                {showSaveButton && onSaveTrip && (
+                    <Button variant="secondary" onClick={onSaveTrip} disabled={isSaved}>
+                        <Save className="mr-2 h-4 w-4" />
+                        {isSaved ? "Trip Saved" : "Save Trip"}
+                    </Button>
+                )}
                 {user?.email === 'admin@wandergenie.com' && (
                   <Button variant="secondary" onClick={handleToggleSimulation}>
                     <Bot className="mr-2 h-4 w-4" />
@@ -266,5 +276,3 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
 };
 
 export default ItineraryDisplay;
-
-    

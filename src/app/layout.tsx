@@ -1,9 +1,11 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { Header } from '@/components/header';
 import { BookingProvider } from '@/context/booking-context';
+import { TripProvider } from '@/context/trip-context';
 
 export const metadata: Metadata = {
   title: 'WanderGenie',
@@ -26,9 +28,11 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <BookingProvider>
           <AuthProvider>
-            <Header />
-            {children}
-            <Toaster />
+            <TripProvider>
+              <Header />
+              {children}
+              <Toaster />
+            </TripProvider>
           </AuthProvider>
         </BookingProvider>
       </body>

@@ -15,12 +15,17 @@ import { handleGenerateItinerary, handleGetTravelOptions } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { HeroSection } from "./hero-section";
 import { AuthModal } from "./auth-modal";
-import { differenceInDays, addDays, isSameDay } from 'date-fns';
+import { addDays } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
+import { useTrip } from "@/context/trip-context";
 
 export type TripType = "oneway" | "roundtrip";
 
 export function TripPlanner() {
+  const { toast } = useToast();
+  const { isAuthenticated, user, openAuthModal } = useAuth();
+  const { trips, addTrip, getTrip, selectedTrip, setSelectedTrip } = useTrip();
+
   const [itinerary, setItinerary] = useState<GeneratePersonalizedItineraryOutput | null>(null);
   const [outboundTravelOptions, setOutboundTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
   const [returnTravelOptions, setReturnTravelOptions] = useState<GetTravelOptionsOutput | null>(null);
@@ -29,10 +34,6 @@ export function TripPlanner() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tripType, setTripType] = useState<TripType>("oneway");
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  const isInitialRender = useRef(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,6 +50,20 @@ export function TripPlanner() {
       tripType: "oneway",
     },
   });
+
+  useEffect(() => {
+    if (selectedTrip) {
+      setItinerary(selectedTrip.itinerary);
+      setDestination(selectedTrip.destination);
+      setOrigin(selectedTrip.origin);
+      // You might want to fetch new travel options or load saved ones if available
+      setOutboundTravelOptions(null);
+      setReturnTravelOptions(null);
+      // Reset selected trip so it doesn't persist on subsequent visits to the home page
+      setSelectedTrip(null); 
+    }
+  }, [selectedTrip, setSelectedTrip]);
+
 
   // Update tripType in form when it changes using useEffect
   useEffect(() => {
@@ -170,8 +185,38 @@ export function TripPlanner() {
       description: `${hotelName} has been added to your plan.`,
     });
   };
-  
 
+  const handleSaveTrip = () => {
+    if (!isAuthenticated) {
+        openAuthModal('login');
+        toast({
+            title: "Login Required",
+            description: "Please log in to save your trip.",
+            variant: "destructive"
+        });
+        return;
+    }
+    if (itinerary && destination && origin) {
+        addTrip({
+            id: `trip_${Date.now()}`,
+            name: `Trip to ${destination}`,
+            itinerary,
+            destination,
+            origin,
+            createdAt: new Date().toISOString(),
+        });
+    }
+  };
+
+  const isCurrentTripSaved = () => {
+    if (!itinerary || trips.length === 0) return false;
+    // A simple check: if a trip with the same destination and very similar plan exists.
+    return trips.some(trip => 
+        trip.destination === destination &&
+        trip.itinerary.dailyPlan[0]?.title === itinerary.dailyPlan[0]?.title
+    );
+  };
+  
   return (
     <div className="flex flex-col">
         <HeroSection tripType={tripType} setTripType={setTripType} form={form}>
@@ -184,7 +229,7 @@ export function TripPlanner() {
             />
         </HeroSection>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-background p-4 md:p-8 rounded-lg -mt-20 relative z-10 shadow-lg space-y-8">
+            <div className="bg-background p-4 md:p-8 rounded-lg -mt-20 relative z-10 shadow-lg space-y-8 min-h-[40vh]">
                 {isLoading ? (
                     <div className="w-full h-96 flex items-center justify-center">
                         <div className="flex flex-col items-center gap-4">
@@ -192,19 +237,20 @@ export function TripPlanner() {
                             <p className="text-muted-foreground text-lg">Generating your adventure...</p>
                         </div>
                     </div>
-                ) : itinerary && destination && outboundTravelOptions && origin ? (
+                ) : itinerary && destination && origin ? (
                     <div className="space-y-8 h-full flex flex-col">
                         <ItineraryDisplay 
                           itineraryData={itinerary} 
                           destination={destination} 
                           origin={origin}
                           onItineraryUpdate={setItinerary}
-                          user={user}
+                          onSaveTrip={handleSaveTrip}
+                          isSaved={isCurrentTripSaved()}
                         />
                         <TravelOptions 
-                            outboundTravelOptions={outboundTravelOptions} 
+                            outboundTravelOptions={outboundTravelOptions!} 
                             returnTravelOptions={returnTravelOptions}
-                            hotelOptions={outboundTravelOptions.hotelOptions}
+                            hotelOptions={outboundTravelOptions!.hotelOptions}
                             onHotelBooked={handleHotelBooking}
                         />
                     </div>

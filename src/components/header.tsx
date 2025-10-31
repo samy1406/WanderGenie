@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { LayoutGrid, LogOut, Briefcase, User, Shield } from 'lucide-react';
+import { LayoutGrid, LogOut, Briefcase, User, Shield, Backpack } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function Header() {
@@ -30,16 +30,8 @@ export function Header() {
     return name.charAt(0).toUpperCase();
   };
 
-  const handleMyBookingsClick = () => {
-    router.push('/my-bookings');
-  }
-
-  const handleProfileClick = () => {
-    router.push('/profile');
-  }
-
-  const handleAdminClick = () => {
-    router.push('/admin');
+  const handleNavigation = (path: string) => {
+    router.push(path);
   }
 
   return (
@@ -72,16 +64,20 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {user?.email === 'admin@wandergenie.com' && (
-                  <DropdownMenuItem onClick={handleAdminClick}>
+                  <DropdownMenuItem onClick={() => handleNavigation('/admin')}>
                     <Shield className="mr-2 h-4 w-4" />
                     <span>Admin</span>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={handleMyBookingsClick}>
+                 <DropdownMenuItem onClick={() => handleNavigation('/my-trips')}>
+                  <Backpack className="mr-2 h-4 w-4" />
+                  <span>My Trips</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavigation('/my-bookings')}>
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>My Bookings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleProfileClick}>
+                <DropdownMenuItem onClick={() => handleNavigation('/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
