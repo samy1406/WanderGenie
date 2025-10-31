@@ -86,11 +86,11 @@ Create a detailed, day-by-day itinerary. Follow these critical instructions:
         - If arrival is 'afternoon' or 'evening', Day 1 should be light: check-in, then maybe a relaxed dinner or a short local walk.
         - If arrival is 'morning', Day 1 can be a fuller day.
 5.  **Activity Details**: Each activity object MUST have:
-    - `startTime` and `endTime`.
-    - `description` (wrap landmarks in double asterisks, e.g., **Eiffel Tower**).
-    - `location` (a specific, geocodable name like 'Eiffel Tower, Paris').
-    - A plausible Google Maps `link`.
-    - `travelInfo` (unless it's the last activity of the day).
+    - 'startTime' and 'endTime'.
+    - 'description' (wrap landmarks in double asterisks, e.g., **Eiffel Tower**).
+    - 'location' (a specific, geocodable name like 'Eiffel Tower, Paris').
+    - A plausible Google Maps 'link'.
+    - 'travelInfo' (unless it's the last activity of the day).
 6.  **Costs**: Provide an "estimatedCost" breakdown (total, accommodation, food, localTransport) in Indian Rupees (INR), reflecting the travel preference.
 7.  **Additional Info**: Include "thingsToCarry", "mustDo" activities, and "travelTips".
 
