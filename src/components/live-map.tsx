@@ -47,7 +47,8 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
                 console.error(`Failed to fetch from Nominatim for "${query}": ${response.statusText}`);
                 return null;
             }
-            return await response.json();
+            const data = await response.json();
+            return data;
         } catch (err: any) {
             console.error(`Error fetching coordinates for "${query}":`, err.message);
             return null;
@@ -56,35 +57,25 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 
     let data;
 
-    const queries: string[] = [location];
-    
+    // Create a set of unique queries to try for geocoding
+    const queries = new Set<string>();
+    queries.add(location);
     if (location.includes(',')) {
-        queries.unshift(location.split(',')[0].trim()); 
+        queries.add(location.split(',')[0].trim());
     }
-    
-    queries.push(`${location}, India`);
-    
-    if (location.includes(',')) {
-        const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
-        if (cityPart) queries.push(cityPart);
-    }
+    queries.add(`${location}, India`);
 
-    const uniqueQueries = [...new Set(queries.filter(q => q))];
-
-    for (const query of uniqueQueries) {
+    for (const query of queries) {
+        if (!query) continue;
         data = await search(query);
         if (data && data.length > 0) {
-            break; 
+            const { lat, lon } = data[0];
+            return [parseFloat(lon), parseFloat(lat)];
         }
     }
 
-    if (!data || data.length === 0) {
-        console.error(`No coordinates found for "${location}" after all fallbacks.`);
-        return null;
-    }
-
-    const { lat, lon } = data[0];
-    return [parseFloat(lon), parseFloat(lat)];
+    console.error(`No coordinates found for "${location}" after all fallbacks.`);
+    return null;
   };
 
 
@@ -167,19 +158,22 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     let isMounted = true;
     
     const initializeMap = async () => {
-      const [originCoords] = await Promise.all([
-        fetchCoords(origin)
+      // Fetch both origin and destination coordinates at the start
+      const [originCoords, destinationCoords] = await Promise.all([
+        fetchCoords(origin),
+        fetchCoords(destination)
       ]);
 
       if (!isMounted) return;
 
-      if (!originCoords) {
-        setError(`Could not find coordinates for origin.`);
+      if (!originCoords || !destinationCoords) {
+        setError(`Could not find coordinates for origin or destination.`);
         if (mapRef.current) mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground">Map data unavailable.</div>';
         return;
       }
       
       const from = fromLonLat(originCoords);
+      const to = fromLonLat(destinationCoords);
 
       const vectorSource = new VectorSource();
       vectorSourceRef.current = vectorSource;
@@ -199,8 +193,9 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
       userLocationFeature.set('type', 'user');
       userLocationFeatureRef.current = userLocationFeature;
       
+      // Initialize the destination marker at the correct destination coordinates
       const nextDestinationFeature = new Feature({
-          geometry: new Point(from), // Initially same as user
+          geometry: new Point(to),
       });
       nextDestinationFeature.setStyle(new Style({
           image: new CircleStyle({
@@ -220,6 +215,9 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         center: from,
         zoom: 10,
       });
+
+      const extent = new LineString([from, to]).getExtent();
+      view.fit(extent, { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
       
       const map = new Map({
         target: mapRef.current!,
@@ -242,7 +240,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         document.body.removeChild(adminPanel);
       }
     };
-  }, []); // Only run on initial mount
+  }, [origin, destination]); // Rerun if origin or destination changes
 
   // Admin logic effect
   useEffect(() => {
@@ -259,7 +257,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
             adminPanel.style.display = 'none';
         }
     }
-  }, [user, isAdminPanelBuilt, itineraryData, simulationStarted, origin, destination]);
+  }, [user, isAdminPanelBuilt, itineraryData, simulationStarted]);
 
 
   // Update map view and "next destination" marker based on journey state
@@ -299,11 +297,20 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
       } else {
         nextStop = destination;
       }
+      updateUserAndNextDest(nextStop);
     } else {
-      nextStop = destination;
+      // Before journey starts, the marker should be on the main destination city,
+      // which is already set during initialization. We only need to potentially refit the view.
+      if (nextDestFeature.getGeometry()) {
+        const userCoords = userLocationFeature.getGeometry()?.getCoordinates();
+        const destCoords = nextDestFeature.getGeometry()?.getCoordinates();
+        if (userCoords && destCoords) {
+            const view = map.getView();
+            const extent = new LineString([userCoords, destCoords]).getExtent();
+            view.fit(extent, { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
+        }
+      }
     }
-    
-    updateUserAndNextDest(nextStop);
     
     // Logic for simulation mode checkpoints
     const source = vectorSourceRef.current;
@@ -344,7 +351,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         clearCheckpoints();
     }
 
-  }, [selectedActivity, journeyStarted, simulationStarted, destination, origin, itineraryData]);
+  }, [selectedActivity, journeyStarted, simulationStarted, itineraryData]);
 
   return (
     <div className="relative w-full h-full">
@@ -359,3 +366,5 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
+
+    
