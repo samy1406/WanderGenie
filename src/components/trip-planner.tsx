@@ -56,13 +56,28 @@ export function TripPlanner() {
       setItinerary(selectedTrip.itinerary);
       setDestination(selectedTrip.destination);
       setOrigin(selectedTrip.origin);
-      // You might want to fetch new travel options or load saved ones if available
+      
+      const departureDate = new Date(selectedTrip.itinerary.dailyPlan[0]?.activities[0]?.description.includes('Check into') ? selectedTrip.createdAt : new Date());
+      const returnDate = selectedTrip.itinerary.dailyPlan.length > 1 ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined;
+
+      form.reset({
+        origin: selectedTrip.origin,
+        destination: selectedTrip.destination,
+        tripDuration: selectedTrip.itinerary.dailyPlan.length,
+        interests: selectedTrip.itinerary.travelTips, 
+        travelPreference: selectedTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
+        departureDate: departureDate,
+        returnDate: returnDate,
+        tripType: returnDate ? 'roundtrip' : 'oneway'
+      });
+      setTripType(returnDate ? 'roundtrip' : 'oneway');
+      
       setOutboundTravelOptions(null);
       setReturnTravelOptions(null);
-      // Reset selected trip so it doesn't persist on subsequent visits to the home page
+      
       setSelectedTrip(null); 
     }
-  }, [selectedTrip, setSelectedTrip]);
+  }, [selectedTrip, setSelectedTrip, form]);
 
 
   // Update tripType in form when it changes using useEffect
@@ -247,12 +262,12 @@ export function TripPlanner() {
                           onSaveTrip={handleSaveTrip}
                           isSaved={isCurrentTripSaved()}
                         />
-                        <TravelOptions 
+                        {outboundTravelOptions && <TravelOptions 
                             outboundTravelOptions={outboundTravelOptions!} 
                             returnTravelOptions={returnTravelOptions}
                             hotelOptions={outboundTravelOptions!.hotelOptions}
                             onHotelBooked={handleHotelBooking}
-                        />
+                        />}
                     </div>
                 ) : (
                     <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh]">
