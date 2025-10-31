@@ -5,7 +5,7 @@ import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
-import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble, IndianRupee } from "lucide-react";
+import { ArrowRight, Plane, Train, Bus, Clock, Wallet, Armchair, Building, Star, BedDouble, IndianRupee, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import React, from "react";
 import { FormatBoldText } from "./format-bold-text";
@@ -75,12 +75,14 @@ const TravelOptions = ({
     outboundTravelOptions, 
     returnTravelOptions, 
     hotelOptions, 
-    onHotelBooked 
+    onHotelBooked,
+    onBackToPlan 
 }: { 
     outboundTravelOptions: GetTravelOptionsOutput, 
     returnTravelOptions: GetTravelOptionsOutput | null, 
     hotelOptions: GetTravelOptionsOutput['hotelOptions'],
-    onHotelBooked: (hotelName: string) => void
+    onHotelBooked: (hotelName: string) => void,
+    onBackToPlan: () => void
 }) => {
     const [showAllTransport, setShowAllTransport] = React.useState(false);
     const hasMultipleOptions = React.useMemo(() => {
@@ -90,9 +92,15 @@ const TravelOptions = ({
 
     return (
         <Card className="shadow-lg bg-card">
-            <CardHeader>
-                <CardTitle className="text-3xl">Travel & Booking</CardTitle>
-                <CardDescription>Here are some options to get you to your destination and back.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="text-3xl">Travel & Booking</CardTitle>
+                    <CardDescription>Here are some options to get you to your destination and back.</CardDescription>
+                </div>
+                 <Button variant="outline" onClick={onBackToPlan}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Trip Plan
+                </Button>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="transport" className="w-full">

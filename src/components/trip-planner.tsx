@@ -20,6 +20,7 @@ import { useAuth } from "@/context/auth-context";
 import { useTrip } from "@/context/trip-context";
 
 export type TripType = "oneway" | "roundtrip";
+type ViewState = 'PLAN' | 'BOOK';
 
 export function TripPlanner() {
   const { toast } = useToast();
@@ -34,6 +35,9 @@ export function TripPlanner() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tripType, setTripType] = useState<TripType>("oneway");
+  const [viewState, setViewState] = useState<ViewState>('PLAN');
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -138,6 +142,7 @@ export function TripPlanner() {
 
       if (itineraryResult) {
         setItinerary(itineraryResult);
+        setViewState('BOOK');
       } else {
         throw new Error("The generated itinerary was empty.");
       }
@@ -163,6 +168,10 @@ export function TripPlanner() {
       });
     } finally {
       setIsLoading(false);
+      // Scroll to results after a short delay to allow rendering
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   }
 
@@ -172,26 +181,41 @@ export function TripPlanner() {
     // Create a deep copy to avoid direct state mutation
     const newItinerary = JSON.parse(JSON.stringify(itinerary));
   
-    const dayOneActivities = newItinerary.dailyPlan[0]?.activities;
-    if (dayOneActivities && dayOneActivities.length > 0) {
-      // Find the first activity that mentions "accommodation"
-      const accommodationActivityIndex = dayOneActivities.findIndex((activity: any) =>
-        activity.description.toLowerCase().includes('accommodation')
-      );
-  
-      const newActivity = {
-        description: `Check into **${hotelName}**`,
-        location: `${hotelName}, ${destination}`, // Provide city context for better geocoding
-        link: `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`
-      };
-  
-      if (accommodationActivityIndex !== -1) {
-        // Replace the existing accommodation activity
-        dayOneActivities[accommodationActivityIndex] = newActivity;
-      } else {
-        // If not found for some reason, prepend it to the day's activities
-        dayOneActivities.unshift(newActivity);
-      }
+    // Smartly find and replace or add the check-in activity
+    let activityReplaced = false;
+
+    for (const day of newItinerary.dailyPlan) {
+        for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
+            if (day[timeSlot]) {
+                const accommodationActivityIndex = day[timeSlot].findIndex((activity: any) =>
+                    activity.description.toLowerCase().includes('accommodation') ||
+                    activity.description.toLowerCase().includes('hotel')
+                );
+                
+                if (accommodationActivityIndex !== -1) {
+                    day[timeSlot][accommodationActivityIndex].description = `Check into **${hotelName}**`;
+                    day[timeSlot][accommodationActivityIndex].location = `${hotelName}, ${destination}`;
+                    day[timeSlot][accommodationActivityIndex].link = `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`;
+                    activityReplaced = true;
+                    break;
+                }
+            }
+        }
+        if(activityReplaced) break;
+    }
+
+    if (!activityReplaced && newItinerary.dailyPlan[0]) {
+        // If no check-in activity was found, prepend it to the first day's morning activities
+        const dayOneMorning = newItinerary.dailyPlan[0].morning || [];
+        dayOneMorning.unshift({
+            startTime: "2:00 PM",
+            endTime: "3:00 PM",
+            description: `Check into **${hotelName}**`,
+            location: `${hotelName}, ${destination}`,
+            link: `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${destination}`)}`,
+            travelInfo: "Welcome to your hotel!"
+        });
+        newItinerary.dailyPlan[0].morning = dayOneMorning;
     }
   
     setItinerary(newItinerary);
@@ -243,7 +267,7 @@ export function TripPlanner() {
               setTripType={setTripType}
             />
         </HeroSection>
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main ref={resultsRef} className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-background p-4 md:p-8 rounded-lg -mt-20 relative z-10 shadow-lg space-y-8 min-h-[40vh]">
                 {isLoading ? (
                     <div className="w-full h-96 flex items-center justify-center">
@@ -254,6 +278,7 @@ export function TripPlanner() {
                     </div>
                 ) : itinerary && destination && origin ? (
                     <div className="space-y-8 h-full flex flex-col">
+                      {viewState === 'PLAN' && 
                         <ItineraryDisplay 
                           itineraryData={itinerary} 
                           destination={destination} 
@@ -262,12 +287,16 @@ export function TripPlanner() {
                           onSaveTrip={handleSaveTrip}
                           isSaved={isCurrentTripSaved()}
                         />
-                        {outboundTravelOptions && <TravelOptions 
+                      }
+                      {viewState === 'BOOK' && outboundTravelOptions && 
+                        <TravelOptions 
                             outboundTravelOptions={outboundTravelOptions!} 
                             returnTravelOptions={returnTravelOptions}
                             hotelOptions={outboundTravelOptions!.hotelOptions}
                             onHotelBooked={handleHotelBooking}
-                        />}
+                            onBackToPlan={() => setViewState('PLAN')}
+                        />
+                      }
                     </div>
                 ) : (
                     <div className="w-full h-full bg-card rounded-lg flex items-center justify-center p-8 min-h-[40vh]">

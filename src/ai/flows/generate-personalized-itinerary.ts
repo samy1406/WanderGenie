@@ -78,8 +78,8 @@ const generatePersonalizedItineraryPrompt = ai.definePrompt({
 Create a detailed, day-by-day itinerary. Follow these critical instructions:
 
 1.  **Pacing is Key**: Do NOT cram too many activities into one day. A relaxed pace of 2-3 main activities is ideal. People want to enjoy the places, not rush.
-2.  **Account for Travel Time**: For each activity, include a "travelInfo" field estimating the time and mode of travel to the NEXT activity. This is crucial for a realistic plan.
-3.  **Structure by Time of Day**: Organize each day's plan into "morning", "afternoon", and "evening" blocks. "night" is optional. Each block should contain an array of activities.
+2.  **Account for Travel Time**: For each activity, include a 'travelInfo' field estimating the time and mode of travel to the NEXT activity. This is crucial for a realistic plan.
+3.  **Structure by Time of Day**: For EVERY day in the trip, you MUST provide well-structured plans for 'morning', 'afternoon', and 'evening' blocks. 'night' is optional. Each block must contain an array of activities. Do not leave any day's plan incomplete.
 4.  **Smart Day 1 Plan**:
     - The very first activity of the trip must be checking into the accommodation. The description should reflect the travel preference (e.g., 'Check into your budget-friendly hotel').
     - **Crucially, adjust the Day 1 schedule based on the arrival time.**
@@ -91,8 +91,8 @@ Create a detailed, day-by-day itinerary. Follow these critical instructions:
     - 'location' (a specific, geocodable name like 'Eiffel Tower, Paris').
     - A plausible Google Maps 'link'.
     - 'travelInfo' (unless it's the last activity of the day).
-6.  **Costs**: Provide an "estimatedCost" breakdown (total, accommodation, food, localTransport) in Indian Rupees (INR), reflecting the travel preference.
-7.  **Additional Info**: Include "thingsToCarry", "mustDo" activities, and "travelTips".
+6.  **Costs**: Provide an 'estimatedCost' breakdown (total, accommodation, food, localTransport) in Indian Rupees (INR), reflecting the travel preference.
+7.  **Additional Info**: Include 'thingsToCarry', 'mustDo' activities, and 'travelTips'.
 
 Output the entire plan as a single, valid JSON object.
 `,
