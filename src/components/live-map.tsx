@@ -247,15 +247,18 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 
   // Admin logic effect
   useEffect(() => {
-    if (user?.email === 'admin@wandergenie.com' && itineraryData) {
-      AppLocationService.startSimulation();
-      if (!isAdminPanelBuilt) {
-        buildAdminPanel();
-      }
-    }
     const adminPanel = document.getElementById('admin-test-panel');
-    if (adminPanel) {
-      adminPanel.style.display = simulationStarted ? 'block' : 'none';
+    if (user?.email === 'admin@wandergenie.com' && itineraryData) {
+        if (simulationStarted) {
+            AppLocationService.startSimulation();
+            if (!isAdminPanelBuilt) {
+                buildAdminPanel();
+            } else if(adminPanel) {
+                adminPanel.style.display = 'block';
+            }
+        } else if (adminPanel) {
+            adminPanel.style.display = 'none';
+        }
     }
   }, [user, isAdminPanelBuilt, itineraryData, simulationStarted, origin, destination]);
 
@@ -287,21 +290,20 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         }
     };
     
+    let nextStop = destination; // Default to the main destination
+
     if (journeyStarted) {
-        if(selectedActivity){
-            // Journey started and an activity is selected: point to the activity
-            updateUserAndNextDest(selectedActivity.location);
+        // If journey has started, the next stop is the selected activity
+        if (selectedActivity) {
+            nextStop = selectedActivity.location;
         } else if (itineraryData.dailyPlan.length > 0 && itineraryData.dailyPlan[0].activities.length > 0) {
-            // Journey started, no activity selected yet: point to the first activity
-            updateUserAndNextDest(itineraryData.dailyPlan[0].activities[0].location);
-        } else {
-            // Journey started but no activities: point to the main destination
-            updateUserAndNextDest(destination);
+            // Or the first activity if none is selected yet
+            nextStop = itineraryData.dailyPlan[0].activities[0].location;
         }
-    } else {
-        // Journey not started: point to the main destination city
-        updateUserAndNextDest(destination);
     }
+    // If journey has NOT started, nextStop remains the main 'destination'
+
+    updateUserAndNextDest(nextStop);
     
     // Logic for simulation mode checkpoints
     const source = vectorSourceRef.current;
@@ -342,7 +344,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         clearCheckpoints();
     }
 
-  }, [selectedActivity, journeyStarted, simulationStarted, destination, itineraryData]);
+  }, [selectedActivity, journeyStarted, simulationStarted, destination, origin, itineraryData]);
 
   return (
     <div className="relative w-full h-full">
