@@ -64,7 +64,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     if (location.includes(',')) {
         queries.unshift(location.split(',')[0].trim()); // Higher priority for simplified name
         const cityPart = location.substring(location.lastIndexOf(',') + 1).trim();
-        if (cityPart) queries.push(cityPart);
+        if (cityPart && cityPart.toLowerCase() !== location.split(',')[0].trim().toLowerCase()) queries.push(cityPart);
     }
     
     queries.push(`${location}, India`)
@@ -357,5 +357,3 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
-
-    
