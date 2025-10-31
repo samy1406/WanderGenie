@@ -57,8 +57,7 @@ export function TripPlanner() {
       setDestination(selectedTrip.destination);
       setOrigin(selectedTrip.origin);
       
-      const departureDate = new Date(selectedTrip.itinerary.dailyPlan[0]?.activities[0]?.description.includes('Check into') ? selectedTrip.createdAt : new Date());
-      const returnDate = selectedTrip.itinerary.dailyPlan.length > 1 ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined;
+      const departureDate = new Date(selectedTrip.createdAt);
 
       form.reset({
         origin: selectedTrip.origin,
@@ -67,10 +66,10 @@ export function TripPlanner() {
         interests: selectedTrip.itinerary.travelTips, 
         travelPreference: selectedTrip.itinerary.estimatedCost.total < 20000 ? 'budget' : 'comfort',
         departureDate: departureDate,
-        returnDate: returnDate,
-        tripType: returnDate ? 'roundtrip' : 'oneway'
+        returnDate: selectedTrip.itinerary.dailyPlan.length > 1 ? addDays(departureDate, selectedTrip.itinerary.dailyPlan.length) : undefined,
+        tripType: selectedTrip.itinerary.dailyPlan.length > 1 ? 'roundtrip' : 'oneway'
       });
-      setTripType(returnDate ? 'roundtrip' : 'oneway');
+      setTripType(selectedTrip.itinerary.dailyPlan.length > 1 ? 'roundtrip' : 'oneway');
       
       setOutboundTravelOptions(null);
       setReturnTravelOptions(null);
@@ -111,6 +110,7 @@ export function TripPlanner() {
         tripDuration: values.tripDuration,
         interests: values.interests,
         travelPreference: values.travelPreference,
+        arrivalTime: values.arrivalTime,
       });
 
       const outboundOptionsPromise = handleGetTravelOptions({

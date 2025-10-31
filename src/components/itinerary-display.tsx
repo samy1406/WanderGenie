@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save } from "lucide-react";
+import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save, Clock, Sunrise, Sun, Sunset } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
@@ -18,7 +18,46 @@ import { formatCurrency } from "@/lib/formatters";
 import type { User } from '@/context/auth-context';
 import { useAuth } from "@/context/auth-context";
 
-type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
+type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
+
+const ActivityList = ({ activities, journeyStarted, selectedActivity, onActivitySelect }: { activities: Activity[], journeyStarted: boolean, selectedActivity: Activity | null, onActivitySelect: (activity: Activity) => void }) => {
+  if (!activities || activities.length === 0) return null;
+
+  return (
+    <ul className="space-y-1 text-sm text-foreground/80">
+      {activities.map((activity, actIndex) => (
+        <li key={actIndex}
+          onClick={() => journeyStarted && onActivitySelect(activity)}
+          className={cn(
+            "p-2 rounded-md transition-colors",
+            journeyStarted && "cursor-pointer hover:bg-primary/10",
+            selectedActivity?.description === activity.description && journeyStarted && "bg-primary/20"
+          )}
+        >
+          <div className="flex items-start">
+             <MapPin className={cn(
+                "mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent",
+                selectedActivity?.description === activity.description && journeyStarted && "text-primary animate-pulse"
+                )} />
+             <div className="flex-1">
+                <div className="flex justify-between items-center">
+                    <span className="font-semibold"><FormatBoldText text={activity.description} /></span>
+                    <span className="text-xs text-muted-foreground flex items-center"><Clock className="mr-1 h-3 w-3"/>{activity.startTime} - {activity.endTime}</span>
+                </div>
+                 <a href={activity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary text-xs">
+                    <Link className="h-3 w-3 mr-1" /> View on Map
+                </a>
+             </div>
+          </div>
+          {activity.travelInfo && (
+            <p className="pl-7 mt-1 text-xs text-muted-foreground italic border-l-2 border-dashed border-accent ml-2 pl-3">{activity.travelInfo}</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 
 const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, onSaveTrip, showSaveButton = true, isSaved = false }: { 
   itineraryData: GeneratePersonalizedItineraryOutput, 
@@ -30,7 +69,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   isSaved?: boolean
 }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
-  const firstActivity = dailyPlan.length > 0 && dailyPlan[0].activities.length > 0 ? dailyPlan[0].activities[0].description : "visit the city center";
+  const firstActivityDescription = dailyPlan[0]?.morning?.[0]?.description ?? dailyPlan[0]?.afternoon?.[0]?.description ?? "visit the city center";
   const { user } = useAuth();
   
   const [journeyStarted, setJourneyStarted] = useState(false);
@@ -45,8 +84,9 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
     if (isStarting) {
       if (dailyPlan.length > 0) {
         setActiveDay("day-0");
-        if (dailyPlan[0].activities.length > 0) {
-            setSelectedActivity(dailyPlan[0].activities[0]);
+        const firstActivity = dailyPlan[0].morning?.[0] ?? dailyPlan[0].afternoon?.[0];
+        if (firstActivity) {
+            setSelectedActivity(firstActivity);
         }
       }
       console.log("Journey started!");
@@ -62,25 +102,44 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   }
 
   const handleSuggestionAccepted = (newActivityDescription: string) => {
+    // This logic might need to be more robust to handle which activity is being replaced.
+    // For now, it replaces the currently selected activity.
+    if (!selectedActivity) return;
+
     const newItinerary = JSON.parse(JSON.stringify(itineraryData));
     
-    if (newItinerary.dailyPlan.length > 0 && newItinerary.dailyPlan[0].activities.length > 0) {
-      const firstDayActivities = newItinerary.dailyPlan[0].activities;
-      const updatedActivity = {
-        ...firstDayActivities[0],
-        description: newActivityDescription,
-        location: newActivityDescription.split('**')[1] || newActivityDescription
-      };
-      
-      firstDayActivities[0] = updatedActivity;
-      
-      if (selectedActivity?.description === firstActivity) {
-        setSelectedActivity(updatedActivity);
-      }
+    let activityFoundAndReplaced = false;
+    for (const day of newItinerary.dailyPlan) {
+        for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
+            if (day[timeSlot]) {
+                const actIndex = day[timeSlot].findIndex((act: Activity) => act.description === selectedActivity.description);
+                if (actIndex !== -1) {
+                    const updatedActivity = {
+                        ...day[timeSlot][actIndex],
+                        description: newActivityDescription,
+                        location: newActivityDescription.split('**')[1] || newActivityDescription
+                    };
+                    day[timeSlot][actIndex] = updatedActivity;
+                    setSelectedActivity(updatedActivity);
+                    activityFoundAndReplaced = true;
+                    break;
+                }
+            }
+        }
+        if (activityFoundAndReplaced) break;
+    }
 
-      onItineraryUpdate(newItinerary);
+    if (activityFoundAndReplaced) {
+        onItineraryUpdate(newItinerary);
     }
   };
+
+  const allActivities = dailyPlan.flatMap(day => [
+      ...(day.morning || []),
+      ...(day.afternoon || []),
+      ...(day.evening || []),
+      ...(day.night || [])
+  ]);
 
 
   return (
@@ -104,7 +163,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                     {simulationStarted ? "End Simulation" : "Simulate Journey"}
                   </Button>
                 )}
-                {journeyStarted && <SuggestionModal currentPlan={firstActivity} location={destination} onSuggestionAccepted={handleSuggestionAccepted} />}
+                {journeyStarted && <SuggestionModal currentPlan={selectedActivity?.description || firstActivityDescription} location={destination} onSuggestionAccepted={handleSuggestionAccepted} />}
                 <Button onClick={handleToggleJourney}>
                     {journeyStarted ? (
                         <><StopCircle className="mr-2 h-4 w-4" /> End Journey</>
@@ -144,30 +203,29 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                     {day.title}
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pl-4 border-l-2 border-accent ml-4">
-                  <ul className="space-y-1 text-sm text-foreground/80">
-                    {day.activities.map((activity, actIndex) => (
-                        <li key={actIndex} 
-                            onClick={() => journeyStarted && setSelectedActivity(activity)}
-                            className={cn(
-                                "flex items-start p-2 rounded-md transition-colors",
-                                journeyStarted && "cursor-pointer hover:bg-primary/10",
-                                selectedActivity?.description === activity.description && journeyStarted && "bg-primary/20"
-                            )}
-                        >
-                            <MapPin className={cn(
-                                "mr-3 mt-1 h-4 w-4 flex-shrink-0 text-accent",
-                                selectedActivity?.description === activity.description && journeyStarted && "text-primary animate-pulse"
-                                )} />
-                            <span className="flex-1">
-                                <FormatBoldText text={activity.description} />
-                                <a href={activity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary/80 hover:text-primary ml-2">
-                                    <Link className="h-3 w-3 mr-1" />
-                                </a>
-                            </span>
-                        </li>
-                    ))}
-                  </ul>
+                <AccordionContent className="pl-4 border-l-2 border-accent ml-4 space-y-4">
+                  
+                  {day.morning && day.morning.length > 0 && (
+                    <div className="space-y-2">
+                        <h4 className="font-semibold flex items-center text-muted-foreground"><Sunrise className="mr-2 h-4 w-4" /> Morning</h4>
+                        <ActivityList activities={day.morning} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                    </div>
+                  )}
+
+                  {day.afternoon && day.afternoon.length > 0 && (
+                     <div className="space-y-2">
+                        <h4 className="font-semibold flex items-center text-muted-foreground"><Sun className="mr-2 h-4 w-4" /> Afternoon</h4>
+                        <ActivityList activities={day.afternoon} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                    </div>
+                  )}
+
+                   {day.evening && day.evening.length > 0 && (
+                     <div className="space-y-2">
+                        <h4 className="font-semibold flex items-center text-muted-foreground"><Sunset className="mr-2 h-4 w-4" /> Evening</h4>
+                        <ActivityList activities={day.evening} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                    </div>
+                  )}
+
                 </AccordionContent>
               </AccordionItem>
             ))}

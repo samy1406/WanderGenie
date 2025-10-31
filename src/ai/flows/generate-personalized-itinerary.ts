@@ -14,15 +14,21 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ActivitySchema = z.object({
+  startTime: z.string().describe("The suggested start time for the activity (e.g., '10:00 AM')."),
+  endTime: z.string().describe("The suggested end time for the activity (e.g., '1:00 PM')."),
   description: z.string().describe("The description of the activity. Specific place names or landmarks should be wrapped in double asterisks (e.g., 'Visit the **Eiffel Tower**')."),
   location: z.string().describe("The specific name of the landmark, park, or restaurant for geocoding (e.g., 'Eiffel Tower, Paris' or 'Central Park, New York')."),
   link: z.string().url().describe("A plausible Google Maps URL for the activity location."),
+  travelInfo: z.string().optional().describe("Brief info on traveling to the next activity, including estimated time (e.g., 'Approx. 20-min taxi ride to the next stop.')."),
 });
 
 const DayPlanSchema = z.object({
   day: z.number().describe("The day number of the plan."),
   title: z.string().describe("A creative and short title for the day's activities."),
-  activities: z.array(ActivitySchema).describe("A list of activities for the day, each with a description and a link."),
+  morning: z.array(ActivitySchema).optional().describe("Activities planned for the morning (approx. 9 AM - 12 PM)."),
+  afternoon: z.array(ActivitySchema).optional().describe("Activities planned for the afternoon (approx. 12 PM - 5 PM)."),
+  evening: z.array(ActivitySchema).optional().describe("Activities planned for the evening (approx. 5 PM - 9 PM)."),
+  night: z.array(ActivitySchema).optional().describe("Optional activities for the night (after 9 PM)."),
 });
 
 const EstimatedCostSchema = z.object({
@@ -37,11 +43,12 @@ const GeneratePersonalizedItineraryInputSchema = z.object({
   tripDuration: z.number().describe('The duration of the trip in days.'),
   interests: z.string().describe('A description of the user\'s interests for the trip.'),
   travelPreference: z.enum(["budget", "comfort", "speed"]).describe("The user's travel preference."),
+  arrivalTime: z.string().optional().describe("The user's preferred arrival time at the destination (e.g., 'morning', 'afternoon', 'evening')."),
 });
 export type GeneratePersonalizedItineraryInput = z.infer<typeof GeneratePersonalizedItineraryInputSchema>;
 
 const GeneratePersonalizedItineraryOutputSchema = z.object({
-  dailyPlan: z.array(DayPlanSchema).describe("A day-by-day itinerary."),
+  dailyPlan: z.array(DayPlanSchema).describe("A day-by-day itinerary, structured by time of day."),
   thingsToCarry: z.array(z.string()).describe("A list of essential items to carry for the trip."),
   mustDo: z.array(z.string()).describe("A list of must-do activities or must-visit places at the destination. Wrap place names in double asterisks."),
   travelTips: z.string().describe("General travel tips for the destination."),
@@ -58,24 +65,36 @@ const generatePersonalizedItineraryPrompt = ai.definePrompt({
   input: {schema: GeneratePersonalizedItineraryInputSchema},
   output: {schema: GeneratePersonalizedItineraryOutputSchema, format: 'json'},
   model: 'googleai/gemini-2.5-flash',
-  prompt: `You are a travel expert. Generate a personalized, day-by-day travel itinerary based on the following information:
+  prompt: `You are a travel expert creating a realistic, enjoyable, and well-paced travel itinerary.
 
-Destination: {{{destination}}}
-Trip Duration: {{{tripDuration}}} days
-Interests: {{{interests}}}
-Travel Preference: {{{travelPreference}}}
+**User Requirements:**
+- Destination: {{{destination}}}
+- Trip Duration: {{{tripDuration}}} days
+- Interests: {{{interests}}}
+- Travel Preference: {{{travelPreference}}}
+- Arrival Time on Day 1: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} Not specified {{/if}}
 
-Provide a detailed itinerary.
-For the very first activity on Day 1, create a generic "Check into your accommodation" activity, using the user's travel preference in the description (e.g., 'Check into your budget-friendly accommodation'). For its location, just use the destination city name.
+**Your Task:**
+Create a detailed, day-by-day itinerary. Follow these critical instructions:
 
-For all other activities, you MUST provide a description, a specific 'location' string for geocoding (like 'Eiffel Tower, Paris'), and a plausible Google Maps link (e.g., https://maps.google.com/?q=...).
-Also include a list of "things to carry", "must-do" activities, and general "travel tips".
-Finally, provide an "estimatedCost" breakdown for the trip, including total, accommodation, food, and localTransport. The costs should reflect the user's travel preference. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR).
+1.  **Pacing is Key**: Do NOT cram too many activities into one day. A relaxed pace of 2-3 main activities is ideal. People want to enjoy the places, not rush.
+2.  **Account for Travel Time**: For each activity, include a "travelInfo" field estimating the time and mode of travel to the NEXT activity. This is crucial for a realistic plan.
+3.  **Structure by Time of Day**: Organize each day's plan into "morning", "afternoon", and "evening" blocks. "night" is optional. Each block should contain an array of activities.
+4.  **Smart Day 1 Plan**:
+    - The very first activity of the trip must be checking into the accommodation. The description should reflect the travel preference (e.g., 'Check into your budget-friendly hotel').
+    - **Crucially, adjust the Day 1 schedule based on the arrival time.**
+        - If arrival is 'afternoon' or 'evening', Day 1 should be light: check-in, then maybe a relaxed dinner or a short local walk.
+        - If arrival is 'morning', Day 1 can be a fuller day.
+5.  **Activity Details**: Each activity object MUST have:
+    - `startTime` and `endTime`.
+    - `description` (wrap landmarks in double asterisks, e.g., **Eiffel Tower**).
+    - `location` (a specific, geocodable name like 'Eiffel Tower, Paris').
+    - A plausible Google Maps `link`.
+    - `travelInfo` (unless it's the last activity of the day).
+6.  **Costs**: Provide an "estimatedCost" breakdown (total, accommodation, food, localTransport) in Indian Rupees (INR), reflecting the travel preference.
+7.  **Additional Info**: Include "thingsToCarry", "mustDo" activities, and "travelTips".
 
-IMPORTANT: In the activity descriptions and must-do list, wrap any specific place names or landmarks in double asterisks to mark them as bold (e.g., 'Visit the **Eiffel Tower**' or '**Golden Gate Bridge**').
-
-Structure the output as a JSON object.
-The dailyPlan should be an array of objects, each with a day number, title, and an 'activities' array of objects. Each activity object must have a 'description', a 'location', and a 'link'.
+Output the entire plan as a single, valid JSON object.
 `,
 });
 
