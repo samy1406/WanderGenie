@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee, CaseUpper, ShieldQuestion } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee, CaseUpper, ShieldQuestion, ArrowLeft } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -82,7 +82,7 @@ const PLATFORM_FEES = {
 
 export default function BookPage() {
   const router = useRouter();
-  const { bookingOption, addBookingAndSaveTrip, setPendingBooking, bookings, getBookingsForTrip } = useBooking();
+  const { bookingOption, addBookingAndSaveTrip, setPendingBooking, getBookingsForTrip } = useBooking();
   const { currentTrip } = useTrip();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
@@ -353,7 +353,7 @@ export default function BookPage() {
   const { item, type } = bookingOption;
 
   const renderBookingItemDetails = () => {
-    const title = type === 'travel' ? 'Flight Detail' : 'Hotel Detail';
+    const title = type === 'travel' ? 'Travel Detail' : 'Hotel Detail';
     const details = type === 'travel' 
         ? `${(item as TravelOption).details} | ${(item as TravelOption).duration} | Economy`
         : `${(item as HotelOption).name} | ${(item as HotelOption).rating} Stars`;
@@ -377,6 +377,11 @@ export default function BookPage() {
   return (
     <>
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50">
+      <div className="flex justify-start mb-4">
+        <Button variant="outline" onClick={() => router.push('/')}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+        </Button>
+      </div>
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
             <Form {...form}>
@@ -794,7 +799,7 @@ export default function BookPage() {
                         <div key={code} className="flex justify-between items-center text-sm p-2 bg-secondary/50 rounded-md">
                             <div>
                                 <p className="font-semibold">{code}</p>
-                                <p className="text-muted-foreground">{description}</p>
+                                <p className="text-muted-foreground">{description.replace('₹', '')}</p>
                             </div>
                             <Button variant="link" size="sm" onClick={() => applyCoupon(code)}>Apply</Button>
                         </div>
@@ -809,5 +814,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    
