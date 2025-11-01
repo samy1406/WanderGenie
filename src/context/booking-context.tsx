@@ -29,6 +29,17 @@ type PassengerDetails = {
     phone: string;
 };
 
+export type SeatDetails = {
+    pnr: string;
+    seats: string[];
+}
+
+export type InsuranceDetails = {
+    policyId: string;
+    provider: string;
+    coverageAmount: number;
+}
+
 export type Booking = BookingItem & {
     id: string;
     passengerDetails: PassengerDetails;
@@ -36,6 +47,8 @@ export type Booking = BookingItem & {
     transactionId?: string;
     amountPaid?: number;
     itinerary?: GeneratePersonalizedItineraryOutput;
+    seatDetails?: SeatDetails;
+    insuranceDetails?: InsuranceDetails;
 };
 
 
@@ -97,15 +110,15 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         let activityReplaced = false;
         for (const day of newItinerary.dailyPlan) {
             for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
-                if (day[timeSlot]) {
-                    const accommodationActivityIndex = day[timeSlot].findIndex((activity: any) =>
+                if ((day as any)[timeSlot]) {
+                    const accommodationActivityIndex = (day as any)[timeSlot].findIndex((activity: any) =>
                         activity.description.toLowerCase().includes('accommodation') ||
                         activity.description.toLowerCase().includes('hotel')
                     );
                     
                     if (accommodationActivityIndex !== -1) {
-                        day[timeSlot][accommodationActivityIndex].description = `Check into **${hotelName}**`;
-                        day[timeSlot][accommodationActivityIndex].location = `${hotelName}, ${tripToSave.destination}`;
+                        (day as any)[timeSlot][accommodationActivityIndex].description = `Check into **${hotelName}**`;
+                        (day as any)[timeSlot][accommodationActivityIndex].location = `${hotelName}, ${tripToSave.destination}`;
                         activityReplaced = true;
                         break;
                     }
@@ -180,3 +193,5 @@ export function useBooking() {
   }
   return context;
 }
+
+    

@@ -9,7 +9,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, User, Home, Plane, Building, IndianRupee, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, User, Home, Plane, Building, IndianRupee, ArrowLeft, Ticket, Shield } from 'lucide-react';
 import type { Booking, Passenger } from '@/context/booking-context';
 import { FormatBoldText } from '@/components/format-bold-text';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
@@ -52,7 +52,7 @@ function ConfirmationContent() {
     return <div className="text-center p-8">Loading booking confirmation...</div>;
   }
 
-  const { id, transactionId, passengerDetails, bookingDate, amountPaid, item, type } = confirmedBooking;
+  const { id, transactionId, passengerDetails, bookingDate, amountPaid, item, type, seatDetails, insuranceDetails } = confirmedBooking;
   const isHotel = type === 'hotel';
   const itemDetails = item as (TravelOption | HotelOption);
 
@@ -122,6 +122,29 @@ function ConfirmationContent() {
                            </div>
                         </CardContent>
                      </Card>
+                     {seatDetails && (
+                        <Card className="bg-secondary/50">
+                            <CardHeader>
+                                <CardTitle className="flex items-center text-lg"><Ticket className="mr-2"/>Seat Details</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p><strong>PNR:</strong> <span className="font-mono">{seatDetails.pnr}</span></p>
+                                <p><strong>Seats:</strong> <span className="font-mono">{seatDetails.seats.join(', ')}</span></p>
+                            </CardContent>
+                        </Card>
+                     )}
+                     {insuranceDetails && (
+                         <Card className="bg-secondary/50">
+                            <CardHeader>
+                                <CardTitle className="flex items-center text-lg"><Shield className="mr-2"/>Insurance Details</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p><strong>Policy ID:</strong> <span className="font-mono">{insuranceDetails.policyId}</span></p>
+                                <p><strong>Provider:</strong> {insuranceDetails.provider}</p>
+                                <p><strong>Coverage:</strong> <IndianRupee className="h-4 w-4 inline"/> {formatCurrency(insuranceDetails.coverageAmount)}</p>
+                            </CardContent>
+                        </Card>
+                     )}
                 </div>
 
                 <div className="mt-8 text-center flex flex-col sm:flex-row justify-center gap-4">
@@ -145,3 +168,5 @@ export default function PaymentConfirmationPage() {
         </Suspense>
     )
 }
+
+    

@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user data - in a real app, this would be fetched from a database
 let MOCK_USERS: User[] = [
-    { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123', avatar: `https://i.pravatar.cc/150?u=admin@wandergenie.com` },
+    { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123' },
     { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', avatar: `https://i.pravatar.cc/150?u=test@example.com` },
 ];
 
@@ -200,3 +200,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

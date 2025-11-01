@@ -2,7 +2,7 @@
 // src/app/book/page.tsx
 'use client';
 
-import { useBooking } from '@/context/booking-context';
+import { useBooking, type InsuranceDetails, type SeatDetails } from '@/context/booking-context';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -68,6 +68,9 @@ const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: num
     "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off." },
 };
 
+const INSURANCE_COST_PER_PERSON = 249;
+const PLATFORM_FEE = 199;
+
 export default function BookPage() {
   const router = useRouter();
   const { bookingOption, addBookingAndSaveTrip, setPendingBooking } = useBooking();
@@ -98,14 +101,17 @@ export default function BookPage() {
   
   const watchedPassengers = form.watch('passengers');
   const useGST = form.watch('useGST');
+  const wantsInsurance = form.watch('insurance') === 'yes';
 
   const priceSummary = useMemo(() => {
     const summary = {
-        adults: { count: 0, total: 0 },
-        children: { count: 0, total: 0 },
-        infants: { count: 0, total: 0 },
+        adults: { count: 0 },
+        children: { count: 0 },
+        infants: { count: 0 },
         baseFare: 0,
-        totalTaxes: 0,
+        gst: 0,
+        platformFee: PLATFORM_FEE,
+        insurance: 0,
         subTotal: 0,
         discount: appliedDiscount,
         grandTotal: 0,
@@ -134,13 +140,18 @@ export default function BookPage() {
             summary.baseFare += passengerCost;
         });
     }
+    
+    summary.gst = summary.baseFare * 0.18;
+    
+    if (wantsInsurance) {
+        summary.insurance = INSURANCE_COST_PER_PERSON * watchedPassengers.length;
+    }
 
-    summary.totalTaxes = summary.baseFare * 0.18;
-    summary.subTotal = summary.baseFare + summary.totalTaxes;
+    summary.subTotal = summary.baseFare + summary.gst + summary.platformFee + summary.insurance;
     summary.grandTotal = summary.subTotal - summary.discount;
 
     return summary;
-}, [watchedPassengers, appliedDiscount, bookingOption]);
+}, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance]);
   
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -208,6 +219,25 @@ export default function BookPage() {
         if (!paymentReq.success) {
              throw new Error("Payment failed. Please try again.");
         }
+        
+        // Generate dummy seat and insurance details
+        let seatDetails: SeatDetails | undefined;
+        let insuranceDetails: InsuranceDetails | undefined;
+
+        if (bookingOption.type === 'travel') {
+            seatDetails = {
+                pnr: `WDR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                seats: data.passengers.map((_, i) => `${Math.floor(Math.random() * 30) + 1}${String.fromCharCode(65 + (i % 6))}`)
+            };
+        }
+
+        if (wantsInsurance) {
+            insuranceDetails = {
+                policyId: `INS-${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+                provider: 'WanderSecure Insurance',
+                coverageAmount: 500000,
+            };
+        }
 
         const newBooking = {
             ...bookingOption,
@@ -219,7 +249,9 @@ export default function BookPage() {
                 phone: data.contactPhone
             },
             bookingDate: new Date().toISOString(),
-            amountPaid: priceSummary.grandTotal
+            amountPaid: priceSummary.grandTotal,
+            seatDetails,
+            insuranceDetails,
         };
 
         addBookingAndSaveTrip(newBooking, currentTrip);
@@ -310,7 +342,7 @@ export default function BookPage() {
                             <ShieldCheck className="h-8 w-8 text-purple-600" />
                             <div>
                                 <CardTitle className="text-lg">Add travel insurance and secure your trip</CardTitle>
-                                <FormDescription>Get comprehensive travel coverage for your trip.</FormDescription>
+                                <FormDescription>Get comprehensive travel coverage for your trip for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(INSURANCE_COST_PER_PERSON)} per person.</FormDescription>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
@@ -587,15 +619,25 @@ export default function BookPage() {
             <CardHeader>
               <CardTitle className="flex items-center"><IndianRupee className="mr-2 h-5 w-5" />Price Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm">
+            <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                     <span>Base Fare</span>
                      <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.baseFare)}</span>
                 </div>
-                 <div className="flex justify-between">
-                    <span>Taxes & Surcharges</span>
-                     <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.totalTaxes)}</span>
+                <div className="flex justify-between">
+                    <span>Taxes & Surcharges (18% GST)</span>
+                     <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.gst)}</span>
                 </div>
+                 <div className="flex justify-between">
+                    <span>Platform Fee</span>
+                     <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.platformFee)}</span>
+                </div>
+                 {priceSummary.insurance > 0 && (
+                     <div className="flex justify-between">
+                        <span>Travel Insurance</span>
+                        <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.insurance)}</span>
+                    </div>
+                 )}
                 {appliedDiscount > 0 && (
                      <div className="flex justify-between text-green-600">
                         <span>Discount</span>
@@ -665,3 +707,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    
