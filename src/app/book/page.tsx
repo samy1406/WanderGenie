@@ -344,7 +344,7 @@ export default function BookPage() {
         if(coupon.minAmount && priceSummary.grandTotal < coupon.minAmount) {
              toast({
                 title: "Coupon Not Applicable",
-                description: `This coupon requires a minimum booking amount of ₹${coupon.minAmount}.`,
+                description: <>This coupon requires a minimum booking amount of <IndianRupee className="inline h-4 w-4 mx-1"/>{formatCurrency(coupon.minAmount)}.</>,
                 variant: "destructive",
             });
             return;
@@ -866,7 +866,7 @@ export default function BookPage() {
                         <div key={code} className="flex justify-between items-center text-sm p-2 bg-secondary/50 rounded-md">
                             <div>
                                 <p className="font-semibold">{code}</p>
-                                <p className="text-muted-foreground flex items-center">{description.replace('₹', '')}</p>
+                                <p className="text-muted-foreground flex items-center"><FormatBoldText text={description.replace(/₹/g, '')} /></p>
                             </div>
                             <Button variant="link" size="sm" onClick={() => applyCoupon(code)}>Apply</Button>
                         </div>
