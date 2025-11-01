@@ -55,11 +55,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }
     try {
         const storedTrips = localStorage.getItem(key);
-        if (storedTrips) {
-            setTrips(JSON.parse(storedTrips));
-        } else {
-            setTrips([]);
-        }
+        setTrips(storedTrips ? JSON.parse(storedTrips) : []);
     } catch (error) {
         console.error("Could not load trips from localStorage", error);
         setTrips([]);
@@ -67,15 +63,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [getStorageKey]);
 
   useEffect(() => {
-    if (user) {
-      loadTripsForUser(user.id);
-    } else {
-      setTrips([]); // Clear trips if user logs out
-    }
+    const userId = user?.id;
+    loadTripsForUser(userId);
     
     const handleStorageChange = (event: StorageEvent) => {
-        if (user && event.key === getStorageKey(user.id)) {
-            loadTripsForUser(user.id);
+        if (userId && event.key === getStorageKey(userId)) {
+            loadTripsForUser(userId);
         }
     };
 

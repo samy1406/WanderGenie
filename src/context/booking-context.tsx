@@ -2,7 +2,7 @@
 // src/context/booking-context.tsx
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
 import { useTrip, type Trip } from './trip-context';
@@ -90,18 +90,15 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const { addTrip, setCurrentTrip, updateTrip } = useTrip();
   const { isAuthenticated, handlePostAuth } = useAuth();
   
-  const loadBookingsFromStorage = () => {
+  const loadBookingsFromStorage = useCallback(() => {
     try {
         const storedBookings = localStorage.getItem(BOOKINGS_STORAGE_KEY);
-        if (storedBookings) {
-            setBookings(JSON.parse(storedBookings));
-        } else {
-            setBookings([]);
-        }
+        setBookings(storedBookings ? JSON.parse(storedBookings) : []);
     } catch (error) {
         console.error("Could not load bookings from localStorage", error);
+        setBookings([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadBookingsFromStorage();
@@ -117,7 +114,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     return () => {
         window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [loadBookingsFromStorage]);
   
   // Effect to complete pending booking after authentication
   useEffect(() => {

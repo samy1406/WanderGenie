@@ -89,8 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for changes from other tabs
     const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === USERS_STORAGE_KEY) {
-            syncUsersFromStorage();
+        if (event.key === USERS_STORAGE_KEY && event.newValue) {
+            setAllUsers(JSON.parse(event.newValue));
         }
         if (event.key === CURRENT_USER_STORAGE_KEY) {
             const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
@@ -186,7 +186,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatar: undefined,
     };
     
-    saveUsersToStorage([...allUsers, newUser]);
+    const updatedUsers = [...allUsers, newUser];
+    setAllUsers(updatedUsers);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
     
     setUser(newUser);
     localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(newUser));
