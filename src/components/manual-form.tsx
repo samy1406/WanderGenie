@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon, ArrowRight, Clock, SlidersHorizontal, UserPlus, Baby, PersonStanding, X } from "lucide-react";
+import { Users, CalendarIcon, ArrowRight, Clock, SlidersHorizontal, X } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -83,30 +83,6 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                 label: 'Arrives', 
                 value: watchAllFields.arrivalTime.charAt(0).toUpperCase() + watchAllFields.arrivalTime.slice(1), 
                 onRemove: () => form.setValue('arrivalTime', 'any') 
-            });
-        }
-        if (watchAllFields.adults > 1) {
-            filters.push({ 
-                id: 'adults',
-                label: 'Adults', 
-                value: watchAllFields.adults, 
-                onRemove: () => form.setValue('adults', 1) 
-            });
-        }
-        if (watchAllFields.children > 0) {
-            filters.push({ 
-                id: 'children',
-                label: 'Children', 
-                value: watchAllFields.children, 
-                onRemove: () => form.setValue('children', 0) 
-            });
-        }
-        if (watchAllFields.infants > 0) {
-            filters.push({ 
-                id: 'infants',
-                label: 'Infants', 
-                value: watchAllFields.infants, 
-                onRemove: () => form.setValue('infants', 0) 
             });
         }
         return filters;
@@ -243,7 +219,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   name="travelPreference"
                   render={({ field }) => (
                   <FormItem className="p-4 border-l flex flex-col justify-center">
-                      <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>TRAVELLER & CLASS</FormLabel>
+                      <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>TRAVEL PREFERENCES</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                           <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left text-lg font-semibold">
@@ -271,7 +247,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 pt-6 border-t bg-gray-50 rounded-b-lg">
-             <div className="grid grid-cols-[1fr_2fr_auto] gap-6 items-end">
+             <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-x-6 gap-y-4 items-end">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -283,7 +259,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         </FormControl>
                         </FormItem>
                     )}
-                    />
+                />
                 <FormField
                     control={form.control}
                     name="interests"
@@ -299,114 +275,83 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         </FormControl>
                         </FormItem>
                     )}
-                    />
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full md:w-auto self-end">
-                            <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                         <div className="grid gap-4">
-                            <div className="space-y-2">
-                                <h4 className="font-medium leading-none">Filters</h4>
-                                <p className="text-sm text-muted-foreground">Fine-tune your trip details.</p>
-                            </div>
+                />
+                 <div className="flex flex-col gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-full">
+                                <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
                             <div className="grid gap-4">
-                                <h5 className="font-medium text-sm">Time Preferences</h5>
-                                 <FormField
-                                    control={form.control}
-                                    name="departureTime"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || 'any'}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder="Any time" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="any">Anytime</SelectItem>
-                                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
-                                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
-                                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
-                                        </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="arrivalTime"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || 'any'}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder="Any time" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="any">Anytime</SelectItem>
-                                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
-                                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
-                                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
-                                        </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                    )}
-                                />
-
-                                <h5 className="font-medium text-sm pt-2">Travelers</h5>
-                                <FormField
-                                    control={form.control}
-                                    name="adults"
-                                    render={({ field }) => (
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Time Filters</h4>
+                                    <p className="text-sm text-muted-foreground">Fine-tune your travel times.</p>
+                                </div>
+                                <div className="grid gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="departureTime"
+                                        render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="flex items-center"><PersonStanding className="mr-2 h-4 w-4" />Adults</FormLabel>
-                                            <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                                            <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || 'any'}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder="Any time" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="any">Anytime</SelectItem>
+                                                <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                                                <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                                                <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                                            </SelectContent>
+                                            </Select>
                                         </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="children"
-                                    render={({ field }) => (
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="arrivalTime"
+                                        render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4" />Children (2-12 yrs)</FormLabel>
-                                            <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                                            <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || 'any'}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder="Any time" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="any">Anytime</SelectItem>
+                                                <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                                                <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                                                <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                                            </SelectContent>
+                                            </Select>
                                         </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="infants"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center"><Baby className="mr-2 h-4 w-4" />Infants (below 2 yrs)</FormLabel>
-                                            <FormControl><Input type="number" min={0} {...field} /></FormControl>
-                                        </FormItem>
-                                    )}
-                                />
+                                        )}
+                                    />
+                                </div>
                             </div>
+                        </PopoverContent>
+                    </Popover>
+                    {activeFilters.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {activeFilters.map(filter => (
+                                <FilterBadge
+                                    key={filter.id}
+                                    label={filter.label}
+                                    value={filter.value}
+                                    onRemove={filter.onRemove}
+                                />
+                            ))}
                         </div>
-                    </PopoverContent>
-                </Popover>
+                    )}
+                 </div>
             </div>
-             {activeFilters.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4">
-                    {activeFilters.map(filter => (
-                        <FilterBadge
-                            key={filter.id}
-                            label={filter.label}
-                            value={filter.value}
-                            onRemove={filter.onRemove}
-                        />
-                    ))}
-                </div>
-            )}
           </div>
         </CardContent>
     </Card>
