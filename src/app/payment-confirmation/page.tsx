@@ -9,7 +9,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, User, Home, Plane, Building, IndianRupee, ArrowLeft, Ticket, Shield } from 'lucide-react';
+import { CheckCircle2, User, Home, Plane, Building, IndianRupee, ArrowLeft, Ticket, Shield, Train, Bus, Briefcase } from 'lucide-react';
 import type { Booking, Passenger } from '@/context/booking-context';
 import { FormatBoldText } from '@/components/format-bold-text';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
@@ -18,6 +18,20 @@ import { useTrip } from '@/context/trip-context';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
+
+const iconMap: { [key: string]: React.ReactElement } = {
+    Flight: <Plane className="h-8 w-8 text-primary" />,
+    Train: <Train className="h-8 w-8 text-primary" />,
+    Bus: <Bus className="h-8 w-8 text-primary" />,
+    hotel: <Building className="h-8 w-8 text-primary" />,
+};
+
+const getIconForBooking = (booking: Booking) => {
+    if (booking.type === 'hotel') return iconMap.hotel;
+    const travelOption = booking.item as TravelOption;
+    return iconMap[travelOption.mode] || <Briefcase className="h-8 w-8 text-primary" />;
+}
+
 
 function ConfirmationContent() {
   const router = useRouter();
@@ -82,7 +96,7 @@ function ConfirmationContent() {
 
                 <div className="flex items-center gap-4 mb-6">
                     <div className="bg-primary/10 p-4 rounded-lg">
-                        {isHotel ? <Building className="h-8 w-8 text-primary" /> : <Plane className="h-8 w-8 text-primary" />}
+                        {getIconForBooking(confirmedBooking)}
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold"><FormatBoldText text={isHotel ? (itemDetails as HotelOption).name : (itemDetails as TravelOption).details} /></h2>
