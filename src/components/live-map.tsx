@@ -16,6 +16,7 @@ import { Style, Icon, Stroke, Fill, Circle as CircleStyle } from 'ol/style.js';
 import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
 import { AppLocationService } from '@/lib/location-service';
 import { handleGeocodeLocation } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
 
@@ -43,7 +44,7 @@ const LiveMap = ({
   const vectorSourceRef = useRef<VectorSource<Point | LineString> | null>(null);
   const userLocationFeatureRef = useRef<Feature<Point> | null>(null);
   const nextDestinationFeatureRef = useRef<Feature<Point> | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchCoords = async (location: string): Promise<[number, number] | null> => {
     try {
@@ -60,10 +61,10 @@ const LiveMap = ({
         return [parseFloat(lon), parseFloat(lat)];
       }
 
-      console.error(`No coordinates found for "${location}"`);
+      // Instead of console.error, we now handle this gracefully in the calling function.
       return null;
     } catch (err: any) {
-        console.error(`Error fetching coordinates for "${location}":`, err.message);
+        console.error(`Error during geocoding for "${location}":`, err.message);
         return null;
     }
   };
@@ -77,8 +78,11 @@ const LiveMap = ({
   };
 
   const handleGpsError = (error: GeolocationPositionError) => {
-    setError(`GPS Error: ${error.message}`);
-    setTimeout(() => setError(null), 5000);
+    toast({
+        title: "GPS Error",
+        description: error.message,
+        variant: "destructive"
+    });
   };
 
   // Initialize map effect
@@ -96,7 +100,11 @@ const LiveMap = ({
       if (!isMounted) return;
 
       if (!originCoords || !destinationCoords) {
-        setError(`Could not find coordinates for origin or destination.`);
+        toast({
+            title: "Map Error",
+            description: "Could not find coordinates for origin or destination.",
+            variant: "destructive"
+        });
         if (mapRef.current) mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground">Map data unavailable.</div>';
         return;
       }
@@ -164,7 +172,7 @@ const LiveMap = ({
       isMounted = false;
       mapInstanceRef.current?.setTarget(undefined);
     };
-  }, [origin, destination]);
+  }, [origin, destination, toast]);
 
 
   // Update map view and "next destination" marker based on journey state
@@ -187,33 +195,31 @@ const LiveMap = ({
         
         let nextDestCoords = await fetchCoords(locationToSearch);
 
-        // This is our new, more robust fallback logic
         if (!nextDestCoords) {
-            setError(`Could not find "${locationToSearch}".`);
-            setTimeout(() => setError(null), 5000);
-
+            toast({
+                title: "Location not found",
+                description: `Could not plot "${locationToSearch}" on the map.`,
+                variant: "destructive"
+            });
+            
+            let fallbackCoords: [number, number] | null = null;
             // SIMULATION FALLBACK: Find next valid point and create dummy location
             if (simulationStarted) {
                 for (let i = currentCheckpointIndex + 1; i < checkpoints.length; i++) {
                     const nextValidCoords = await fetchCoords(checkpoints[i].location);
                     if (nextValidCoords) {
-                        // Create a dummy coordinate slightly offset from the next valid one
-                        nextDestCoords = [nextValidCoords[0] - 0.01, nextValidCoords[1] - 0.01];
-                        setError(`Plotting dummy location for "${locationToSearch}" near next valid point.`);
-                        setTimeout(() => setError(null), 5000);
+                        fallbackCoords = [nextValidCoords[0] - 0.01, nextValidCoords[1] - 0.01];
                         break;
                     }
                 }
             }
             
-            // REGULAR USER FALLBACK: If still no coords, default to the main destination city
-            if (!nextDestCoords) {
-                 nextDestCoords = await fetchCoords(destination);
-                 setError(`Defaulting map view to ${destination}.`);
-                 setTimeout(() => setError(null), 5000);
+            // REGULAR USER or SIMULATION FAILED FALLBACK: Default to the main destination city
+            if (!fallbackCoords) {
+                 fallbackCoords = await fetchCoords(destination);
             }
+            nextDestCoords = fallbackCoords;
         }
-
 
         if (nextDestCoords) {
             const nextDestPoint = fromLonLat(nextDestCoords);
@@ -251,15 +257,10 @@ const LiveMap = ({
         }
     }
 
-  }, [selectedActivity, journeyStarted, simulationStarted, destination, checkpoints, currentCheckpointIndex]);
+  }, [selectedActivity, journeyStarted, simulationStarted, destination, checkpoints, currentCheckpointIndex, toast]);
 
   return (
     <div className="relative w-full h-full">
-        {error && (
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-destructive/80 text-destructive-foreground p-2 rounded-md text-xs">
-            {error}
-            </div>
-        )}
         <div ref={mapRef} className="w-full h-full bg-muted" />
     </div>
   );
@@ -267,4 +268,3 @@ const LiveMap = ({
 
 export default LiveMap;
 
-    
