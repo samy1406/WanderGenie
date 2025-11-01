@@ -34,6 +34,7 @@ import {
   DialogFooter,
   DialogClose,
   DialogDescription,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -116,7 +117,7 @@ function BookingCard({
                 {getIconForBooking(booking)}
                 <FormatBoldText text={isHotel ? hotelItem!.name : travelItem!.details} />
                 </CardTitle>
-                <span className="font-mono text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
+                <span className="font-mono text-xs bg-gray-800 text-gray-200 px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
             </div>
             <CardDescription className="flex items-center gap-4 mt-2">
                 <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
