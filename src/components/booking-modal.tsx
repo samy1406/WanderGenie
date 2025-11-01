@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useBooking } from "@/context/booking-context";
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
+import Link from "next/link";
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -26,23 +27,21 @@ type BookingModalProps = {
   onBookingComplete?: (itemName: string) => void;
 };
 
-export function BookingModal({ option, optionType, triggerButton, onBookingComplete }: BookingModalProps) {
-  const router = useRouter();
+export function BookingModal({ option, optionType, triggerButton }: BookingModalProps) {
   const { setBookingOption } = useBooking();
 
-  const handleBookNowClick = () => {
+  const handleBookNowClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default link behavior if it's wrapped in one
     setBookingOption({
       item: option,
       type: optionType,
     });
-    router.push('/book');
+    // Navigation is now handled by the Link component
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {React.cloneElement(triggerButton as React.ReactElement, { onClick: handleBookNowClick })}
-      </DialogTrigger>
-    </Dialog>
+    <Link href="/book" onClick={handleBookNowClick} passHref>
+        {React.cloneElement(triggerButton as React.ReactElement)}
+    </Link>
   );
 }

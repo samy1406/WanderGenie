@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Briefcase, Edit, Trash2, Eye, KeyRound, Shield, Ticket } from 'lucide-react';
+import { Users, Briefcase, Edit, Trash2, Eye, KeyRound, Shield, Ticket, ArrowLeft } from 'lucide-react';
 import type { User } from '@/context/auth-context';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/formatters';
@@ -107,8 +107,15 @@ export default function AdminPage() {
   return (
     <>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground mb-6">Manage users and bookings across WanderGenie.</p>
+        <div className="flex items-center justify-between mb-6">
+            <div>
+                <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+                <p className="text-muted-foreground">Manage users and bookings across WanderGenie.</p>
+            </div>
+             <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            </Button>
+        </div>
         
         <Tabs defaultValue="users">
           <TabsList className="grid w-full grid-cols-2">

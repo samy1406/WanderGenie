@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Backpack, Trash2, ArrowRight, Plane, Hotel, CheckCircle, Clock } from 'lucide-react';
+import { Backpack, Trash2, ArrowRight, Plane, Hotel, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { useToast } from '@/hooks/use-toast';
@@ -159,8 +159,13 @@ export default function MyTripsPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-2 flex items-center"><Backpack className="mr-3 h-8 w-8"/>My Saved Trips</h1>
-      <p className="text-muted-foreground mb-6">Here are all the adventures you've planned.</p>
+        <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold flex items-center"><Backpack className="mr-3 h-8 w-8"/>My Saved Trips</h1>
+            <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            </Button>
+        </div>
+        <p className="text-muted-foreground mb-6">Here are all the adventures you've planned.</p>
 
       {userTrips.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
-import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby } from 'lucide-react';
+import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby, ArrowLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import {
   AlertDialog,
@@ -265,8 +265,15 @@ export default function MyBookingsPage() {
   
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
-      <p className="text-muted-foreground mb-6">Welcome back, {user?.name}! Here are your trip details.</p>
+        <div className="flex items-center justify-between mb-6">
+            <div>
+                <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
+                <p className="text-muted-foreground">Welcome back, {user?.name}! Here are your trip details.</p>
+            </div>
+             <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            </Button>
+        </div>
 
       {userBookings.length > 0 ? (
         <div className="space-y-6">
