@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { FormatBoldText } from '@/components/format-bold-text';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -883,3 +884,4 @@ export default function BookPage() {
 }
 
     
+
