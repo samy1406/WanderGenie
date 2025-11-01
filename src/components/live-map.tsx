@@ -187,19 +187,30 @@ const LiveMap = ({
         
         let nextDestCoords = await fetchCoords(locationToSearch);
 
-        // Dummy location logic for simulation
-        if (!nextDestCoords && simulationStarted) {
-            setError(`Could not find "${locationToSearch}". Plotting near next valid location.`);
+        // This is our new, more robust fallback logic
+        if (!nextDestCoords) {
+            setError(`Could not find "${locationToSearch}".`);
             setTimeout(() => setError(null), 5000);
 
-            // Find the next valid checkpoint
-            for (let i = currentCheckpointIndex + 1; i < checkpoints.length; i++) {
-                const nextValidCoords = await fetchCoords(checkpoints[i].location);
-                if (nextValidCoords) {
-                    // Create a dummy coordinate slightly offset from the next valid one
-                    nextDestCoords = [nextValidCoords[0] - 0.01, nextValidCoords[1] - 0.01];
-                    break;
+            // SIMULATION FALLBACK: Find next valid point and create dummy location
+            if (simulationStarted) {
+                for (let i = currentCheckpointIndex + 1; i < checkpoints.length; i++) {
+                    const nextValidCoords = await fetchCoords(checkpoints[i].location);
+                    if (nextValidCoords) {
+                        // Create a dummy coordinate slightly offset from the next valid one
+                        nextDestCoords = [nextValidCoords[0] - 0.01, nextValidCoords[1] - 0.01];
+                        setError(`Plotting dummy location for "${locationToSearch}" near next valid point.`);
+                        setTimeout(() => setError(null), 5000);
+                        break;
+                    }
                 }
+            }
+            
+            // REGULAR USER FALLBACK: If still no coords, default to the main destination city
+            if (!nextDestCoords) {
+                 nextDestCoords = await fetchCoords(destination);
+                 setError(`Defaulting map view to ${destination}.`);
+                 setTimeout(() => setError(null), 5000);
             }
         }
 
@@ -214,9 +225,6 @@ const LiveMap = ({
                  const extent = new LineString([userCoords, nextDestPoint]).getExtent();
                  view.fit(extent, { duration: 1000, maxZoom: 14, padding: [100, 100, 100, 100] });
             }
-        } else {
-            setError(`Could not find location: ${nextLocationName}`);
-            setTimeout(() => setError(null), 3000);
         }
     };
     
