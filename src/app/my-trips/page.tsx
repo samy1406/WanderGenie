@@ -13,6 +13,18 @@ import { Backpack, Trash2, ArrowRight, Plane, Hotel, CheckCircle, Clock } from '
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -104,19 +116,6 @@ function TripCard({ trip, onDelete, onViewPlan, onCompleteBookings }: {
     </Card>
   )
 }
-
-
-// Dummy Alert Dialog components for type-checking if not globally available
-const AlertDialog = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogTrigger = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogContent = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogHeader = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogTitle = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogDescription = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogFooter = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogCancel = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const AlertDialogAction = ({ children, onClick, className }: { children: React.ReactNode, onClick: () => void, className: string }) => <div onClick={onClick}>{children}</div>;
-
 
 export default function MyTripsPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
