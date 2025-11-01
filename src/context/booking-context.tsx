@@ -105,10 +105,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     let updatedTrip = { ...tripToSave, bookingIds: [...(tripToSave.bookingIds || []), booking.id] };
 
     if (booking.type === 'hotel') {
-        const hotelName = (booking.item as HotelOption).name;
+        const hotelName = (booking.item as HotelOption).name.replace(/\*\*/g, ''); // Get name without asterisks
         let newItinerary = JSON.parse(JSON.stringify(tripToSave.itinerary));
         
         let activityReplaced = false;
+        // Search for the placeholder activity and replace it with the booked hotel.
         for (const day of newItinerary.dailyPlan) {
             for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
                 if ((day as any)[timeSlot]) {
@@ -118,8 +119,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                     );
                     
                     if (accommodationActivityIndex !== -1) {
+                        // Update the existing placeholder activity
                         (day as any)[timeSlot][accommodationActivityIndex].description = `Check into **${hotelName}**`;
                         (day as any)[timeSlot][accommodationActivityIndex].location = `${hotelName}, ${tripToSave.destination}`;
+                         (day as any)[timeSlot][accommodationActivityIndex].link = `https://maps.google.com/?q=${encodeURIComponent(`${hotelName}, ${tripToSave.destination}`)}`;
                         activityReplaced = true;
                         break;
                     }
@@ -128,6 +131,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
             if(activityReplaced) break;
         }
 
+        // If no placeholder was found, inject a new activity for check-in on Day 1.
         if (!activityReplaced && newItinerary.dailyPlan[0]) {
             const dayOneMorning = newItinerary.dailyPlan[0].morning || [];
             dayOneMorning.unshift({
@@ -143,8 +147,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         updatedTrip.itinerary = newItinerary;
     }
 
-    updateTrip(updatedTrip); // Use updateTrip to save changes
-    setCurrentTrip(updatedTrip); // Make it the active trip
+    updateTrip(updatedTrip); // Use updateTrip to save changes to localStorage
+    setCurrentTrip(updatedTrip); // Make it the active trip in the UI
   };
   
   const deleteBooking = (bookingId: string) => {
