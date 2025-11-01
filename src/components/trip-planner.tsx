@@ -54,6 +54,9 @@ function TripPlannerContent() {
       departureTime: "any",
       arrivalTime: "any",
       tripType: "oneway",
+      adults: 1,
+      children: 0,
+      infants: 0,
     },
   });
 
@@ -76,6 +79,10 @@ function TripPlannerContent() {
             departureDate: currentTrip.departureDate ? new Date(currentTrip.departureDate) : new Date(),
             returnDate: currentTrip.returnDate ? new Date(currentTrip.returnDate) : undefined,
             tripType: currentTrip.returnDate ? 'roundtrip' : 'oneway',
+            // Note: adults/children/infants are not part of the trip object yet
+            adults: form.getValues('adults') || 1, 
+            children: form.getValues('children') || 0,
+            infants: form.getValues('infants') || 0,
         });
         setTripType(currentTrip.returnDate ? 'roundtrip' : 'oneway');
         // Do not automatically change viewState here, let the ?view=book param handle it

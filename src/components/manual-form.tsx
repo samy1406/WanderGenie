@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon, ArrowRight, Clock, SlidersHorizontal } from "lucide-react";
+import { Users, CalendarIcon, ArrowRight, Clock, SlidersHorizontal, UserPlus, Baby, PersonStanding, X } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -27,6 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Badge } from "./ui/badge";
+import React from "react";
 
 
 type ManualFormProps = {
@@ -36,7 +38,80 @@ type ManualFormProps = {
   setTripType: (tripType: TripType) => void;
 };
 
+
+const FilterBadge = ({
+  label,
+  value,
+  onRemove,
+}: {
+  label: string;
+  value: string | number;
+  onRemove: () => void;
+}) => (
+  <Badge
+    variant="default"
+    className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+  >
+    <span className="font-normal">{label}:</span>
+    <span className="font-semibold">{value}</span>
+    <button
+      type="button"
+      onClick={onRemove}
+      className="rounded-full hover:bg-primary/20 p-0.5 -mr-1"
+    >
+      <X className="h-3 w-3" />
+    </button>
+  </Badge>
+);
+
 export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFormProps) {
+    const watchAllFields = form.watch();
+
+    const activeFilters = React.useMemo(() => {
+        const filters = [];
+        if (watchAllFields.departureTime && watchAllFields.departureTime !== 'any') {
+            filters.push({ 
+                id: 'departureTime',
+                label: 'Departs', 
+                value: watchAllFields.departureTime.charAt(0).toUpperCase() + watchAllFields.departureTime.slice(1), 
+                onRemove: () => form.setValue('departureTime', 'any') 
+            });
+        }
+        if (watchAllFields.arrivalTime && watchAllFields.arrivalTime !== 'any') {
+            filters.push({ 
+                id: 'arrivalTime',
+                label: 'Arrives', 
+                value: watchAllFields.arrivalTime.charAt(0).toUpperCase() + watchAllFields.arrivalTime.slice(1), 
+                onRemove: () => form.setValue('arrivalTime', 'any') 
+            });
+        }
+        if (watchAllFields.adults > 1) {
+            filters.push({ 
+                id: 'adults',
+                label: 'Adults', 
+                value: watchAllFields.adults, 
+                onRemove: () => form.setValue('adults', 1) 
+            });
+        }
+        if (watchAllFields.children > 0) {
+            filters.push({ 
+                id: 'children',
+                label: 'Children', 
+                value: watchAllFields.children, 
+                onRemove: () => form.setValue('children', 0) 
+            });
+        }
+        if (watchAllFields.infants > 0) {
+            filters.push({ 
+                id: 'infants',
+                label: 'Infants', 
+                value: watchAllFields.infants, 
+                onRemove: () => form.setValue('infants', 0) 
+            });
+        }
+        return filters;
+    }, [watchAllFields, form]);
+
 
     return (
       <Card className="w-full shadow-lg border-none">
@@ -196,7 +271,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 pt-6 border-t bg-gray-50 rounded-b-lg">
-             <div className="grid md:grid-cols-2 lg:grid-cols-[0.5fr_2fr_auto] gap-6 items-end">
+             <div className="grid grid-cols-[1fr_2fr_auto] gap-6 items-end">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -227,24 +302,25 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                     />
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full md:w-auto justify-start">
+                        <Button variant="outline" size="sm" className="w-full md:w-auto self-end">
                             <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80">
                          <div className="grid gap-4">
                             <div className="space-y-2">
-                                <h4 className="font-medium leading-none">Time Preferences</h4>
-                                <p className="text-sm text-muted-foreground">Set preferred times for your journey.</p>
+                                <h4 className="font-medium leading-none">Filters</h4>
+                                <p className="text-sm text-muted-foreground">Fine-tune your trip details.</p>
                             </div>
-                             <div className="grid gap-2">
-                                <FormField
+                            <div className="grid gap-4">
+                                <h5 className="font-medium text-sm">Time Preferences</h5>
+                                 <FormField
                                     control={form.control}
                                     name="departureTime"
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || 'any'}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Any time" />
@@ -266,7 +342,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || 'any'}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Any time" />
@@ -282,11 +358,55 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                                     </FormItem>
                                     )}
                                 />
+
+                                <h5 className="font-medium text-sm pt-2">Travelers</h5>
+                                <FormField
+                                    control={form.control}
+                                    name="adults"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center"><PersonStanding className="mr-2 h-4 w-4" />Adults</FormLabel>
+                                            <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="children"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center"><UserPlus className="mr-2 h-4 w-4" />Children (2-12 yrs)</FormLabel>
+                                            <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="infants"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center"><Baby className="mr-2 h-4 w-4" />Infants (below 2 yrs)</FormLabel>
+                                            <FormControl><Input type="number" min={0} {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
                         </div>
                     </PopoverContent>
                 </Popover>
             </div>
+             {activeFilters.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-4">
+                    {activeFilters.map(filter => (
+                        <FilterBadge
+                            key={filter.id}
+                            label={filter.label}
+                            value={filter.value}
+                            onRemove={filter.onRemove}
+                        />
+                    ))}
+                </div>
+            )}
           </div>
         </CardContent>
     </Card>
