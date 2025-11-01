@@ -2,7 +2,7 @@
 // src/context/auth-context.tsx
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from './booking-context';
@@ -47,6 +47,8 @@ let MOCK_USERS: User[] = [
     { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', contact: '1234567890', age: 30, gender: 'female' },
 ];
 
+const USERS_STORAGE_KEY = 'wandergenie-users';
+const CURRENT_USER_STORAGE_KEY = 'wandergenie-user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -57,30 +59,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
-  const syncUsers = () => {
+  const syncUsers = useCallback(() => {
     try {
-        const storedUsers = localStorage.getItem('wandergenie-users');
+        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         if (storedUsers) {
-            const parsedUsers = JSON.parse(storedUsers);
-            const combinedUsers = [...MOCK_USERS];
-            parsedUsers.forEach((su: User) => {
-                if (!combinedUsers.some(u => u.email === su.email)) {
-                    combinedUsers.push(su);
-                }
-            });
-            MOCK_USERS = combinedUsers;
+            MOCK_USERS = JSON.parse(storedUsers);
         } else {
-            localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
         }
     } catch (error) {
         console.error("Could not sync users from localStorage", error);
     }
-  }
+  }, []);
 
   useEffect(() => {
+    // Initial load
+    syncUsers();
     try {
-        syncUsers();
-        const storedUser = localStorage.getItem('wandergenie-user');
+        const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
@@ -89,13 +85,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
         setIsLoading(false);
     }
-  }, []);
+
+    // Listen for changes from other tabs
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === USERS_STORAGE_KEY) {
+            syncUsers();
+        }
+        if (event.key === CURRENT_USER_STORAGE_KEY) {
+            const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
+            setUser(storedUser ? JSON.parse(storedUser) : null);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, [syncUsers]);
 
   const updateUser = (updatedUserDetails: Partial<User>) => {
     if (user) {
         const updatedUser = { ...user, ...updatedUserDetails };
         setUser(updatedUser);
-        localStorage.setItem('wandergenie-user', JSON.stringify(updatedUser));
+        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser));
         updateUserInList(updatedUser);
         toast({ title: "Profile Updated", description: "Your details have been successfully updated." });
     }
@@ -107,16 +121,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updateUserInList = (updatedUser: User) => {
+    syncUsers();
     const userIndex = MOCK_USERS.findIndex(u => u.id === updatedUser.id);
     if(userIndex !== -1) {
         MOCK_USERS[userIndex] = updatedUser;
-        localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
+    } else { // If user not in list (e.g. from another tab), add them
+        MOCK_USERS.push(updatedUser);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
     }
   }
 
   const deleteUserFromList = (userId: string) => {
+    syncUsers();
     MOCK_USERS = MOCK_USERS.filter(u => u.id !== userId);
-    localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
   }
   
   const validatePassword = (password: string) => {
@@ -124,19 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handlePostAuth = () => {
-    // This is now just a simple function to close the modal.
-    // The component that initiated the auth flow is responsible
-    // for checking isAuthenticated and proceeding with its action.
     closeAuthModal();
   };
 
   const login = (email: string, password?: string) => {
-    syncUsers(); // Make sure we have the latest user list
+    syncUsers();
     const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     if (foundUser && foundUser.password === password) {
         setUser(foundUser);
-        localStorage.setItem('wandergenie-user', JSON.stringify(foundUser));
+        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(foundUser));
         toast({ title: "Login Successful", description: `Welcome back, ${foundUser.name}!` });
         handlePostAuth();
     } else {
@@ -145,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = (data: SignupData) => {
+    syncUsers();
     if (MOCK_USERS.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
         toast({ title: "Signup Failed", description: "An account with this email already exists.", variant: "destructive" });
         return;
@@ -157,21 +174,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       age: data.age,
       contact: data.contact,
       gender: data.gender,
-      avatar: undefined, // Explicitly set avatar to undefined
+      avatar: undefined,
     };
     
     MOCK_USERS.push(newUser);
-    localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
     
     setUser(newUser);
-    localStorage.setItem('wandergenie-user', JSON.stringify(newUser));
+    localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(newUser));
     toast({ title: "Account Created!", description: `Welcome to WanderGenie, ${newUser.name}!` });
     handlePostAuth();
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('wandergenie-user');
+    localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
     router.push('/');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };

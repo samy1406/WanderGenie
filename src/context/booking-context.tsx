@@ -70,6 +70,7 @@ type BookingContextType = {
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
+const BOOKINGS_STORAGE_KEY = 'wandergenie-bookings';
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingOption, setBookingOption] = useState<BookingItem | null>(null);
@@ -79,14 +80,29 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, handlePostAuth } = useAuth();
   
   useEffect(() => {
-    try {
-        const storedBookings = localStorage.getItem('wandergenie-bookings');
-        if (storedBookings) {
-          setBookings(JSON.parse(storedBookings));
+    const loadBookings = () => {
+        try {
+            const storedBookings = localStorage.getItem(BOOKINGS_STORAGE_KEY);
+            if (storedBookings) {
+                setBookings(JSON.parse(storedBookings));
+            }
+        } catch (error) {
+            console.error("Could not load bookings from localStorage", error);
         }
-    } catch (error) {
-        console.error("Could not load bookings from localStorage", error);
-    }
+    };
+    loadBookings();
+
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === BOOKINGS_STORAGE_KEY) {
+            loadBookings();
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   // Effect to complete pending booking after authentication
@@ -99,9 +115,13 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const addBookingAndSaveTrip = (booking: Omit<Booking, 'tripId'>, tripToSave: Trip) => {
     const bookingWithTripId: Booking = { ...booking, tripId: tripToSave.id };
-    const newBookings = [...bookings, bookingWithTripId];
-    setBookings(newBookings);
-    localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
+    
+    // Use a function with the state setter to get the most recent state
+    setBookings(prevBookings => {
+        const newBookings = [...prevBookings, bookingWithTripId];
+        localStorage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(newBookings));
+        return newBookings;
+    });
     
     let updatedTrip = { ...tripToSave, bookingIds: [...(tripToSave.bookingIds || []), booking.id] };
 
@@ -153,25 +173,28 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   };
   
   const deleteBooking = (bookingId: string) => {
-    const newBookings = bookings.filter(b => b.id !== bookingId);
-    setBookings(newBookings);
-    localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
+    setBookings(prevBookings => {
+        const newBookings = prevBookings.filter(b => b.id !== bookingId);
+        localStorage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(newBookings));
+        return newBookings;
+    });
   };
   
   const deleteBookingFromList = (bookingId: string) => {
-    const newBookings = bookings.filter(b => b.id !== bookingId);
-    setBookings(newBookings);
-    localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
+    deleteBooking(bookingId);
   };
 
   const updateBookingInList = (updatedBooking: Booking) => {
-    const bookingIndex = bookings.findIndex(b => b.id === updatedBooking.id);
-    if(bookingIndex !== -1) {
-        const newBookings = [...bookings];
-        newBookings[bookingIndex] = updatedBooking;
-        setBookings(newBookings);
-        localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
-    }
+    setBookings(prevBookings => {
+        const bookingIndex = prevBookings.findIndex(b => b.id === updatedBooking.id);
+        if(bookingIndex !== -1) {
+            const newBookings = [...prevBookings];
+            newBookings[bookingIndex] = updatedBooking;
+            localStorage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(newBookings));
+            return newBookings;
+        }
+        return prevBookings;
+    });
   };
 
   const getBookingById = (bookingId: string) => {

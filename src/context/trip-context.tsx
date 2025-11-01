@@ -47,24 +47,40 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const getStorageKey = useCallback((userId?: string | null) => `wandergenie-trips-${userId || 'guest'}`, []);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-        try {
-            const storedTrips = localStorage.getItem(getStorageKey(user.id));
-            if (storedTrips) {
-                setTrips(JSON.parse(storedTrips));
-            } else {
-                setTrips([]);
-            }
-        } catch (error) {
-            console.error("Could not load trips from localStorage", error);
+  const loadTripsForUser = useCallback((userId?: string | null) => {
+    if (!userId) {
+        setTrips([]);
+        return;
+    }
+    try {
+        const storedTrips = localStorage.getItem(getStorageKey(userId));
+        if (storedTrips) {
+            setTrips(JSON.parse(storedTrips));
+        } else {
             setTrips([]);
         }
-    } else {
-        setTrips([]); // Clear trips if user logs out
-        setCurrentTripState(null); // Also clear the active trip
+    } catch (error) {
+        console.error("Could not load trips from localStorage", error);
+        setTrips([]);
     }
-  }, [isAuthenticated, user, getStorageKey]);
+  }, [getStorageKey]);
+
+  useEffect(() => {
+    loadTripsForUser(user?.id);
+
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === getStorageKey(user?.id)) {
+            loadTripsForUser(user?.id);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, [user, getStorageKey, loadTripsForUser]);
   
   const saveTripsToStorage = useCallback((tripsToSave: Trip[], userId: string) => {
     try {
@@ -82,25 +98,29 @@ export function TripProvider({ children }: { children: ReactNode }) {
     
     const tripWithUser = { ...trip, userId: user.id };
 
-    const tripExists = trips.some(t => t.id === tripWithUser.id);
-    let newTrips;
-    if (tripExists) {
-        newTrips = trips.map(t => t.id === tripWithUser.id ? tripWithUser : t);
-    } else {
-        newTrips = [...trips, tripWithUser];
-    }
+    setTrips(prevTrips => {
+        const tripExists = prevTrips.some(t => t.id === tripWithUser.id);
+        let newTrips;
+        if (tripExists) {
+            newTrips = prevTrips.map(t => t.id === tripWithUser.id ? tripWithUser : t);
+        } else {
+            newTrips = [...prevTrips, tripWithUser];
+        }
+        saveTripsToStorage(newTrips, user.id);
+        return newTrips;
+    });
     
-    setTrips(newTrips);
-    saveTripsToStorage(newTrips, user.id);
     toast({ title: "Trip Saved!", description: `${trip.name} has been added to your collection.` });
-  }, [user, trips, saveTripsToStorage, toast]);
+  }, [user, saveTripsToStorage, toast]);
 
   const updateTrip = useCallback((trip: Trip) => {
     if (!user) return;
-    const newTrips = trips.map(t => t.id === trip.id ? trip : t);
-    setTrips(newTrips);
-    saveTripsToStorage(newTrips, user.id);
-  }, [user, trips, saveTripsToStorage]);
+    setTrips(prevTrips => {
+        const newTrips = prevTrips.map(t => t.id === trip.id ? trip : t);
+        saveTripsToStorage(newTrips, user.id);
+        return newTrips;
+    });
+  }, [user, saveTripsToStorage]);
 
   const getTrip = (tripId: string) => {
     return trips.find(t => t.id === tripId);
@@ -108,9 +128,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const deleteTrip = (tripId: string) => {
     if (!user) return;
-    const newTrips = trips.filter(t => t.id !== tripId);
-    setTrips(newTrips);
-    saveTripsToStorage(newTrips, user.id);
+    setTrips(prevTrips => {
+        const newTrips = prevTrips.filter(t => t.id !== tripId);
+        saveTripsToStorage(newTrips, user.id);
+        return newTrips;
+    });
     toast({ title: "Trip Deleted", description: "The trip has been removed from your list." });
   }
   
