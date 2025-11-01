@@ -26,6 +26,7 @@ export function AuthModal() {
   const [gender, setGender] = useState('');
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordStrength = useMemo(() => {
     let strength = 0;
@@ -88,6 +89,7 @@ export function AuthModal() {
         setContact('');
         setGender('');
         setShowPassword(false);
+        setShowConfirmPassword(false);
     }
   }
 
@@ -174,8 +176,8 @@ export function AuthModal() {
             <div className="grid gap-2">
                 <Label htmlFor="confirm-password">Re-enter Password</Label>
                 <div className="relative">
-                    <Input id="confirm-password" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
-                     <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(p => !p)}>
+                    <Input id="confirm-password" type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                     <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowConfirmPassword(p => !p)}>
                         <Eye className="h-4 w-4" />
                     </Button>
                 </div>
