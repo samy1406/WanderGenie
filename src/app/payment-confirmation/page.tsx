@@ -155,7 +155,7 @@ function ConfirmationContent() {
                             <CardContent>
                                 <p><strong>Policy ID:</strong> <span className="font-mono">{insuranceDetails.policyId}</span></p>
                                 <p><strong>Provider:</strong> {insuranceDetails.provider}</p>
-                                <p><strong>Coverage:</strong> <IndianRupee className="h-4 w-4 inline"/> {formatCurrency(insuranceDetails.coverageAmount)}</p>
+                                <p className="flex items-center"><strong>Coverage:</strong> <IndianRupee className="h-4 w-4 inline mx-1"/> {formatCurrency(insuranceDetails.coverageAmount)}</p>
                             </CardContent>
                         </Card>
                      )}
@@ -182,3 +182,5 @@ export default function PaymentConfirmationPage() {
         </Suspense>
     )
 }
+
+    

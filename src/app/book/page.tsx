@@ -329,7 +329,7 @@ export default function BookPage() {
         setAppliedDiscount(discount);
         toast({
             title: "Coupon Applied!",
-            description: <>You've saved <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(discount)} with coupon {code.toUpperCase()}.</>
+            description: <p className="flex items-center">You've saved <IndianRupee className="inline-block h-4 w-4 mx-1" />{formatCurrency(discount)} with coupon {code.toUpperCase()}.</p>
         });
     } else {
         setAppliedDiscount(0);
@@ -388,10 +388,10 @@ export default function BookPage() {
                             {isHotelBooking ? <ShieldQuestion className="h-8 w-8 text-purple-600" /> : <ShieldCheck className="h-8 w-8 text-purple-600" />}
                             <div>
                                 <CardTitle className="text-lg">{isHotelBooking ? 'Secure Your Stay' : 'Add travel insurance and secure your trip'}</CardTitle>
-                                <FormDescription>
+                                <FormDescription className="flex items-center">
                                     {isHotelBooking 
-                                        ? <>Get free cancellation coverage for your booking for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(insuranceCostPerPerson)} per person.</>
-                                        : <>Get comprehensive travel coverage for your trip for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(insuranceCostPerPerson)} per person.</>
+                                        ? <>Get free cancellation coverage for your booking for just <IndianRupee className="inline-block h-4 w-4 mx-1" />{formatCurrency(insuranceCostPerPerson)} per person.</>
+                                        : <>Get comprehensive travel coverage for your trip for just <IndianRupee className="inline-block h-4 w-4 mx-1" />{formatCurrency(insuranceCostPerPerson)} per person.</>
                                     }
                                 </FormDescription>
                             </div>
@@ -809,3 +809,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    

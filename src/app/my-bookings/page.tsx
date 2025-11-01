@@ -100,7 +100,7 @@ function BookingCard({
                     <h4 className="font-semibold mb-2 flex items-center"><Shield className="mr-2 h-4 w-4 text-muted-foreground" />Insurance</h4>
                     <p className="text-sm"><strong>Policy ID:</strong> <span className="font-mono">{insuranceDetails.policyId}</span></p>
                     <p className="text-sm"><strong>Provider:</strong> {insuranceDetails.provider}</p>
-                    <p className="text-sm"><strong>Coverage:</strong> <IndianRupee className="inline h-3 w-3"/>{formatCurrency(insuranceDetails.coverageAmount)}</p>
+                    <p className="text-sm flex items-center"><strong>Coverage:</strong><IndianRupee className="inline h-3 w-3 mx-1"/>{formatCurrency(insuranceDetails.coverageAmount)}</p>
                 </div>
             )}
              <div className="md:col-span-full lg:col-span-1 lg:col-start-3">
@@ -173,7 +173,7 @@ export default function MyBookingsPage() {
 
     toast({
         title: "Booking Cancelled",
-        description: <>Your booking has been cancelled. A refund of <IndianRupee className="inline h-4 w-4"/>{formatCurrency(refundAmount)} has been initiated.</>,
+        description: <p className="flex items-center">Your booking has been cancelled. A refund of <IndianRupee className="inline h-4 w-4 mx-1"/>{formatCurrency(refundAmount)} has been initiated.</p>,
     })
   }
 
@@ -226,3 +226,5 @@ export default function MyBookingsPage() {
     </div>
   );
 }
+
+    
