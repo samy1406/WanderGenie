@@ -111,7 +111,7 @@ function BookingCard({
             </CardTitle>
             <CardDescription className="flex items-center gap-4 mt-2">
                 <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
-                <span className="font-mono text-xs bg-primary/10 text-primary-foreground px-2 py-0.5 rounded-full">ID: {booking.id}</span>
+                <span className="font-mono text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">ID: {booking.id}</span>
             </CardDescription>
           </div>
           <div className="text-right">
@@ -242,10 +242,7 @@ export default function MyBookingsPage() {
 
   const handleViewTrip = (bookingId: string) => {
     // Find the trip associated with this booking
-    const tripForBooking = trips.find(trip => 
-        (trip.outboundTravelOptions && trip.outboundTravelOptions.travelOptions.some(opt => opt.details === (bookings.find(b => b.id === bookingId)?.item as TravelOption).details)) ||
-        (trip.outboundTravelOptions && trip.outboundTravelOptions.hotelOptions.some(opt => opt.name === (bookings.find(b => b.id === bookingId)?.item as HotelOption).name))
-    );
+    const tripForBooking = trips.find(trip => trip.bookingIds.includes(bookingId));
 
     if (tripForBooking) {
         setCurrentTrip(tripForBooking);
