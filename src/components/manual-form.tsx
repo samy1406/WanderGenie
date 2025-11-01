@@ -196,7 +196,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 border-t bg-gray-50 rounded-b-lg">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+            <div className="grid md:grid-cols-2 lg:grid-cols-[1fr_2fr_auto] gap-6 items-end">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -227,7 +227,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                     />
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
+                        <Button variant="outline" className="w-auto justify-start">
                             <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
                         </Button>
                     </PopoverTrigger>
@@ -292,4 +292,3 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
     </Card>
     );
 }
-

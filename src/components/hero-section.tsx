@@ -29,7 +29,7 @@ export const HeroSection = ({ children, tripType, setTripType, form }: HeroSecti
         <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
                 <Button 
-                    variant={tripType === 'oneway' ? 'secondary' : 'ghost'} 
+                    variant='ghost'
                     onClick={() => setTripType('oneway')}
                     className={cn(
                         "rounded-full shadow-lg",
@@ -40,7 +40,7 @@ export const HeroSection = ({ children, tripType, setTripType, form }: HeroSecti
                     One Way
                 </Button>
                 <Button 
-                    variant={tripType === 'roundtrip' ? 'secondary' : 'ghost'}
+                    variant='ghost'
                     onClick={() => setTripType('roundtrip')}
                     className={cn(
                         "rounded-full shadow-lg",
