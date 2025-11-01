@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee, CaseUpper, ShieldQuestion } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -51,7 +51,6 @@ const bookingFormSchema = z.object({
   contactPhone: z.string().length(10, 'Contact number must be 10 digits'),
   agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions." }),
   useGST: z.boolean().default(false),
-  gstDetails: gstDetailsSchema.optional(),
   insurance: z.enum(['yes', 'no']).default('no'),
 }).refine(data => {
     if (data.useGST && !data.gstDetails) {
@@ -69,7 +68,8 @@ const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: num
     "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off." },
 };
 
-const INSURANCE_COST_PER_PERSON = 249;
+const TRAVEL_INSURANCE_COST_PER_PERSON = 249;
+const HOTEL_INSURANCE_COST_PER_PERSON = 1;
 const PLATFORM_FEE = 199;
 
 export default function BookPage() {
@@ -82,6 +82,9 @@ export default function BookPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(0);
+
+  const isHotelBooking = bookingOption?.type === 'hotel';
+  const insuranceCostPerPerson = isHotelBooking ? HOTEL_INSURANCE_COST_PER_PERSON : TRAVEL_INSURANCE_COST_PER_PERSON;
   
   const form = useForm<z.infer<typeof bookingFormSchema>>({
     resolver: zodResolver(bookingFormSchema),
@@ -128,15 +131,15 @@ export default function BookPage() {
         const baseCost = (bookingOption.item as TravelOption).cost;
         watchedPassengers.forEach(passenger => {
             let passengerCost = 0;
-            if (passenger.age >= 12) {
+            if (passenger.age >= 11) {
                 summary.adults.count++;
                 passengerCost = baseCost;
             } else if (passenger.age >= 2) {
                 summary.children.count++;
-                passengerCost = baseCost * 0.75;
+                passengerCost = baseCost * 0.5; // 50% fare for children
             } else {
                 summary.infants.count++;
-                passengerCost = baseCost * 0.1;
+                passengerCost = baseCost * 0.1; // 10% fare for infants
             }
             summary.baseFare += passengerCost;
         });
@@ -145,14 +148,14 @@ export default function BookPage() {
     summary.gst = summary.baseFare * 0.18;
     
     if (wantsInsurance) {
-        summary.insurance = INSURANCE_COST_PER_PERSON * watchedPassengers.length;
+        summary.insurance = insuranceCostPerPerson * watchedPassengers.length;
     }
 
     summary.subTotal = summary.baseFare + summary.gst + summary.platformFee + summary.insurance;
     summary.grandTotal = summary.subTotal - summary.discount;
 
     return summary;
-}, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance]);
+}, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance, insuranceCostPerPerson]);
   
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -235,8 +238,8 @@ export default function BookPage() {
         if (wantsInsurance) {
             insuranceDetails = {
                 policyId: `INS-${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
-                provider: 'WanderSecure Insurance',
-                coverageAmount: 500000,
+                provider: isHotelBooking ? 'WanderStay Secure' : 'WanderSecure Insurance',
+                coverageAmount: isHotelBooking ? 50000 : 500000,
             };
         }
 
@@ -340,10 +343,15 @@ export default function BookPage() {
 
                     <Card>
                         <CardHeader className="bg-purple-50 flex items-center gap-4 p-4 rounded-t-lg">
-                            <ShieldCheck className="h-8 w-8 text-purple-600" />
+                            {isHotelBooking ? <ShieldQuestion className="h-8 w-8 text-purple-600" /> : <ShieldCheck className="h-8 w-8 text-purple-600" />}
                             <div>
-                                <CardTitle className="text-lg">Add travel insurance and secure your trip</CardTitle>
-                                <FormDescription>Get comprehensive travel coverage for your trip for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(INSURANCE_COST_PER_PERSON)} per person.</FormDescription>
+                                <CardTitle className="text-lg">{isHotelBooking ? 'Secure Your Stay' : 'Add travel insurance and secure your trip'}</CardTitle>
+                                <FormDescription>
+                                    {isHotelBooking 
+                                        ? <>Get free cancellation coverage for your booking for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(insuranceCostPerPerson)} per person.</>
+                                        : <>Get comprehensive travel coverage for your trip for just <IndianRupee className="inline-block h-4 w-4" />{formatCurrency(insuranceCostPerPerson)} per person.</>
+                                    }
+                                </FormDescription>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
@@ -362,7 +370,7 @@ export default function BookPage() {
                                                     <RadioGroupItem value="yes" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal">
-                                                    Yes, I want to secure my trip with insurance.
+                                                    Yes, I want to secure my {isHotelBooking ? 'booking' : 'trip'} with insurance.
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -370,7 +378,7 @@ export default function BookPage() {
                                                     <RadioGroupItem value="no" />
                                                 </FormControl>
                                                 <FormLabel className="font-normal">
-                                                    No, I do not want to insure my trip.
+                                                    No, I do not want to insure my {isHotelBooking ? 'booking' : 'trip'}.
                                                 </FormLabel>
                                             </FormItem>
                                         </RadioGroup>
@@ -475,7 +483,19 @@ export default function BookPage() {
                                             <FormItem>
                                                 <FormLabel>Age</FormLabel>
                                                 <FormControl>
-                                                <Input type="number" placeholder="30" {...field} />
+                                                <Input type="number" placeholder="30" {...field} 
+                                                    onChange={(e) => {
+                                                        const age = parseInt(e.target.value, 10);
+                                                        field.onChange(age);
+                                                        if (age > 10 && form.getValues(`passengers.${index}.title`) === 'Master') {
+                                                            form.setValue(`passengers.${index}.title`, 'Mr');
+                                                            toast({
+                                                                title: "Passenger Updated",
+                                                                description: "Passenger older than 10 is considered an adult."
+                                                            });
+                                                        }
+                                                    }}
+                                                />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -485,9 +505,14 @@ export default function BookPage() {
                                 </CardContent>
                             </Card>
                         ))}
-                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '', gender: 'male', age: 30 })}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '', gender: 'male', age: 30 })}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
+                            </Button>
+                            <Button type="button" variant="outline" onClick={() => append({ title: 'Master', firstName: '', lastName: '', gender: 'male', age: 6 })}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Child
+                            </Button>
+                        </div>
                     
                     <Card>
                         <CardHeader>
@@ -669,7 +694,7 @@ export default function BookPage() {
                 </div>
                  {priceSummary.insurance > 0 && (
                      <div className="flex justify-between">
-                        <span>Travel Insurance</span>
+                        <span>{isHotelBooking ? 'Cancellation Insurance' : 'Travel Insurance'}</span>
                         <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(priceSummary.insurance)}</span>
                     </div>
                  )}
@@ -742,3 +767,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    
