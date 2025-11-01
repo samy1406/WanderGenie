@@ -46,10 +46,20 @@ export default function AdminPage() {
       toast({ title: "Access Denied", description: "You do not have permission to view this page.", variant: "destructive"});
       router.push('/');
     } else if (user) {
-      setAllUsers(getAllUsers());
-      setAllBookings(bookings);
+        setAllUsers(getAllUsers());
+        setAllBookings(bookings);
     }
   }, [isLoading, isAuthenticated, user, router, getAllUsers, bookings, toast]);
+  
+  // This effect listens for changes in the underlying contexts
+  useEffect(() => {
+    setAllUsers(getAllUsers());
+  }, [getAllUsers]);
+
+  useEffect(() => {
+    setAllBookings(bookings);
+  }, [bookings]);
+
 
   const handleActionConfirmation = () => {
     if (!actionToConfirm || !validatePassword(password)) {
@@ -63,24 +73,20 @@ export default function AdminPage() {
     switch (type) {
         case 'editUser':
             updateUserInList(data as User);
-            setAllUsers(getAllUsers());
-            toast({ title: "User Updated", description: "User details have been saved." });
             setEditingUser(null);
+            toast({ title: "User Updated", description: "User details have been saved." });
             break;
         case 'deleteUser':
             deleteUserFromList((data as User).id);
-            setAllUsers(getAllUsers());
             toast({ title: "User Deleted", description: "The user has been removed." });
             break;
         case 'editBooking':
             updateBookingInList(data as Booking);
-            setAllBookings([...bookings]);
-            toast({ title: "Booking Updated", description: "Booking details have been saved." });
             setEditingBooking(null);
+            toast({ title: "Booking Updated", description: "Booking details have been saved." });
             break;
         case 'deleteBooking':
             deleteBookingFromList((data as Booking).id);
-            setAllBookings(bookings.filter(b => b.id !== (data as Booking).id));
             toast({ title: "Booking Deleted", description: "The booking has been removed." });
             break;
     }
@@ -357,5 +363,3 @@ export default function AdminPage() {
     </>
   );
 }
-
-    

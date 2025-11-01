@@ -90,22 +90,25 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const { addTrip, setCurrentTrip, updateTrip } = useTrip();
   const { isAuthenticated, handlePostAuth } = useAuth();
   
-  useEffect(() => {
-    const loadBookings = () => {
-        try {
-            const storedBookings = localStorage.getItem(BOOKINGS_STORAGE_KEY);
-            if (storedBookings) {
-                setBookings(JSON.parse(storedBookings));
-            }
-        } catch (error) {
-            console.error("Could not load bookings from localStorage", error);
+  const loadBookingsFromStorage = () => {
+    try {
+        const storedBookings = localStorage.getItem(BOOKINGS_STORAGE_KEY);
+        if (storedBookings) {
+            setBookings(JSON.parse(storedBookings));
+        } else {
+            setBookings([]);
         }
-    };
-    loadBookings();
+    } catch (error) {
+        console.error("Could not load bookings from localStorage", error);
+    }
+  };
+
+  useEffect(() => {
+    loadBookingsFromStorage();
 
     const handleStorageChange = (event: StorageEvent) => {
         if (event.key === BOOKINGS_STORAGE_KEY) {
-            loadBookings();
+            loadBookingsFromStorage();
         }
     };
 

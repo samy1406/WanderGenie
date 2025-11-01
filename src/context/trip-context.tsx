@@ -45,15 +45,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const getStorageKey = useCallback((userId?: string | null) => `wandergenie-trips-${userId || 'guest'}`, []);
+  const getStorageKey = useCallback((userId?: string) => `wandergenie-trips-${userId || 'guest'}`, []);
 
-  const loadTripsForUser = useCallback((userId?: string | null) => {
+  const loadTripsForUser = useCallback((userId?: string) => {
+    const key = getStorageKey(userId);
     if (!userId) {
         setTrips([]);
         return;
     }
     try {
-        const storedTrips = localStorage.getItem(getStorageKey(userId));
+        const storedTrips = localStorage.getItem(key);
         if (storedTrips) {
             setTrips(JSON.parse(storedTrips));
         } else {
@@ -66,11 +67,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [getStorageKey]);
 
   useEffect(() => {
-    loadTripsForUser(user?.id);
-
+    if (user) {
+      loadTripsForUser(user.id);
+    } else {
+      setTrips([]); // Clear trips if user logs out
+    }
+    
     const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === getStorageKey(user?.id)) {
-            loadTripsForUser(user?.id);
+        if (user && event.key === getStorageKey(user.id)) {
+            loadTripsForUser(user.id);
         }
     };
 

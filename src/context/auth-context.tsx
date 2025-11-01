@@ -41,8 +41,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data - in a real app, this would be fetched from a database
-let MOCK_USERS: User[] = [
+const initialUsers: User[] = [
     { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123', gender: 'male' },
     { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', contact: '1234567890', age: 30, gender: 'female' },
 ];
@@ -52,6 +51,7 @@ const CURRENT_USER_STORAGE_KEY = 'wandergenie-user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -59,13 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
-  const syncUsers = useCallback(() => {
+  const syncUsersFromStorage = useCallback(() => {
     try {
         const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
         if (storedUsers) {
-            MOCK_USERS = JSON.parse(storedUsers);
+            setAllUsers(JSON.parse(storedUsers));
         } else {
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
+            setAllUsers(initialUsers);
         }
     } catch (error) {
         console.error("Could not sync users from localStorage", error);
@@ -74,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Initial load
-    syncUsers();
+    syncUsersFromStorage();
     try {
         const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
         if (storedUser) {
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for changes from other tabs
     const handleStorageChange = (event: StorageEvent) => {
         if (event.key === USERS_STORAGE_KEY) {
-            syncUsers();
+            syncUsersFromStorage();
         }
         if (event.key === CURRENT_USER_STORAGE_KEY) {
             const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
@@ -103,7 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.removeEventListener('storage', handleStorageChange);
     };
 
-  }, [syncUsers]);
+  }, [syncUsersFromStorage]);
+
+  const saveUsersToStorage = (usersToSave: User[]) => {
+      setAllUsers(usersToSave);
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersToSave));
+  };
+
 
   const updateUser = (updatedUserDetails: Partial<User>) => {
     if (user) {
@@ -116,26 +123,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const getAllUsers = () => {
-    syncUsers();
-    return MOCK_USERS.filter(u => u.email !== 'admin@wandergenie.com'); // Don't show admin in user list
+    return allUsers.filter(u => u.email !== 'admin@wandergenie.com');
   }
 
   const updateUserInList = (updatedUser: User) => {
-    syncUsers();
-    const userIndex = MOCK_USERS.findIndex(u => u.id === updatedUser.id);
-    if(userIndex !== -1) {
-        MOCK_USERS[userIndex] = updatedUser;
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
-    } else { // If user not in list (e.g. from another tab), add them
-        MOCK_USERS.push(updatedUser);
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
-    }
+    setAllUsers(prevUsers => {
+        const userIndex = prevUsers.findIndex(u => u.id === updatedUser.id);
+        let newUsers;
+        if(userIndex !== -1) {
+            newUsers = [...prevUsers];
+            newUsers[userIndex] = updatedUser;
+        } else {
+            newUsers = [...prevUsers, updatedUser];
+        }
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+        return newUsers;
+    });
   }
 
   const deleteUserFromList = (userId: string) => {
-    syncUsers();
-    MOCK_USERS = MOCK_USERS.filter(u => u.id !== userId);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
+    setAllUsers(prevUsers => {
+        const newUsers = prevUsers.filter(u => u.id !== userId);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+        return newUsers;
+    });
   }
   
   const validatePassword = (password: string) => {
@@ -147,8 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (email: string, password?: string) => {
-    syncUsers();
-    const foundUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const foundUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     if (foundUser && foundUser.password === password) {
         setUser(foundUser);
@@ -161,8 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = (data: SignupData) => {
-    syncUsers();
-    if (MOCK_USERS.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
+    if (allUsers.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
         toast({ title: "Signup Failed", description: "An account with this email already exists.", variant: "destructive" });
         return;
     }
@@ -177,8 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatar: undefined,
     };
     
-    MOCK_USERS.push(newUser);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(MOCK_USERS));
+    saveUsersToStorage([...allUsers, newUser]);
     
     setUser(newUser);
     localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(newUser));
