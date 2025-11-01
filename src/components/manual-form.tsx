@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Users, CalendarIcon, ArrowRight, Clock } from "lucide-react";
+import { Users, CalendarIcon, ArrowRight, Clock, SlidersHorizontal } from "lucide-react";
 import { type formSchema } from "./itinerary-form";
 import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
@@ -39,9 +39,9 @@ type ManualFormProps = {
 export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFormProps) {
 
     return (
-      <Card className="w-full shadow-lg">
+      <Card className="w-full shadow-lg border-none">
         <CardContent className="p-0">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_1fr_auto] items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_1fr_auto] items-stretch border rounded-lg">
               {/* From */}
               <FormField
               control={form.control}
@@ -50,7 +50,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   <FormItem className="p-4 relative">
                   <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                   <FormControl>
-                      <Input placeholder="e.g., Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      <Input placeholder="Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
                   </FormControl>
                   </FormItem>
               )}
@@ -64,7 +64,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   <FormItem className="p-4 border-l">
                       <FormLabel className="text-xs text-gray-500">TO</FormLabel>
                       <FormControl>
-                      <Input placeholder="e.g., Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      <Input placeholder="Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
                       </FormControl>
                   </FormItem>
                   )}
@@ -74,24 +74,29 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   control={form.control}
                   name="departureDate"
                   render={({ field }) => (
-                    <FormItem className="p-4 border-l flex flex-col">
-                      <FormLabel className="text-xs text-gray-500">DEPARTURE</FormLabel>
+                    <FormItem className="p-4 border-l flex flex-col justify-center">
+                       <FormLabel className="text-xs text-gray-500">DEPARTURE</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant={"ghost"}
                               className={cn(
-                                "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold",
+                                "w-full pl-0 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-transparent",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span className="text-2xl font-bold text-gray-400">Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                             <div className="flex items-end">
+                                {field.value ? (
+                                    <>
+                                        <span className="text-4xl font-bold">{format(field.value, "d")}</span>
+                                        <span className="ml-2 text-lg font-semibold">{format(field.value, "MMM''yy")}</span>
+                                    </>
+                                ) : (
+                                    <span className="text-2xl font-bold text-gray-400">Pick a date</span>
+                                )}
+                              </div>
+                              <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -107,6 +112,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                           />
                         </PopoverContent>
                       </Popover>
+                      {field.value && <p className="text-sm text-muted-foreground -mt-1">{format(field.value, "EEEE")}</p>}
                     </FormItem>
                   )}
                 />
@@ -115,25 +121,28 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   control={form.control}
                   name="returnDate"
                   render={({ field }) => (
-                    <FormItem className="p-4 border-l flex flex-col" onClick={() => { if (tripType === 'oneway') setTripType('roundtrip')}}>
-                      <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
+                    <FormItem className="p-4 border-l flex flex-col justify-center" onClick={() => { if (tripType === 'oneway') setTripType('roundtrip')}}>
+                       <FormLabel className="text-xs text-gray-500">RETURN</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant={"ghost"}
                               disabled={tripType === 'oneway'}
                               className={cn(
-                                "w-full pl-3 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-2xl font-bold disabled:opacity-100",
+                                "w-full pl-0 text-left font-normal border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-100 hover:bg-transparent",
                                 !field.value && tripType === 'roundtrip' && "text-muted-foreground"
                               )}
                             >
-                              {field.value && tripType === 'roundtrip' ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span className="text-lg font-medium text-gray-400">Book a round trip to save more</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            {field.value && tripType === 'roundtrip' ? (
+                                <div className="flex items-end">
+                                    <span className="text-4xl font-bold">{format(field.value, "d")}</span>
+                                    <span className="ml-2 text-lg font-semibold">{format(field.value, "MMM''yy")}</span>
+                                </div>
+                            ) : (
+                                <span className="text-sm font-medium text-gray-400">Book a round trip to save more</span>
+                            )}
+                              <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -149,6 +158,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                           />
                         </PopoverContent>
                       </Popover>
+                        {field.value && tripType === 'roundtrip' && <p className="text-sm text-muted-foreground -mt-1">{format(field.value, "EEEE")}</p>}
                     </FormItem>
                   )}
                 />
@@ -158,11 +168,11 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   name="travelPreference"
                   render={({ field }) => (
                   <FormItem className="p-4 border-l">
-                      <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>Travel Preferences</FormLabel>
+                      <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>TRAVELLER & CLASS</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                           <SelectTrigger className="border-0 p-0 h-auto focus:ring-0 focus:ring-offset-0 text-left text-lg font-semibold">
-                          <SelectValue placeholder="Select" />
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -185,8 +195,8 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
               </Button>
           </div>
 
-          <div className="p-4 border-t">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -215,53 +225,71 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         </FormItem>
                     )}
                     />
-                <FormField
-                    control={form.control}
-                    name="departureTime"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Any time" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="any">Anytime</SelectItem>
-                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
-                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
-                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="arrivalTime"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Any time" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="any">Anytime</SelectItem>
-                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
-                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
-                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start">
+                            <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                         <div className="grid gap-4">
+                            <div className="space-y-2">
+                                <h4 className="font-medium leading-none">Time Preferences</h4>
+                                <p className="text-sm text-muted-foreground">Set preferred times for your journey.</p>
+                            </div>
+                             <div className="grid gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="departureTime"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Departure Time</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Any time" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="any">Anytime</SelectItem>
+                                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                                        </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="arrivalTime"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center"><Clock className="mr-1 h-4 w-4"/>Arrival Time</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Any time" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="any">Anytime</SelectItem>
+                                            <SelectItem value="morning">Morning (5am - 12pm)</SelectItem>
+                                            <SelectItem value="afternoon">Afternoon (12pm - 6pm)</SelectItem>
+                                            <SelectItem value="evening">Evening (6pm - 11pm)</SelectItem>
+                                        </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
           </div>
         </CardContent>
     </Card>
     );
 }
+
