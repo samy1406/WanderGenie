@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -37,8 +38,10 @@ export function useSpeechRecognition({ onTranscriptChanged }: UseSpeechRecogniti
             };
             
             recognition.onend = () => {
-                 if (recognitionRef.current) { // Check if we are still meant to be listening
+                 if (isListening && recognitionRef.current) { // Check if we are still meant to be listening
                     recognition.start(); // Restart if ended unexpectedly
+                 } else {
+                    setIsListening(false);
                  }
             };
 
@@ -53,7 +56,7 @@ export function useSpeechRecognition({ onTranscriptChanged }: UseSpeechRecogniti
                 recognitionRef.current.stop();
             }
         };
-    }, [onTranscriptChanged]);
+    }, [onTranscriptChanged, isListening]);
 
     const startListening = () => {
         if (recognitionRef.current) {
