@@ -70,6 +70,15 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   isSaved?: boolean,
   departureDate: Date,
 }) => {
+
+  if (!itineraryData || !itineraryData.dailyPlan || itineraryData.dailyPlan.length === 0) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">Itinerary data is not available.</p>
+        </div>
+    );
+  }
+
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
   const firstActivityDescription = dailyPlan[0]?.morning?.[0]?.description ?? dailyPlan[0]?.afternoon?.[0]?.description ?? "visit the city center";
   const { user } = useAuth();
@@ -341,5 +350,3 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
 };
 
 export default ItineraryDisplay;
-
-    
