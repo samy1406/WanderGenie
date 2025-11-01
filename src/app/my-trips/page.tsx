@@ -30,11 +30,12 @@ type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
 
 
-function TripCard({ trip, onDelete, onViewPlan, onCompleteBookings }: { 
+function TripCard({ trip, onDelete, onViewPlan, onCompleteBookings, onViewBookings }: { 
   trip: Trip, 
   onDelete: (id: string) => void, 
   onViewPlan: (trip: Trip) => void,
-  onCompleteBookings: (trip: Trip) => void
+  onCompleteBookings: (trip: Trip) => void,
+  onViewBookings: () => void,
 }) {
   const { getBookingsForTrip } = useBooking();
   const tripBookings = useMemo(() => getBookingsForTrip(trip.id), [getBookingsForTrip, trip.id]);
@@ -87,10 +88,13 @@ function TripCard({ trip, onDelete, onViewPlan, onCompleteBookings }: {
       </CardContent>
       <CardFooter className="bg-secondary/30 p-4 flex flex-col sm:flex-row justify-end gap-2">
          <Button variant="outline" onClick={() => onViewPlan(trip)}>View Plan</Button>
-         <Button onClick={() => onCompleteBookings(trip)} disabled={isComplete}>
-            {isComplete ? 'View Bookings' : 'Complete Bookings'}
-            {!isComplete && <ArrowRight className="ml-2 h-4 w-4"/>}
-         </Button>
+         {isComplete ? (
+            <Button onClick={onViewBookings}>View Bookings</Button>
+         ) : (
+            <Button onClick={() => onCompleteBookings(trip)}>
+                Complete Bookings <ArrowRight className="ml-2 h-4 w-4"/>
+            </Button>
+         )}
          <AlertDialog>
             <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="icon">
@@ -136,13 +140,13 @@ export default function MyTripsPage() {
 
   const handleCompleteBookings = (trip: Trip) => {
     setCurrentTrip(trip);
-    // Directly navigate to the booking view, which needs to be handled in the main page
-    // We can use a query param or a temporary state in a context
-    // For now, let's just go to the main page and assume it will open the booking view.
     router.push('/?view=book'); 
-    // In TripPlanner, we'll need to read this param and set viewState='BOOK'
   };
   
+  const handleViewBookings = () => {
+    router.push('/my-bookings');
+  }
+
   const handleDeleteTrip = (tripId: string) => {
     deleteTrip(tripId);
     toast({
@@ -176,6 +180,7 @@ export default function MyTripsPage() {
                 onDelete={handleDeleteTrip} 
                 onViewPlan={handleViewPlan}
                 onCompleteBookings={handleCompleteBookings}
+                onViewBookings={handleViewBookings}
               />
           ))}
         </div>
