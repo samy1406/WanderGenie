@@ -13,14 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Phone, Calendar, Upload, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Upload, Trash2, VenetianMask } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
   contact: z.string().optional(),
   age: z.coerce.number().min(0).optional(),
+  gender: z.string().optional(),
 });
 
 export default function ProfilePage() {
@@ -35,6 +37,7 @@ export default function ProfilePage() {
       email: '',
       contact: '',
       age: 0,
+      gender: '',
     },
   });
 
@@ -48,6 +51,7 @@ export default function ProfilePage() {
         email: user.email,
         contact: user.contact || '',
         age: user.age || undefined,
+        gender: user.gender || '',
       });
     }
   }, [isLoading, isAuthenticated, user, router, form]);
@@ -144,7 +148,7 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="contact"
@@ -171,6 +175,28 @@ export default function ProfilePage() {
                         </FormItem>
                       )}
                     />
+                     <FormField
+                        control={form.control}
+                        name="gender"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="flex items-center"><VenetianMask className="mr-2 h-4 w-4" />Gender</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select gender" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">Female</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                   </div>
                   <div className="flex justify-end">
                     <Button type="submit">Save Changes</Button>
@@ -184,5 +210,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

@@ -13,6 +13,7 @@ export type User = {
   email: string;
   age?: number;
   contact?: string;
+  gender?: 'male' | 'female' | 'other';
   avatar?: string;
   password?: string; // In a real app, this would be a hash
 };
@@ -42,8 +43,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user data - in a real app, this would be fetched from a database
 let MOCK_USERS: User[] = [
-    { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123' },
-    { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', contact: '1234567890', age: 30 },
+    { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123', gender: 'male' },
+    { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', contact: '1234567890', age: 30, gender: 'female' },
 ];
 
 
@@ -155,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: data.password,
       age: data.age,
       contact: data.contact,
+      gender: data.gender,
       avatar: undefined, // Explicitly set avatar to undefined
     };
     

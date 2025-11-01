@@ -32,6 +32,7 @@ const passengerSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
+  gender: z.string().min(1, "Gender is required"),
   age: z.coerce.number().min(0, "Age is required").max(120, "Enter a valid age"),
   email: z.string().email('Invalid email').optional(),
   contactNumber: z.string().optional(),
@@ -85,7 +86,7 @@ export default function BookPage() {
   const form = useForm<z.infer<typeof bookingFormSchema>>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      passengers: [{ title: 'Mr', firstName: '', lastName: '', age: 30 }],
+      passengers: [{ title: 'Mr', firstName: '', lastName: '', gender: 'male', age: 30 }],
       contactEmail: '',
       contactPhone: '',
       agreeToTerms: false,
@@ -396,7 +397,7 @@ export default function BookPage() {
                                     </Button>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                                         <FormField
                                             control={form.control}
                                             name={`passengers.${index}.title`}
@@ -447,6 +448,28 @@ export default function BookPage() {
                                         />
                                         <FormField
                                             control={form.control}
+                                            name={`passengers.${index}.gender`}
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Gender</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Gender" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
                                             name={`passengers.${index}.age`}
                                             render={({ field }) => (
                                             <FormItem>
@@ -462,7 +485,7 @@ export default function BookPage() {
                                 </CardContent>
                             </Card>
                         ))}
-                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '', age: 30 })}>
+                        <Button type="button" variant="outline" onClick={() => append({ title: 'Mr', firstName: '', lastName: '', gender: 'male', age: 30 })}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Adult
                         </Button>
                     

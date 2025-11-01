@@ -84,7 +84,7 @@ function BookingCard({
                 <h4 className="font-semibold mb-2 flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground" />Passengers</h4>
                 <ul className="space-y-1 text-sm text-foreground/90">
                 {passengerDetails.passengers.map((p, i) => (
-                    <li key={i}>{p.title}. {p.firstName} {p.lastName}</li>
+                    <li key={i}>{p.title}. {p.firstName} {p.lastName} ({p.gender}, {p.age})</li>
                 ))}
                 </ul>
             </div>
@@ -226,5 +226,3 @@ export default function MyBookingsPage() {
     </div>
   );
 }
-
-    

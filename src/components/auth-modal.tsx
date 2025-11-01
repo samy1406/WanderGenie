@@ -23,6 +23,7 @@ export function AuthModal() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [age, setAge] = useState('');
   const [contact, setContact] = useState('');
+  const [gender, setGender] = useState('');
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -50,7 +51,7 @@ export function AuthModal() {
         }
       login(email, password);
     } else { // signup
-        if (!name || !email || !password || !confirmPassword || !age || !contact) {
+        if (!name || !email || !password || !confirmPassword || !age || !contact || !gender) {
             toast({title: "All fields are required for sign up", variant: "destructive"});
             return;
         }
@@ -66,7 +67,7 @@ export function AuthModal() {
             toast({title: "Invalid Contact Number", description: "Contact number must be 10 digits.", variant: "destructive"});
             return;
         }
-        signup({name, email, password, age: parseInt(age), contact});
+        signup({name, email, password, age: parseInt(age), contact, gender});
     }
   };
   
@@ -85,6 +86,7 @@ export function AuthModal() {
         setConfirmPassword('');
         setAge('');
         setContact('');
+        setGender('');
         setShowPassword(false);
     }
   }
@@ -108,10 +110,25 @@ export function AuthModal() {
                 <Label htmlFor="name">Full Name</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Jane Doe" />
               </div>
-               <div className="grid gap-2">
-                <Label htmlFor="age">Age</Label>
-                <Input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g., 25" />
-              </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="grid gap-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g., 25" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="gender">Gender</Label>
+                     <Select value={gender} onValueChange={setGender}>
+                        <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+               </div>
             </>
           )}
           <div className="grid gap-2">

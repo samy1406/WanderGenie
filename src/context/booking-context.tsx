@@ -20,6 +20,7 @@ export type Passenger = {
     title: string;
     firstName: string;
     lastName: string;
+    gender: 'male' | 'female' | 'other' | string;
     age: number;
 };
 
@@ -198,5 +199,3 @@ export function useBooking() {
   }
   return context;
 }
-
-    

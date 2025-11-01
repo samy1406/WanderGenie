@@ -98,7 +98,7 @@ function ConfirmationContent() {
                         <CardContent>
                             <ul className="space-y-2">
                                 {passengerDetails.passengers.map((p: Passenger, i: number) => (
-                                    <li key={i}>{p.title} {p.firstName} {p.lastName} (Age: {p.age})</li>
+                                    <li key={i}>{p.title} {p.firstName} {p.lastName} ({p.gender}, Age: {p.age})</li>
                                 ))}
                             </ul>
                             <Separator className="my-4" />
@@ -168,5 +168,3 @@ export default function PaymentConfirmationPage() {
         </Suspense>
     )
 }
-
-    
