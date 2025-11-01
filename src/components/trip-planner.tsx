@@ -104,6 +104,7 @@ export function TripPlanner() {
         interests: values.interests,
         travelPreference: values.travelPreference,
         arrivalTime: values.arrivalTime,
+        departureTime: values.departureTime,
       });
 
       const outboundOptionsPromise = handleGetTravelOptions({
@@ -209,11 +210,6 @@ export function TripPlanner() {
                     <div className="space-y-8 h-full flex flex-col">
                       {viewState === 'PLAN' ? (
                         <>
-                          <div className="text-right">
-                             <Button onClick={() => setViewState('BOOK')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                                <Ticket className="mr-2 h-4 w-4" /> Book Travel & Hotels
-                            </Button>
-                          </div>
                           <ItineraryDisplay 
                             itineraryData={currentTrip.itinerary} 
                             destination={currentTrip.destination} 
@@ -221,7 +217,13 @@ export function TripPlanner() {
                             onItineraryUpdate={handleItineraryUpdate}
                             onSaveTrip={handleSaveTrip}
                             isSaved={isCurrentTripSaved()}
+                            departureDate={new Date(currentTrip.departureDate)}
                           />
+                          <div className="text-center">
+                             <Button onClick={() => setViewState('BOOK')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                <Ticket className="mr-2 h-4 w-4" /> View Travel & Hotel Options
+                            </Button>
+                          </div>
                         </>
                       ) : (
                         <TravelOptions 

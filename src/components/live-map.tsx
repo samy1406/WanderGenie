@@ -17,7 +17,15 @@ import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-pe
 import { AppLocationService } from '@/lib/location-service';
 import { useAuth } from '@/context/auth-context';
 
-type Activity = GeneratePersonalizedItineraryOutput['dailyPlan'][0]['activities'][0];
+type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
+const allActivities = (dailyPlan: GeneratePersonalizedItineraryOutput['dailyPlan']) =>
+  dailyPlan.flatMap(day => [
+    ...(day.morning || []),
+    ...(day.afternoon || []),
+    ...(day.evening || []),
+    ...(day.night || [])
+  ]);
+
 
 const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selectedActivity, itineraryData }: { 
     destination: string, 
@@ -99,7 +107,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     if (originCoords) checkpoints.push({ name: `Source: ${origin}`, lat: originCoords[1], lng: originCoords[0] });
 
     for (const day of itineraryData.dailyPlan) {
-        for (const activity of day.activities) {
+        for (const activity of allActivities([day])) {
             const activityCoords = await fetchCoords(activity.location);
             if (activityCoords) {
                 checkpoints.push({ name: `Day ${day.day}: ${activity.location}`, lat: activityCoords[1], lng: activityCoords[0]});
@@ -292,8 +300,8 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     if (journeyStarted) {
       if (selectedActivity) {
         nextStop = selectedActivity.location;
-      } else if (itineraryData.dailyPlan.length > 0 && itineraryData.dailyPlan[0].activities.length > 0) {
-        nextStop = itineraryData.dailyPlan[0].activities[0].location;
+      } else if (itineraryData.dailyPlan.length > 0 && allActivities(itineraryData.dailyPlan).length > 0) {
+        nextStop = allActivities(itineraryData.dailyPlan)[0].location;
       } else {
         nextStop = destination;
       }
@@ -326,7 +334,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         const allCoords = [];
 
         for (const day of itineraryData.dailyPlan) {
-            for (const activity of day.activities) {
+            for (const activity of allActivities([day])) {
                 const coords = await fetchCoords(activity.location);
                 if (coords) {
                     allCoords.push(coords);
@@ -366,5 +374,3 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
-
-    

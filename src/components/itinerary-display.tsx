@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
-import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save, Clock, Sunrise, Sun, Sunset } from "lucide-react";
+import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save, Clock, Sunrise, Sun, Sunset, Moon } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { FormatBoldText } from "./format-bold-text";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
 import type { User } from '@/context/auth-context';
 import { useAuth } from "@/context/auth-context";
+import { addDays, format } from 'date-fns';
 
 type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
 
@@ -59,14 +60,15 @@ const ActivityList = ({ activities, journeyStarted, selectedActivity, onActivity
 };
 
 
-const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, onSaveTrip, showSaveButton = true, isSaved = false }: { 
+const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdate, onSaveTrip, showSaveButton = true, isSaved = false, departureDate }: { 
   itineraryData: GeneratePersonalizedItineraryOutput, 
   destination: string, 
   origin: string,
   onItineraryUpdate: (newItinerary: GeneratePersonalizedItineraryOutput) => void,
   onSaveTrip?: () => void,
   showSaveButton?: boolean,
-  isSaved?: boolean
+  isSaved?: boolean,
+  departureDate: Date,
 }) => {
   const { dailyPlan, thingsToCarry, mustDo, travelTips, estimatedCost } = itineraryData;
   const firstActivityDescription = dailyPlan[0]?.morning?.[0]?.description ?? dailyPlan[0]?.afternoon?.[0]?.description ?? "visit the city center";
@@ -74,7 +76,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [simulationStarted, setSimulationStarted] = useState(false);
-  const [activeDay, setActiveDay] = useState<string | undefined>(undefined);
+  const [activeDay, setActiveDay] = useState<string | undefined>("day-0");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
   const handleToggleJourney = () => {
@@ -102,8 +104,6 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   }
 
   const handleSuggestionAccepted = (newActivityDescription: string) => {
-    // This logic might need to be more robust to handle which activity is being replaced.
-    // For now, it replaces the currently selected activity.
     if (!selectedActivity) return;
 
     const newItinerary = JSON.parse(JSON.stringify(itineraryData));
@@ -111,15 +111,15 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
     let activityFoundAndReplaced = false;
     for (const day of newItinerary.dailyPlan) {
         for (const timeSlot of ['morning', 'afternoon', 'evening', 'night']) {
-            if (day[timeSlot]) {
-                const actIndex = day[timeSlot].findIndex((act: Activity) => act.description === selectedActivity.description);
+            if ((day as any)[timeSlot]) {
+                const actIndex = (day as any)[timeSlot].findIndex((act: Activity) => act.description === selectedActivity.description);
                 if (actIndex !== -1) {
                     const updatedActivity = {
-                        ...day[timeSlot][actIndex],
+                        ...(day as any)[timeSlot][actIndex],
                         description: newActivityDescription,
                         location: newActivityDescription.split('**')[1] || newActivityDescription
                     };
-                    day[timeSlot][actIndex] = updatedActivity;
+                    (day as any)[timeSlot][actIndex] = updatedActivity;
                     setSelectedActivity(updatedActivity);
                     activityFoundAndReplaced = true;
                     break;
@@ -133,14 +133,6 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
         onItineraryUpdate(newItinerary);
     }
   };
-
-  const allActivities = dailyPlan.flatMap(day => [
-      ...(day.morning || []),
-      ...(day.afternoon || []),
-      ...(day.evening || []),
-      ...(day.night || [])
-  ]);
-
 
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
@@ -176,7 +168,7 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
         <div className="h-64 rounded-lg overflow-hidden border shadow-inner">
-            <LiveMap 
+             <LiveMap 
                 destination={destination} 
                 origin={origin} 
                 journeyStarted={journeyStarted} 
@@ -193,14 +185,22 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
             onValueChange={setActiveDay} 
             className="pr-4"
           >
-            {dailyPlan.map((day, index) => (
+            {dailyPlan.map((day, index) => {
+              const currentDate = addDays(departureDate, index);
+              const formattedDate = format(currentDate, "MMMM d, yyyy");
+              const dayOfWeek = format(currentDate, "EEEE");
+
+              return (
               <AccordionItem key={index} value={`day-${index}`} className="border-b-2 border-primary/10">
                 <AccordionTrigger className="font-headline text-xl font-bold hover:text-primary py-4">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-body text-sm">
                       {day.day}
                     </div>
-                    {day.title}
+                    <div>
+                      <span>{day.title}</span>
+                      <p className="text-sm font-normal text-muted-foreground">{formattedDate}, {dayOfWeek}</p>
+                    </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pl-4 border-l-2 border-accent ml-4 space-y-4">
@@ -225,10 +225,17 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                         <ActivityList activities={day.evening} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
                     </div>
                   )}
+                  
+                  {day.night && day.night.length > 0 && (
+                     <div className="space-y-2">
+                        <h4 className="font-semibold flex items-center text-muted-foreground"><Moon className="mr-2 h-4 w-4" /> Night</h4>
+                        <ActivityList activities={day.night} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                    </div>
+                  )}
 
                 </AccordionContent>
               </AccordionItem>
-            ))}
+            )})}
           </Accordion>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
