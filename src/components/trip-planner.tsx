@@ -44,7 +44,7 @@ function TripPlannerContent() {
     defaultValues: {
       origin: "Ahmedabad",
       destination: "Mumbai",
-      departureDate: new Date(),
+      departureDate: undefined, // Initialize as undefined to prevent hydration error
       returnDate: undefined,
       tripDuration: 3,
       interests: "Historical sites and local food",
@@ -54,6 +54,13 @@ function TripPlannerContent() {
       tripType: "oneway",
     },
   });
+
+  // Set default departure date on client-side to avoid hydration mismatch
+  useEffect(() => {
+    if (!form.getValues('departureDate')) {
+        form.setValue('departureDate', new Date());
+    }
+  }, [form]);
 
   // Effect to handle navigating directly to the booking view
   useEffect(() => {
