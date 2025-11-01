@@ -48,12 +48,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const getStorageKey = useCallback((userId?: string) => `wandergenie-trips-${userId || 'guest'}`, []);
 
   const loadTripsForUser = useCallback((userId?: string) => {
-    const key = getStorageKey(userId);
     // Guest users have no saved trips
     if (!userId) {
         setTrips([]);
         return;
     }
+    const key = getStorageKey(userId);
     try {
         const storedTrips = localStorage.getItem(key);
         setTrips(storedTrips ? JSON.parse(storedTrips) : []);

@@ -5,7 +5,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Booking } from './booking-context';
 
 export type User = {
   id: string;
@@ -13,7 +12,7 @@ export type User = {
   email: string;
   age?: number;
   contact?: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: 'male' | 'female' | 'other' | string;
   avatar?: string;
   password?: string; // In a real app, this would be a hash
 };
@@ -63,12 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // On initial load, read from localStorage
     try {
         const storedAllUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        if (storedAllUsers) {
-            setAllUsers(JSON.parse(storedAllUsers));
-        } else {
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-            setAllUsers(initialUsers);
-        }
+        setAllUsers(storedAllUsers ? JSON.parse(storedAllUsers) : initialUsers);
 
         const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
         if (storedUser) {
