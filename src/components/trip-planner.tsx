@@ -2,7 +2,7 @@
 // src/components/trip-planner.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import ItineraryForm, { formSchema } from "@/components/itinerary-form";
 import ItineraryDisplay from "@/components/itinerary-display";
 import TravelOptions from "@/components/travel-options";
@@ -21,15 +21,18 @@ import { useTrip } from "@/context/trip-context";
 import { Button } from "./ui/button";
 import { Ticket } from "lucide-react";
 import { useBooking } from "@/context/booking-context";
+import { useSearchParams } from "next/navigation";
+
 
 export type TripType = "oneway" | "roundtrip";
 type ViewState = 'PLAN' | 'BOOK';
 
-export function TripPlanner() {
+function TripPlannerContent() {
   const { toast } = useToast();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { currentTrip, setCurrentTrip, addTrip, isCurrentTripSaved, clearCurrentTrip } = useTrip();
   const { addBookingAndSaveTrip } = useBooking();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +57,13 @@ export function TripPlanner() {
     },
   });
 
+  // Effect to handle navigating directly to the booking view
+  useEffect(() => {
+    if (searchParams.get('view') === 'book' && currentTrip) {
+      setViewState('BOOK');
+    }
+  }, [searchParams, currentTrip]);
+
   useEffect(() => {
     if (currentTrip) {
         // When a trip is loaded or set, update the form
@@ -68,7 +78,7 @@ export function TripPlanner() {
             tripType: currentTrip.returnDate ? 'roundtrip' : 'oneway',
         });
         setTripType(currentTrip.returnDate ? 'roundtrip' : 'oneway');
-        setViewState('PLAN'); // Always default to the plan view when a trip is loaded
+        // Do not automatically change viewState here, let the ?view=book param handle it
     } else {
         // Optional: Reset form to defaults if there's no current trip
         // form.reset();
@@ -149,6 +159,7 @@ export function TripPlanner() {
         returnTravelOptions: returnOptionsResult,
         bookingIds: [],
         createdAt: new Date().toISOString(),
+        userId: user?.id,
       });
 
     } catch (error) {
@@ -257,4 +268,12 @@ export function TripPlanner() {
         <AuthModal />
     </div>
   );
+}
+
+export function TripPlanner() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TripPlannerContent />
+        </Suspense>
+    )
 }

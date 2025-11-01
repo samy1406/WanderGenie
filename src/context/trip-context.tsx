@@ -21,7 +21,7 @@ export type Trip = {
     outboundTravelOptions?: GetTravelOptionsOutput;
     returnTravelOptions?: GetTravelOptionsOutput | null;
     userId?: string;
-    bookingIds?: string[];
+    bookingIds: string[]; // Changed to non-optional
     createdAt: string;
 };
 
