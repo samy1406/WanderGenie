@@ -87,7 +87,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingOption, setBookingOption] = useState<BookingItem | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [pendingBooking, setPendingBooking] = useState<Booking | null>(null);
-  const { addTrip, setCurrentTrip, updateTrip } = useTrip();
+  const { addTrip, setCurrentTrip, updateTrip, isCurrentTripSaved } = useTrip();
   const { isAuthenticated, handlePostAuth } = useAuth();
   
   useEffect(() => {
@@ -134,6 +134,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     
     const newBookings = [...bookings, bookingWithTripId];
     saveBookings(newBookings);
+    
+    // Check if the trip is already saved. If not, save it now.
+    if (!isCurrentTripSaved()) {
+        addTrip(tripToSave);
+    }
     
     let updatedTrip = { ...tripToSave, bookingIds: [...(tripToSave.bookingIds || []), booking.id] };
 
