@@ -281,6 +281,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                     )}
                 />
                  <div className="flex flex-col gap-2">
+                    <FormLabel>&nbsp;</FormLabel>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="w-full">
