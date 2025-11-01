@@ -227,7 +227,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                     />
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full md:w-auto justify-start self-end">
+                        <Button variant="outline" size="sm" className="w-full md:w-auto justify-start">
                             <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
                         </Button>
                     </PopoverTrigger>
