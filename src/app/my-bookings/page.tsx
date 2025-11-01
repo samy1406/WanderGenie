@@ -2,12 +2,11 @@
 // src/app/my-bookings/page.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useBooking, type Booking, type Passenger, type SeatDetails, type InsuranceDetails, type PriceSummary } from '@/context/booking-context';
 import { useTrip, type Trip } from '@/context/trip-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +36,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { format, differenceInSeconds } from 'date-fns';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -88,6 +88,52 @@ const PriceBreakoutContent = ({ summary }: { summary: PriceSummary }) => (
     </div>
 );
 
+const useCountdown = (targetDate: Date) => {
+    const [timeLeft, setTimeLeft] = useState(differenceInSeconds(targetDate, new Date()));
+
+    useEffect(() => {
+        if (timeLeft <= 0) return;
+
+        const intervalId = setInterval(() => {
+            setTimeLeft(differenceInSeconds(targetDate, new Date()));
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, [targetDate, timeLeft]);
+
+    const days = Math.floor(timeLeft / (60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (60 * 60 * 24)) / (60 * 60));
+    const minutes = Math.floor((timeLeft % (60 * 60)) / 60);
+    const seconds = Math.floor(timeLeft % 60);
+    
+    return { days, hours, minutes, seconds, isPast: timeLeft <= 0 };
+};
+
+const CountdownTimer = ({ date }: { date: string }) => {
+    const target = useMemo(() => {
+        // Assume a plausible time like 10:00 AM for the countdown
+        const d = new Date(date);
+        d.setHours(10, 0, 0, 0); 
+        return d;
+    }, [date]);
+    
+    const { days, hours, minutes, seconds, isPast } = useCountdown(target);
+
+    if (isPast) {
+        return <span className="text-sm text-green-600">Journey Started</span>;
+    }
+
+    return (
+        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>{String(days).padStart(2, '0')}d</span>:
+            <span>{String(hours).padStart(2, '0')}h</span>:
+            <span>{String(minutes).padStart(2, '0')}m</span>:
+            <span>{String(seconds).padStart(2, '0')}s</span>
+        </div>
+    );
+};
+
 
 function BookingCard({ 
   booking,
@@ -119,8 +165,9 @@ function BookingCard({
                 </CardTitle>
                 <span className="font-mono text-xs bg-gray-800 text-gray-200 px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
             </div>
-            <CardDescription className="flex items-center gap-4 mt-2">
+            <CardDescription className="flex items-center gap-4 mt-2 text-xs">
                 <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
+                {trip && <CountdownTimer date={trip.departureDate} />}
             </CardDescription>
           </div>
            <div className="text-right">
@@ -132,7 +179,7 @@ function BookingCard({
                    {priceSummary && (
                       <Dialog>
                           <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/90">
+                              <Button variant="ghost" size="sm" className="text-primary hover:text-primary-foreground hover:bg-primary">
                                 <IndianRupee className="mr-2 h-4 w-4" />
                                 Price Breakout
                               </Button>
@@ -161,7 +208,7 @@ function BookingCard({
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">From</p>
                         <p className="text-xl font-bold">{trip.origin}</p>
-                        <p className="text-sm text-muted-foreground">{new Date(trip.departureDate).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground">{format(new Date(trip.departureDate), "dd MMM, yyyy")} - 10:00 AM</p>
                     </div>
                     <div className="text-center flex-1 px-4">
                         <div className="flex items-center justify-center text-sm text-muted-foreground">
@@ -176,7 +223,7 @@ function BookingCard({
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">To</p>
                         <p className="text-xl font-bold">{trip.destination}</p>
-                        {trip.returnDate && <p className="text-sm text-muted-foreground">{new Date(trip.returnDate).toLocaleDateString()}</p>}
+                        {trip.returnDate && <p className="text-sm text-muted-foreground">{format(new Date(trip.returnDate), "dd MMM, yyyy")} - 06:00 PM</p>}
                     </div>
                 </div>
             </div>
@@ -345,3 +392,5 @@ export default function MyBookingsPage() {
     </div>
   );
 }
+
+    
