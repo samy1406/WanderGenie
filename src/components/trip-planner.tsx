@@ -148,6 +148,7 @@ export function TripPlanner() {
         outboundTravelOptions: outboundOptionsResult,
         returnTravelOptions: returnOptionsResult,
         bookingIds: [],
+        createdAt: new Date().toISOString(),
       });
 
     } catch (error) {

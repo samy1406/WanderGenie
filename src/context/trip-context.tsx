@@ -22,6 +22,7 @@ export type Trip = {
     returnTravelOptions?: GetTravelOptionsOutput | null;
     userId?: string;
     bookingIds?: string[];
+    createdAt: string;
 };
 
 type TripContextType = {

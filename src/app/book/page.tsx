@@ -52,6 +52,7 @@ const bookingFormSchema = z.object({
   agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions." }),
   useGST: z.boolean().default(false),
   insurance: z.enum(['yes', 'no']).default('no'),
+  gstDetails: gstDetailsSchema.optional(),
 }).refine(data => {
     if (data.useGST && !data.gstDetails) {
       return false;
@@ -74,7 +75,7 @@ const PLATFORM_FEE = 199;
 
 export default function BookPage() {
   const router = useRouter();
-  const { bookingOption, addBookingAndSaveTrip, setPendingBooking } = useBooking();
+  const { bookingOption, addBookingAndSaveTrip, setPendingBooking, bookings } = useBooking();
   const { currentTrip } = useTrip();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
@@ -97,6 +98,35 @@ export default function BookPage() {
       insurance: 'no',
     },
   });
+  
+  // This effect pre-fills the form with the latest booking details for the current trip
+  useEffect(() => {
+    if (currentTrip && currentTrip.bookingIds && currentTrip.bookingIds.length > 0) {
+      // Find the latest booking for this trip
+      const tripBookings = bookings
+        .filter(b => currentTrip.bookingIds?.includes(b.id))
+        .sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime());
+
+      if (tripBookings.length > 0) {
+        const latestBooking = tripBookings[0];
+        form.reset({
+          ...form.getValues(), // keep other defaults
+          passengers: latestBooking.passengerDetails.passengers,
+          contactEmail: latestBooking.passengerDetails.email,
+          contactPhone: latestBooking.passengerDetails.phone,
+        });
+         toast({
+          title: "Passenger Details Pre-filled",
+          description: "We've filled in your details from your last booking on this trip.",
+        });
+      }
+    } else if (isAuthenticated && user) {
+        // Fallback for logged-in user with no previous bookings on this trip
+        form.setValue('contactEmail', user.email || '');
+        form.setValue('contactPhone', user.contact || '');
+    }
+  }, [currentTrip, bookings, isAuthenticated, user, form, toast]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -157,12 +187,6 @@ export default function BookPage() {
     return summary;
 }, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance, insuranceCostPerPerson]);
   
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      form.setValue('contactEmail', user.email || '');
-      form.setValue('contactPhone', user.contact || '');
-    }
-  }, [isAuthenticated, user, form]);
 
   useEffect(() => {
     if (!bookingOption) {
