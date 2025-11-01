@@ -59,42 +59,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
 
-  const syncUsersFromStorage = useCallback(() => {
+  useEffect(() => {
+    // On initial load, read from localStorage
     try {
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        if (storedUsers) {
-            setAllUsers(JSON.parse(storedUsers));
+        const storedAllUsers = localStorage.getItem(USERS_STORAGE_KEY);
+        if (storedAllUsers) {
+            setAllUsers(JSON.parse(storedAllUsers));
         } else {
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
             setAllUsers(initialUsers);
         }
-    } catch (error) {
-        console.error("Could not sync users from localStorage", error);
-    }
-  }, []);
 
-  useEffect(() => {
-    // Initial load
-    syncUsersFromStorage();
-    try {
         const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+            setUser(JSON.parse(storedUser));
         }
     } catch (error) {
-        console.error("Could not load user from localStorage", error);
+        console.error("Could not load data from localStorage on init", error);
     } finally {
         setIsLoading(false);
     }
 
-    // Listen for changes from other tabs
+    // Then, set up the event listener for cross-tab synchronization
     const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === USERS_STORAGE_KEY && event.newValue) {
-            setAllUsers(JSON.parse(event.newValue));
-        }
-        if (event.key === CURRENT_USER_STORAGE_KEY) {
-            const storedUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
-            setUser(storedUser ? JSON.parse(storedUser) : null);
+        try {
+            if (event.key === USERS_STORAGE_KEY && event.newValue) {
+                setAllUsers(JSON.parse(event.newValue));
+            }
+            if (event.key === CURRENT_USER_STORAGE_KEY) {
+                if (event.newValue) {
+                    setUser(JSON.parse(event.newValue));
+                } else {
+                    setUser(null); // Handles logout from another tab
+                }
+            }
+        } catch (error) {
+            console.error("Error processing storage event", error);
         }
     };
 
@@ -103,20 +103,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
         window.removeEventListener('storage', handleStorageChange);
     };
+  }, []);
 
-  }, [syncUsersFromStorage]);
-
-  const saveUsersToStorage = (usersToSave: User[]) => {
+  const saveAllUsers = (usersToSave: User[]) => {
       setAllUsers(usersToSave);
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersToSave));
   };
+  
+  const saveCurrentUser = (userToSave: User | null) => {
+      setUser(userToSave);
+      if (userToSave) {
+          localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(userToSave));
+      } else {
+          localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+      }
+  }
 
 
   const updateUser = (updatedUserDetails: Partial<User>) => {
     if (user) {
         const updatedUser = { ...user, ...updatedUserDetails };
-        setUser(updatedUser);
-        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser));
+        saveCurrentUser(updatedUser);
         updateUserInList(updatedUser);
         toast({ title: "Profile Updated", description: "Your details have been successfully updated." });
     }
@@ -127,26 +134,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updateUserInList = (updatedUser: User) => {
-    setAllUsers(prevUsers => {
-        const userIndex = prevUsers.findIndex(u => u.id === updatedUser.id);
-        let newUsers;
-        if(userIndex !== -1) {
-            newUsers = [...prevUsers];
-            newUsers[userIndex] = updatedUser;
-        } else {
-            newUsers = [...prevUsers, updatedUser];
-        }
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
-        return newUsers;
-    });
+    const userIndex = allUsers.findIndex(u => u.id === updatedUser.id);
+    let newUsers;
+    if(userIndex !== -1) {
+        newUsers = [...allUsers];
+        newUsers[userIndex] = updatedUser;
+    } else {
+        newUsers = [...allUsers, updatedUser];
+    }
+    saveAllUsers(newUsers);
   }
 
   const deleteUserFromList = (userId: string) => {
-    setAllUsers(prevUsers => {
-        const newUsers = prevUsers.filter(u => u.id !== userId);
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
-        return newUsers;
-    });
+    const newUsers = allUsers.filter(u => u.id !== userId);
+    saveAllUsers(newUsers);
   }
   
   const validatePassword = (password: string) => {
@@ -161,8 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const foundUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     if (foundUser && foundUser.password === password) {
-        setUser(foundUser);
-        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(foundUser));
+        saveCurrentUser(foundUser);
         toast({ title: "Login Successful", description: `Welcome back, ${foundUser.name}!` });
         handlePostAuth();
     } else {
@@ -187,18 +187,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     const updatedUsers = [...allUsers, newUser];
-    setAllUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-    
-    setUser(newUser);
-    localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(newUser));
+    saveAllUsers(updatedUsers);
+    saveCurrentUser(newUser);
+
     toast({ title: "Account Created!", description: `Welcome to WanderGenie, ${newUser.name}!` });
     handlePostAuth();
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+    saveCurrentUser(null);
     router.push('/');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };

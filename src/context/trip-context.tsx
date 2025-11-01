@@ -49,6 +49,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const loadTripsForUser = useCallback((userId?: string) => {
     const key = getStorageKey(userId);
+    // Guest users have no saved trips
     if (!userId) {
         setTrips([]);
         return;
@@ -63,12 +64,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [getStorageKey]);
 
   useEffect(() => {
-    const userId = user?.id;
-    loadTripsForUser(userId);
+    loadTripsForUser(user?.id);
     
     const handleStorageChange = (event: StorageEvent) => {
-        if (userId && event.key === getStorageKey(userId)) {
-            loadTripsForUser(userId);
+        if (user?.id && event.key === getStorageKey(user.id) && event.newValue) {
+           try {
+             setTrips(JSON.parse(event.newValue));
+           } catch(e) {
+            console.error("Error parsing trips from storage event", e);
+           }
         }
     };
 
@@ -83,6 +87,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const saveTripsToStorage = useCallback((tripsToSave: Trip[], userId: string) => {
     try {
       localStorage.setItem(getStorageKey(userId), JSON.stringify(tripsToSave));
+      setTrips(tripsToSave);
     } catch (error) {
       console.error("Could not save trips to localStorage", error);
     }
@@ -96,29 +101,23 @@ export function TripProvider({ children }: { children: ReactNode }) {
     
     const tripWithUser = { ...trip, userId: user.id };
 
-    setTrips(prevTrips => {
-        const tripExists = prevTrips.some(t => t.id === tripWithUser.id);
-        let newTrips;
-        if (tripExists) {
-            newTrips = prevTrips.map(t => t.id === tripWithUser.id ? tripWithUser : t);
-        } else {
-            newTrips = [...prevTrips, tripWithUser];
-        }
-        saveTripsToStorage(newTrips, user.id);
-        return newTrips;
-    });
+    const tripExists = trips.some(t => t.id === tripWithUser.id);
+    let newTrips;
+    if (tripExists) {
+        newTrips = trips.map(t => t.id === tripWithUser.id ? tripWithUser : t);
+    } else {
+        newTrips = [...trips, tripWithUser];
+    }
+    saveTripsToStorage(newTrips, user.id);
     
     toast({ title: "Trip Saved!", description: `${trip.name} has been added to your collection.` });
-  }, [user, saveTripsToStorage, toast]);
+  }, [user, trips, saveTripsToStorage, toast]);
 
   const updateTrip = useCallback((trip: Trip) => {
     if (!user) return;
-    setTrips(prevTrips => {
-        const newTrips = prevTrips.map(t => t.id === trip.id ? trip : t);
-        saveTripsToStorage(newTrips, user.id);
-        return newTrips;
-    });
-  }, [user, saveTripsToStorage]);
+    const newTrips = trips.map(t => t.id === trip.id ? trip : t);
+    saveTripsToStorage(newTrips, user.id);
+  }, [user, trips, saveTripsToStorage]);
 
   const getTrip = (tripId: string) => {
     return trips.find(t => t.id === tripId);
@@ -126,11 +125,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const deleteTrip = (tripId: string) => {
     if (!user) return;
-    setTrips(prevTrips => {
-        const newTrips = prevTrips.filter(t => t.id !== tripId);
-        saveTripsToStorage(newTrips, user.id);
-        return newTrips;
-    });
+    const newTrips = trips.filter(t => t.id !== tripId);
+    saveTripsToStorage(newTrips, user.id);
     toast({ title: "Trip Deleted", description: "The trip has been removed from your list." });
   }
   
