@@ -5,7 +5,7 @@
 import React from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useBooking, type Booking, type Passenger, type SeatDetails, type InsuranceDetails, type PriceSummary } from '@/context/booking-context';
-import { useTrip } from '@/context/trip-context';
+import { useTrip, type Trip } from '@/context/trip-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -99,7 +100,6 @@ function BookingCard({
   onViewTrip: (bookingId: string) => void;
 }) {
   const { item, type, passengerDetails, bookingDate, transactionId, amountPaid, seatDetails, insuranceDetails, priceSummary } = booking;
-  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const isHotel = type === 'hotel';
   const travelItem = isHotel ? null : item as TravelOption;
   const hotelItem = isHotel ? item as HotelOption : null;
@@ -116,25 +116,39 @@ function BookingCard({
                 {getIconForBooking(booking)}
                 <FormatBoldText text={isHotel ? hotelItem!.name : travelItem!.details} />
                 </CardTitle>
-                <span className="font-mono text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
+                <span className="font-mono text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
             </div>
             <CardDescription className="flex items-center gap-4 mt-2">
                 <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
             </CardDescription>
           </div>
            <div className="text-right">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end gap-2">
                   <p className="flex items-center text-xl font-bold">
                       <IndianRupee className="h-5 w-5 mr-1"/>
                       {formatCurrency(booking.amountPaid || 0)}
                   </p>
-                  {priceSummary && (
-                      <Button variant="ghost" size="sm" onClick={() => setIsPriceModalOpen(true)}>
-                          Price Breakout
-                      </Button>
+                   {priceSummary && (
+                      <Dialog>
+                          <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/90">
+                                <IndianRupee className="mr-2 h-4 w-4" />
+                                Price Breakout
+                              </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle>Price Breakout</DialogTitle>
+                                  <DialogDescription>ID: {booking.id}</DialogDescription>
+                              </DialogHeader>
+                              <PriceBreakoutContent summary={priceSummary} />
+                              <DialogFooter>
+                                  <DialogClose asChild><Button>Close</Button></DialogClose>
+                              </DialogFooter>
+                          </DialogContent>
+                      </Dialog>
                   )}
               </div>
-            <p className="text-xs text-muted-foreground">Total Price</p>
           </div>
         </div>
       </CardHeader>
@@ -149,14 +163,14 @@ function BookingCard({
                         <p className="text-sm text-muted-foreground">{new Date(trip.departureDate).toLocaleDateString()}</p>
                     </div>
                     <div className="text-center flex-1 px-4">
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center text-sm text-muted-foreground">
                             <Clock className="h-4 w-4 mr-2" /> {travelItem?.duration}
                         </div>
                         <div className="w-full bg-border h-0.5 relative my-1">
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
                             <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
                         </div>
-                         <p className="text-xs text-muted-foreground">{travelItem?.mode}</p>
+                         <p className="text-xs text-center text-muted-foreground">{travelItem?.mode}</p>
                     </div>
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">To</p>
@@ -234,18 +248,6 @@ function BookingCard({
         </AlertDialog>
       </CardFooter>
     </Card>
-
-    <Dialog open={isPriceModalOpen} onOpenChange={setIsPriceModalOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Price Breakout</DialogTitle>
-            </DialogHeader>
-            {priceSummary && <PriceBreakoutContent summary={priceSummary} />}
-             <DialogFooter>
-                <DialogClose asChild><Button>Close</Button></DialogClose>
-             </DialogFooter>
-        </DialogContent>
-    </Dialog>
     </>
   )
 }
@@ -342,5 +344,3 @@ export default function MyBookingsPage() {
     </div>
   );
 }
-
-    
