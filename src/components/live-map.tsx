@@ -64,14 +64,16 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     }
 
     let data;
+    const city = location.split(',').pop()?.trim() || location;
 
     // Create a set of unique queries to try for geocoding
     const queries = new Set<string>();
-    queries.add(location);
+    queries.add(location); // Full query first
     if (location.includes(',')) {
-        queries.add(location.split(',')[0].trim());
+        queries.add(location.split(',')[0].trim()); // Just the name
     }
-    queries.add(`${location}, India`);
+    queries.add(`${location}, India`); // Append country
+    queries.add(city); // Fallback to just the city
 
     for (const query of queries) {
         if (!query) continue;
@@ -374,3 +376,5 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
+
+    
