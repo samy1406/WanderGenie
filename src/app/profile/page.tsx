@@ -70,11 +70,11 @@ export default function ProfilePage() {
   
   const handleUploadPhoto = () => {
     // This is a mock function. In a real app, this would open a file picker.
-    if(user) {
-        const newAvatar = `https://i.pravatar.cc/150?u=${user.email}&t=${Date.now()}`;
-        updateUser({ avatar: newAvatar });
-        toast({ title: "Photo Updated", description: "Your profile picture has been updated." });
-    }
+    // For now, it just shows a toast.
+    toast({
+        title: "Feature not available",
+        description: "File uploads are not yet implemented in this prototype.",
+    });
   }
 
   const onSubmit = (data: z.infer<typeof profileSchema>) => {
@@ -152,7 +152,7 @@ export default function ProfilePage() {
                         <FormItem>
                           <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4" />Contact Number</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="1234567890" {...field} />
+                            <Input type="tel" placeholder="1234567890" {...field} />
                           </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -163,9 +163,9 @@ export default function ProfilePage() {
                       name="age"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center"><Calendar className="mr-2 h-4 w-4" />Age</FormLabel>
+                          <FormLabel className="flex items-center"><Calendar className="mr-2 h-4 w-4" />Age</FormLabel>                          
                           <FormControl>
-                            <Input type="number" placeholder="25" {...field} />
+                            <Input type="number" placeholder="25" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} />
                           </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -184,3 +184,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

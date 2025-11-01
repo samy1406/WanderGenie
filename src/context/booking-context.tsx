@@ -58,6 +58,7 @@ type BookingContextType = {
   bookings: Booking[];
   addBookingAndSaveTrip: (booking: Booking, tripToSave: Trip) => void;
   deleteBooking: (bookingId: string) => void;
+  deleteBookingFromList: (bookingId: string) => void;
   updateBookingInList: (updatedBooking: Booking) => void;
   getBookingById: (bookingId: string) => Booking | undefined;
   pendingBooking: Booking | null;
@@ -88,9 +89,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   // Effect to complete pending booking after authentication
   useEffect(() => {
     if (isAuthenticated && pendingBooking) {
-      // In a real app you might automatically trigger the booking submission here
-      // For this app, we let the user re-click the 'Pay' button.
-      // We can notify the AuthContext to close the modal.
       handlePostAuth();
     }
   }, [isAuthenticated, pendingBooking, handlePostAuth]);
@@ -151,6 +149,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setBookings(newBookings);
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
   };
+  
+  const deleteBookingFromList = (bookingId: string) => {
+    const newBookings = bookings.filter(b => b.id !== bookingId);
+    setBookings(newBookings);
+    localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
+  };
 
   const updateBookingInList = (updatedBooking: Booking) => {
     const bookingIndex = bookings.findIndex(b => b.id === updatedBooking.id);
@@ -176,6 +180,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     bookings,
     addBookingAndSaveTrip,
     deleteBooking,
+    deleteBookingFromList,
     updateBookingInList,
     getBookingById,
     pendingBooking,

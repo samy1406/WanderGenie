@@ -3,10 +3,10 @@
 'use client';
 
 import { useAuth } from '@/context/auth-context';
-import { useBooking, type Booking } from '@/context/booking-context';
+import { useBooking, type Booking, Passenger } from '@/context/booking-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,12 +14,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Briefcase, Edit, Trash2 } from 'lucide-react';
+import { Users, Briefcase, Edit, Trash2, Eye, KeyRound, Shield, Ticket } from 'lucide-react';
 import type { User } from '@/context/auth-context';
+import { Separator } from '@/components/ui/separator';
+import { formatCurrency } from '@/lib/formatters';
+
+type ActionType = 'editUser' | 'deleteUser' | 'editBooking' | 'deleteBooking';
 
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoading, getAllUsers, updateUserInList } = useAuth();
-  const { bookings, updateBookingInList } = useBooking();
+  const { user, isAuthenticated, isLoading, getAllUsers, updateUserInList, deleteUserFromList, validatePassword } = useAuth();
+  const { bookings, updateBookingInList, deleteBookingFromList } = useBooking();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -29,34 +33,66 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
+
+  const [actionToConfirm, setActionToConfirm] = useState<{ type: ActionType, data: User | Booking } | null>(null);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || user?.email !== 'admin@wandergenie.com')) {
       toast({ title: "Access Denied", description: "You do not have permission to view this page.", variant: "destructive"});
       router.push('/');
-    } else {
+    } else if (user) {
       setAllUsers(getAllUsers());
       setAllBookings(bookings);
     }
   }, [isLoading, isAuthenticated, user, router, getAllUsers, bookings, toast]);
 
-  const handleUserUpdate = () => {
-    if(editingUser) {
-        updateUserInList(editingUser);
-        setAllUsers(getAllUsers());
-        toast({ title: "User Updated", description: "User details have been saved."});
-        setEditingUser(null);
+  const handleActionConfirmation = () => {
+    if (!actionToConfirm || !validatePassword(password)) {
+        toast({ title: "Authentication Failed", description: "The password you entered is incorrect.", variant: "destructive" });
+        setPassword('');
+        return;
     }
-  }
-  
-  const handleBookingUpdate = () => {
-    if(editingBooking) {
-        updateBookingInList(editingBooking);
-        setAllBookings([...bookings]);
-        toast({ title: "Booking Updated", description: "Booking details have been saved."});
-        setEditingBooking(null);
-    }
-  };
+    
+    const { type, data } = actionToConfirm;
 
+    switch (type) {
+        case 'editUser':
+            updateUserInList(data as User);
+            setAllUsers(getAllUsers());
+            toast({ title: "User Updated", description: "User details have been saved." });
+            setEditingUser(null);
+            break;
+        case 'deleteUser':
+            deleteUserFromList((data as User).id);
+            setAllUsers(getAllUsers());
+            toast({ title: "User Deleted", description: "The user has been removed." });
+            break;
+        case 'editBooking':
+            updateBookingInList(data as Booking);
+            setAllBookings([...bookings]);
+            toast({ title: "Booking Updated", description: "Booking details have been saved." });
+            setEditingBooking(null);
+            break;
+        case 'deleteBooking':
+            deleteBookingFromList((data as Booking).id);
+            setAllBookings(bookings.filter(b => b.id !== (data as Booking).id));
+            toast({ title: "Booking Deleted", description: "The booking has been removed." });
+            break;
+    }
+
+    closeConfirmationModal();
+  }
+
+  const closeConfirmationModal = () => {
+    setActionToConfirm(null);
+    setPassword('');
+    setShowPassword(false);
+  }
 
   if (isLoading || !user || user.email !== 'admin@wandergenie.com') {
     return <div className="text-center p-8">Loading admin dashboard...</div>;
@@ -78,7 +114,7 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>All Registered Users</CardTitle>
-                <CardDescription>View and manage all user accounts.</CardDescription>
+                <CardDescription>View, edit, and manage all user accounts.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -87,7 +123,6 @@ export default function AdminPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Contact</TableHead>
-                      <TableHead>Age</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -97,11 +132,10 @@ export default function AdminPage() {
                         <TableCell>{u.name}</TableCell>
                         <TableCell>{u.email}</TableCell>
                         <TableCell>{u.contact || 'N/A'}</TableCell>
-                        <TableCell>{u.age || 'N/A'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setEditingUser(u)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                        <TableCell className="text-right space-x-1">
+                          <Button variant="ghost" size="icon" onClick={() => setViewingUser(u)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setEditingUser(u)}><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setActionToConfirm({ type: 'deleteUser', data: u})} className="text-destructive hover:text-destructive/90"><Trash2 className="h-4 w-4" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -115,17 +149,16 @@ export default function AdminPage() {
              <Card>
               <CardHeader>
                 <CardTitle>All Bookings</CardTitle>
-                <CardDescription>View and manage all trip bookings.</CardDescription>
+                <CardDescription>View, edit, and manage all trip bookings.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Booking ID</TableHead>
-                      <TableHead>Txn ID</TableHead>
                       <TableHead>User Email</TableHead>
-                      <TableHead>Booking Date</TableHead>
                       <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -133,14 +166,13 @@ export default function AdminPage() {
                      {allBookings.map((booking) => (
                       <TableRow key={booking.id}>
                         <TableCell className="font-mono text-xs">{booking.id}</TableCell>
-                        <TableCell className="font-mono text-xs">{booking.transactionId || 'N/A'}</TableCell>
                         <TableCell>{booking.passengerDetails.email}</TableCell>
-                        <TableCell>{new Date(booking.bookingDate).toLocaleDateString()}</TableCell>
                         <TableCell className="capitalize">{booking.type}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setEditingBooking(booking)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                        <TableCell>{new Date(booking.bookingDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right space-x-1">
+                           <Button variant="ghost" size="icon" onClick={() => setViewingBooking(booking)}><Eye className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon" onClick={() => setEditingBooking(booking)}><Edit className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon" onClick={() => setActionToConfirm({ type: 'deleteBooking', data: booking})} className="text-destructive hover:text-destructive/90"><Trash2 className="h-4 w-4" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -151,6 +183,27 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+    {/* View User Modal */}
+    <Dialog open={!!viewingUser} onOpenChange={() => setViewingUser(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>View User Details</DialogTitle>
+                <DialogDescription>ID: {viewingUser?.id}</DialogDescription>
+            </DialogHeader>
+            {viewingUser && (
+                 <div className="grid gap-4 py-4 text-sm">
+                    <p><strong>Name:</strong> {viewingUser.name}</p>
+                    <p><strong>Email:</strong> {viewingUser.email}</p>
+                    <p><strong>Contact:</strong> {viewingUser.contact || 'N/A'}</p>
+                    <p><strong>Age:</strong> {viewingUser.age || 'N/A'}</p>
+                 </div>
+            )}
+            <DialogFooter>
+                <DialogClose asChild><Button>Close</Button></DialogClose>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 
     {/* Edit User Modal */}
     <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
@@ -180,11 +233,65 @@ export default function AdminPage() {
                 </div>
             )}
             <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button onClick={handleUserUpdate}>Save Changes</Button>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={() => setActionToConfirm({type: 'editUser', data: editingUser!})}>Save Changes</Button>
             </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    {/* View Booking Modal */}
+    <Dialog open={!!viewingBooking} onOpenChange={() => setViewingBooking(null)}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>View Booking Details</DialogTitle>
+                 <DialogDescription>ID: {viewingBooking?.id}</DialogDescription>
+            </DialogHeader>
+            {viewingBooking && (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 text-sm">
+                    <p><strong>Type:</strong> <span className="capitalize">{viewingBooking.type}</span></p>
+                    <p><strong>Booking Date:</strong> {new Date(viewingBooking.bookingDate).toLocaleString()}</p>
+                    <p><strong>Total Amount:</strong> {formatCurrency(viewingBooking.amountPaid || 0)}</p>
+                    <p><strong>Transaction ID:</strong> <span className="font-mono">{viewingBooking.transactionId || 'N/A'}</span></p>
+                    
+                    <Separator/>
+                    <h4 className="font-semibold">Passenger Details</h4>
+                    <p><strong>Contact Email:</strong> {viewingBooking.passengerDetails.email}</p>
+                    <p><strong>Contact Phone:</strong> {viewingBooking.passengerDetails.phone}</p>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Title</TableHead><TableHead>First Name</TableHead><TableHead>Last Name</TableHead><TableHead>Age</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {viewingBooking.passengerDetails.passengers.map((p: Passenger, i: number) => (
+                                <TableRow key={i}><TableCell>{p.title}</TableCell><TableCell>{p.firstName}</TableCell><TableCell>{p.lastName}</TableCell><TableCell>{p.age}</TableCell></TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+
+                    {viewingBooking.seatDetails && (
+                        <>
+                            <Separator/>
+                            <div className="flex items-center gap-2 font-semibold"><Ticket/> Seat Details</div>
+                            <p><strong>PNR:</strong> <span className="font-mono">{viewingBooking.seatDetails.pnr}</span></p>
+                            <p><strong>Seats:</strong> <span className="font-mono">{viewingBooking.seatDetails.seats.join(', ')}</span></p>
+                        </>
+                    )}
+                     {viewingBooking.insuranceDetails && (
+                        <>
+                            <Separator/>
+                            <div className="flex items-center gap-2 font-semibold"><Shield/> Insurance Details</div>
+                            <p><strong>Policy ID:</strong> <span className="font-mono">{viewingBooking.insuranceDetails.policyId}</span></p>
+                            <p><strong>Provider:</strong> {viewingBooking.insuranceDetails.provider}</p>
+                            <p><strong>Coverage:</strong> {formatCurrency(viewingBooking.insuranceDetails.coverageAmount)}</p>
+                        </>
+                    )}
+                </div>
+            )}
+             <DialogFooter>
+                <DialogClose asChild><Button>Close</Button></DialogClose>
+             </DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -197,24 +304,58 @@ export default function AdminPage() {
             </DialogHeader>
             {editingBooking && (
                  <div className="grid gap-4 py-4">
-                     <p>Booking details for: <strong>{editingBooking.passengerDetails.email}</strong></p>
+                     <p>Editing for <strong>{editingBooking.passengerDetails.email}</strong></p>
                      <p className="text-sm text-muted-foreground">This is a simplified view. All details are editable in a real application.</p>
                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="booking-type" className="text-right">Type</Label>
-                        <Input id="booking-type" value={editingBooking.type} disabled className="col-span-3"/>
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="booking-date" className="text-right">Date</Label>
-                        <Input id="booking-date" value={new Date(editingBooking.bookingDate).toLocaleString()} disabled className="col-span-3"/>
+                        <Label htmlFor="booking-amount" className="text-right">Amount Paid</Label>
+                        <Input 
+                            id="booking-amount" 
+                            type="number" 
+                            value={editingBooking.amountPaid} 
+                            onChange={(e) => setEditingBooking({...editingBooking, amountPaid: Number(e.target.value)})} 
+                            className="col-span-3"/>
                     </div>
                 </div>
             )}
              <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={handleBookingUpdate}>Save Changes</Button>
+                <Button onClick={() => setActionToConfirm({type: 'editBooking', data: editingBooking!})}>Save Changes</Button>
              </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    {/* Action Confirmation Modal */}
+    <Dialog open={!!actionToConfirm} onOpenChange={closeConfirmationModal}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="flex items-center"><KeyRound className="mr-2"/>Admin Confirmation Required</DialogTitle>
+                <DialogDescription>
+                    To proceed with this action, please enter your admin password.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-2">
+                <Label htmlFor="admin-password">Password</Label>
+                <div className="relative">
+                    <Input 
+                        id="admin-password" 
+                        type={showPassword ? "text" : "password"} 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter admin password"
+                    />
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(p => !p)}>
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button variant="destructive" onClick={handleActionConfirmation}>Confirm Action</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
     </>
   );
 }
+
+    

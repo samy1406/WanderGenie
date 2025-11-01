@@ -25,6 +25,8 @@ type AuthContextType = {
   updateUser: (updatedUser: Partial<User>) => void;
   getAllUsers: () => User[];
   updateUserInList: (updatedUser: User) => void;
+  deleteUserFromList: (userId: string) => void;
+  validatePassword: (password: string) => boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => void;
   logout: () => void;
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getAllUsers = () => {
     syncUsers();
-    return MOCK_USERS;
+    return MOCK_USERS.filter(u => u.email !== 'admin@wandergenie.com'); // Don't show admin in user list
   }
 
   const updateUserInList = (updatedUser: User) => {
@@ -110,10 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
     }
   }
+
+  const deleteUserFromList = (userId: string) => {
+    MOCK_USERS = MOCK_USERS.filter(u => u.id !== userId);
+    localStorage.setItem('wandergenie-users', JSON.stringify(MOCK_USERS));
+  }
   
+  const validatePassword = (password: string) => {
+    return user?.password === password;
+  };
+
   const handlePostAuth = () => {
-    // This function will be called by the booking context if there's a pending booking.
-    // For now, it just closes the modal.
     // The `useBooking` hook will have logic to check for `isAuthenticated` and complete the action.
     closeAuthModal();
   };
@@ -144,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: data.password,
       age: data.age,
       contact: data.contact,
+      avatar: undefined, // Explicitly set avatar to undefined
     };
     
     MOCK_USERS.push(newUser);
@@ -178,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser,
     getAllUsers,
     updateUserInList,
+    deleteUserFromList,
+    validatePassword,
     isLoading,
     login,
     logout,
@@ -199,3 +211,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
