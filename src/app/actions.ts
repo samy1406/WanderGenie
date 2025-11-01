@@ -58,6 +58,25 @@ export async function handleExtractTripDetails(text: string) {
     }
 }
 
+export async function handleGeocodeLocation(query: string): Promise<any> {
+    try {
+        if (!query) return null;
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
+        );
+        if (!response.ok) {
+            console.error(`Failed to fetch from Nominatim for "${query}": ${response.statusText}`);
+            return null;
+        }
+        const data = await response.json();
+        return data;
+    } catch (err: any) {
+        console.error(`Error fetching coordinates for "${query}":`, err.message);
+        return null;
+    }
+}
+
+
 // Mock function to simulate a booking request
 export async function handleBookingRequest(bookingDetails: { item: string, details: string }) {
   console.log("Booking request received for:", bookingDetails);

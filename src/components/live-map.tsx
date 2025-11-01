@@ -16,6 +16,7 @@ import { Style, Icon, Stroke, Fill, Circle as CircleStyle } from 'ol/style.js';
 import type { GeneratePersonalizedItineraryOutput } from '@/ai/flows/generate-personalized-itinerary';
 import { AppLocationService } from '@/lib/location-service';
 import { useAuth } from '@/context/auth-context';
+import { handleGeocodeLocation } from '@/app/actions';
 
 type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
 const allActivities = (dailyPlan: GeneratePersonalizedItineraryOutput['dailyPlan']) =>
@@ -48,14 +49,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     const search = async (query: string) => {
         try {
             if (!query) return null;
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
-            );
-            if (!response.ok) {
-                console.error(`Failed to fetch from Nominatim for "${query}": ${response.statusText}`);
-                return null;
-            }
-            const data = await response.json();
+            const data = await handleGeocodeLocation(query);
             return data;
         } catch (err: any) {
             console.error(`Error fetching coordinates for "${query}":`, err.message);
@@ -64,8 +58,7 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
     }
 
     let data;
-    const city = location.split(',').pop()?.trim() || location;
-
+    
     // Create a set of unique queries to try for geocoding
     const queries = new Set<string>();
     queries.add(location); // Full query first
@@ -73,7 +66,13 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
         queries.add(location.split(',')[0].trim()); // Just the name
     }
     queries.add(`${location}, India`); // Append country
-    queries.add(city); // Fallback to just the city
+    
+    // Last resort: just the city if it's different from the original location
+    const city = location.split(',').pop()?.trim();
+    if(city && city.toLowerCase() !== location.toLowerCase()) {
+        queries.add(city);
+    }
+
 
     for (const query of queries) {
         if (!query) continue;
@@ -376,5 +375,3 @@ const LiveMap = ({ destination, origin, journeyStarted, simulationStarted, selec
 };
 
 export default LiveMap;
-
-    
