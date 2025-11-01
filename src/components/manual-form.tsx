@@ -47,7 +47,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
               control={form.control}
               name="origin"
               render={({ field }) => (
-                  <FormItem className="p-4 relative">
+                  <FormItem className="p-4 relative flex flex-col justify-center">
                   <FormLabel className="text-xs text-gray-500">FROM</FormLabel>
                   <FormControl>
                       <Input placeholder="Delhi" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -61,7 +61,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   control={form.control}
                   name="destination"
                   render={({ field }) => (
-                  <FormItem className="p-4 border-l">
+                  <FormItem className="p-4 border-l flex flex-col justify-center">
                       <FormLabel className="text-xs text-gray-500">TO</FormLabel>
                       <FormControl>
                       <Input placeholder="Mumbai" {...field} className="text-2xl font-bold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -167,7 +167,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                   control={form.control}
                   name="travelPreference"
                   render={({ field }) => (
-                  <FormItem className="p-4 border-l">
+                  <FormItem className="p-4 border-l flex flex-col justify-center">
                       <FormLabel className="text-xs text-gray-500 flex items-center"><Users className="h-4 w-4 mr-1"/>TRAVELLER & CLASS</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
@@ -195,7 +195,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
               </Button>
           </div>
 
-          <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+          <div className="p-4 pt-6 border-t bg-gray-50 rounded-b-lg">
              <div className="grid md:grid-cols-2 lg:grid-cols-[1fr_2fr_auto] gap-6 items-end">
                 <FormField
                     control={form.control}
