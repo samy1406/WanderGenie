@@ -16,7 +16,7 @@ export const formSchema = z.object({
     required_error: "A departure date is required.",
   }),
   returnDate: z.date().optional(),
-  tripDuration: z.coerce.number().min(1, "Duration must be at least 1 day.").max(14, "Duration cannot exceed 14 days."),
+  tripDuration: z.coerce.number().min(1, "Duration must be at least 1 day."),
   interests: z.string().min(10, "Tell us a bit more about your interests."),
   travelPreference: z.enum(["budget", "comfort", "speed"]),
   departureTime: z.string().optional(),
