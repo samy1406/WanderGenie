@@ -13,6 +13,8 @@ export type Trip = {
     name: string;
     origin: string;
     destination: string;
+    interests: string;
+    travelPreference: "budget" | "comfort" | "speed";
     departureDate: string;
     returnDate?: string;
     itinerary: GeneratePersonalizedItineraryOutput;
