@@ -5,7 +5,7 @@
 import { useBooking, type InsuranceDetails, type SeatDetails, type PriceSummary } from '@/context/booking-context';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -97,6 +97,7 @@ export default function BookPage() {
   const { currentTrip } = useTrip();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
+  const hasShownPrefillToast = useRef(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState('');
@@ -131,8 +132,7 @@ export default function BookPage() {
   
   // This effect pre-fills the form with the latest booking details for the current trip
   useEffect(() => {
-    if (currentTrip) {
-      // Find the latest booking for this trip
+    if (currentTrip && !hasShownPrefillToast.current) {
       const tripBookings = getBookingsForTrip(currentTrip.id)
         .sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime());
 
@@ -148,8 +148,9 @@ export default function BookPage() {
           title: "Passenger Details Pre-filled",
           description: "We've filled in your details from your last booking on this trip.",
         });
+        hasShownPrefillToast.current = true;
       }
-    } else if (isAuthenticated && user) {
+    } else if (isAuthenticated && user && !hasShownPrefillToast.current) {
         // Fallback for logged-in user with no previous bookings on this trip
         form.setValue('contactEmail', user.email || '');
         form.setValue('contactPhone', user.contact || '');
@@ -880,3 +881,5 @@ export default function BookPage() {
   </>
   );
 }
+
+    

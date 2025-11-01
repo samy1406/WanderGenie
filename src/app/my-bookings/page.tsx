@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
-import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby, ArrowLeft } from 'lucide-react';
+import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby, ArrowLeft, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import {
   AlertDialog,
@@ -89,15 +89,21 @@ const PriceBreakoutContent = ({ summary }: { summary: PriceSummary }) => (
 
 function BookingCard({ 
   booking,
+  trip,
   onCancelBooking,
   onViewTrip
 }: { 
-  booking: Booking; 
+  booking: Booking;
+  trip?: Trip; 
   onCancelBooking: (bookingId: string) => void;
   onViewTrip: (bookingId: string) => void;
 }) {
   const { item, type, passengerDetails, bookingDate, transactionId, amountPaid, seatDetails, insuranceDetails, priceSummary } = booking;
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const isHotel = type === 'hotel';
+  const travelItem = isHotel ? null : item as TravelOption;
+  const hotelItem = isHotel ? item as HotelOption : null;
+
 
   return (
     <>
@@ -105,25 +111,70 @@ function BookingCard({
       <CardHeader className="bg-secondary/30">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="flex items-center text-2xl">
-              {getIconForBooking(booking)}
-              <FormatBoldText text={type === 'hotel' ? (item as HotelOption).name : (item as TravelOption).details} />
-            </CardTitle>
+             <div className="flex items-center">
+                <CardTitle className="flex items-center text-2xl">
+                {getIconForBooking(booking)}
+                <FormatBoldText text={isHotel ? hotelItem!.name : travelItem!.details} />
+                </CardTitle>
+                <span className="font-mono text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
+            </div>
             <CardDescription className="flex items-center gap-4 mt-2">
                 <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
-                <span className="font-mono text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">ID: {booking.id}</span>
             </CardDescription>
           </div>
-          <div className="text-right">
-            <p className="flex items-center text-xl font-bold">
-                <IndianRupee className="h-5 w-5 mr-1"/>
-                {formatCurrency(booking.amountPaid || 0)}
-            </p>
+           <div className="text-right">
+              <div className="flex items-center gap-2">
+                  <p className="flex items-center text-xl font-bold">
+                      <IndianRupee className="h-5 w-5 mr-1"/>
+                      {formatCurrency(booking.amountPaid || 0)}
+                  </p>
+                  {priceSummary && (
+                      <Button variant="ghost" size="sm" onClick={() => setIsPriceModalOpen(true)}>
+                          Price Breakout
+                      </Button>
+                  )}
+              </div>
             <p className="text-xs text-muted-foreground">Total Price</p>
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        
+        {trip && !isHotel && (
+            <div className="mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">From</p>
+                        <p className="text-xl font-bold">{trip.origin}</p>
+                        <p className="text-sm text-muted-foreground">{new Date(trip.departureDate).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-center flex-1 px-4">
+                        <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-2" /> {travelItem?.duration}
+                        </div>
+                        <div className="w-full bg-border h-0.5 relative my-1">
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
+                        </div>
+                         <p className="text-xs text-muted-foreground">{travelItem?.mode}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">To</p>
+                        <p className="text-xl font-bold">{trip.destination}</p>
+                        {trip.returnDate && <p className="text-sm text-muted-foreground">{new Date(trip.returnDate).toLocaleDateString()}</p>}
+                    </div>
+                </div>
+            </div>
+        )}
+         {isHotel && (
+            <div className="mb-6">
+                <p className="text-lg font-semibold"><FormatBoldText text={hotelItem!.name} /></p>
+                <p className="text-sm text-muted-foreground">{trip?.destination}</p>
+            </div>
+        )}
+
+        <Separator className="my-6" />
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
                 <h4 className="font-semibold mb-2 flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground" />Passengers</h4>
@@ -156,11 +207,6 @@ function BookingCard({
         </div>
       </CardContent>
       <CardFooter className="bg-secondary/30 p-4 flex justify-end gap-2">
-            {priceSummary && (
-                <Button variant="ghost" onClick={() => setIsPriceModalOpen(true)}>
-                    <Wallet className="mr-2 h-4 w-4"/> View Price Breakout
-                </Button>
-            )}
             <Button variant="outline" onClick={() => onViewTrip(booking.id)}>
                 <ArrowRight className="mr-2 h-4 w-4" /> View Trip Plan
             </Button>
@@ -208,7 +254,7 @@ function BookingCard({
 export default function MyBookingsPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { bookings, deleteBooking } = useBooking();
-  const { trips, setCurrentTrip } = useTrip();
+  const { trips, setCurrentTrip, getTrip } = useTrip();
   const router = useRouter();
   const { toast } = useToast();
   const [userBookings, setUserBookings] = useState<Booking[]>([]);
@@ -218,7 +264,7 @@ export default function MyBookingsPage() {
       router.push('/');
     } else if (user) {
       const filteredBookings = bookings.filter(booking => booking.passengerDetails.email === user.email);
-      setUserBookings(filteredBookings);
+      setUserBookings(filteredBookings.sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()));
     }
   }, [isAuthenticated, isLoading, router, user, bookings]);
 
@@ -274,14 +320,17 @@ export default function MyBookingsPage() {
 
       {userBookings.length > 0 ? (
         <div className="space-y-6">
-          {userBookings.map((booking) => (
+          {userBookings.map((booking) => {
+              const trip = booking.tripId ? getTrip(booking.tripId) : undefined;
+              return (
               <BookingCard 
                 key={booking.id} 
-                booking={booking} 
+                booking={booking}
+                trip={trip}
                 onCancelBooking={handleCancelBooking}
                 onViewTrip={handleViewTrip}
               />
-          ))}
+          )})}
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
