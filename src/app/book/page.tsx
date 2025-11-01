@@ -69,9 +69,16 @@ const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: num
     "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off." },
 };
 
-const TRAVEL_INSURANCE_COST_PER_PERSON = 249;
-const HOTEL_INSURANCE_COST_PER_PERSON = 1;
-const PLATFORM_FEE = 199;
+const HOTEL_INSURANCE_COST = 1;
+const TRAVEL_INSURANCE_COSTS = {
+    'Flight': 49,
+    'Train': 2.5,
+    'Bus': 9,
+};
+const PLATFORM_FEES = {
+    'travel': 39,
+    'hotel': 49,
+};
 
 export default function BookPage() {
   const router = useRouter();
@@ -85,8 +92,20 @@ export default function BookPage() {
   const [appliedDiscount, setAppliedDiscount] = useState(0);
 
   const isHotelBooking = bookingOption?.type === 'hotel';
-  const insuranceCostPerPerson = isHotelBooking ? HOTEL_INSURANCE_COST_PER_PERSON : TRAVEL_INSURANCE_COST_PER_PERSON;
-  
+
+  const insuranceCostPerPerson = useMemo(() => {
+    if (!bookingOption) return 0;
+    if (isHotelBooking) return HOTEL_INSURANCE_COST;
+    
+    const travelMode = (bookingOption.item as TravelOption).mode as keyof typeof TRAVEL_INSURANCE_COSTS;
+    return TRAVEL_INSURANCE_COSTS[travelMode] || 0;
+  }, [bookingOption, isHotelBooking]);
+
+  const platformFee = useMemo(() => {
+      if (!bookingOption) return 0;
+      return isHotelBooking ? PLATFORM_FEES.hotel : PLATFORM_FEES.travel;
+  }, [bookingOption, isHotelBooking]);
+
   const form = useForm<z.infer<typeof bookingFormSchema>>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
@@ -144,7 +163,7 @@ export default function BookPage() {
         infants: { count: 0 },
         baseFare: 0,
         gst: 0,
-        platformFee: PLATFORM_FEE,
+        platformFee: platformFee,
         insurance: 0,
         subTotal: 0,
         discount: appliedDiscount,
@@ -185,7 +204,7 @@ export default function BookPage() {
     summary.grandTotal = summary.subTotal - summary.discount;
 
     return summary;
-}, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance, insuranceCostPerPerson]);
+}, [watchedPassengers, appliedDiscount, bookingOption, wantsInsurance, insuranceCostPerPerson, platformFee]);
   
 
   useEffect(() => {
