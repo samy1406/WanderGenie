@@ -165,7 +165,16 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
     if (!map || !nextDestFeature || !userLocationFeature) return;
 
     const updateUserAndNextDest = async (nextLocationName: string) => {
-        const nextDestCoords = await fetchCoords(nextLocationName);
+        let locationToSearch = nextLocationName;
+        // Handle generic hotel/accommodation placeholders
+        if (locationToSearch.toLowerCase().includes('hotel') || locationToSearch.toLowerCase().includes('accommodation')) {
+            const isGeneric = /budget|luxury|mid-range/i.test(locationToSearch);
+            if(isGeneric) {
+                locationToSearch = destination; // Default to the main destination city
+            }
+        }
+        
+        const nextDestCoords = await fetchCoords(locationToSearch);
 
         if (nextDestCoords) {
             const nextDestPoint = fromLonLat(nextDestCoords);
