@@ -23,7 +23,7 @@ const TravelOptionSchema = z.object({
 });
 
 const HotelOptionSchema = z.object({
-    name: z.string().describe("The name of the hotel. This should be wrapped in double asterisks (e.g., '**Grand Hyatt**')."),
+    name: z.string().describe("The name of the hotel. This should be a real, findable hotel and wrapped in double asterisks (e.g., '**Grand Hyatt**')."),
     rating: z.number().min(1).max(5).describe("The star rating of the hotel (1-5)."),
     pricePerNight: z.number().describe("The estimated price per night in Indian Rupees (INR)."),
     bookingLink: z.string().url().describe("A Google search link for booking the hotel."),
@@ -69,7 +69,7 @@ Preferred Arrival Time: {{#if arrivalTime}} {{{arrivalTime}}} {{else}} any time 
     - If the origin and destination are in different countries and far apart, suggest only 'Flight' as a travel mode.
     - For a 'budget' preference, you MUST include 'Train' and 'Bus' options if the route is feasible.
 
-2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR). For the 'bookingLink', create a specific Google search URL for that hotel in the destination city. Example for 'Grand Hyatt' in '{{{destination}}}': 'https://www.google.com/search?q=Grand+Hyatt+{{{destination}}}'. IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
+2.  **Hotel Options**: Provide three distinct hotel suggestions at the destination that align with the user's travel preference. For each hotel, provide its name, star rating (1-5), and estimated price per night. The hotel name must be a real, well-known hotel that can be easily found on a map. ALL COSTS MUST BE NUMBERS representing Indian Rupees (INR). For the 'bookingLink', create a specific Google search URL for that hotel in the destination city. Example for 'Grand Hyatt' in '{{{destination}}}': 'https://www.google.com/search?q=Grand+Hyatt+{{{destination}}}'. IMPORTANT: Wrap the hotel name in double asterisks (e.g., "**Grand Hyatt**").
 
 Structure the entire output as a single JSON object. If a travel mode is not feasible, do not include any options for it in the 'travelOptions' array.
 `,

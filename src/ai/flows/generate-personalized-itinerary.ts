@@ -17,7 +17,7 @@ const ActivitySchema = z.object({
   startTime: z.string().describe("The suggested start time for the activity (e.g., '10:00 AM')."),
   endTime: z.string().describe("The suggested end time for the activity (e.g., '1:00 PM')."),
   description: z.string().describe("The description of the activity. Specific place names or landmarks should be wrapped in double asterisks (e.g., 'Visit the **Eiffel Tower**')."),
-  location: z.string().describe("The specific name of the landmark, park, or restaurant for geocoding (e.g., 'Eiffel Tower, Paris' or 'Central Park, New York')."),
+  location: z.string().describe("The specific, geocodable name of the landmark, park, or restaurant (e.g., 'Eiffel Tower, Paris' or 'Central Park, New York'). This is crucial for mapping."),
   link: z.string().url().describe("A plausible Google Maps URL for the activity location."),
   travelInfo: z.string().optional().describe("Brief info on traveling to the next activity, including estimated time (e.g., 'Approx. 20-min taxi ride to the next stop.')."),
 });
@@ -79,7 +79,7 @@ Create a detailed, day-by-day itinerary. Follow these critical instructions:
 
 1.  **Pacing is Key**: Do NOT cram too many activities into one day. A relaxed pace of 2-3 main activities is ideal. People want to enjoy the places, not rush.
 2.  **Account for Travel Time**: For each activity, include a 'travelInfo' field estimating the time and mode of travel to the NEXT activity. This is crucial for a realistic plan.
-3.  **Structure by Time of Day**: For EVERY day in the trip, you MUST provide well-structured plans for 'morning', 'afternoon', and 'evening' blocks. Each block must contain an array of activities. Do not leave any day's plan incomplete.
+3.  **Structure by Time of Day**: For EVERY day in the trip, you MUST provide well-structured plans for 'morning', 'afternoon', and 'evening' blocks. Each block must contain an array of activities. You should also include an optional 'night' block for activities after 9 PM if it makes sense.
 4.  **Smart Day 1 Plan**:
     - The very first activity of the trip must be checking into the accommodation. The description should reflect the travel preference (e.g., 'Check into your budget-friendly hotel').
     - **Crucially, adjust the Day 1 schedule based on the arrival time.**
@@ -88,7 +88,7 @@ Create a detailed, day-by-day itinerary. Follow these critical instructions:
 5.  **Activity Details**: Each activity object MUST have:
     - 'startTime' and 'endTime'.
     - 'description' (wrap landmarks in double asterisks, e.g., **Eiffel Tower**).
-    - 'location' (a specific, geocodable name like 'Eiffel Tower, Paris').
+    - 'location' (a specific, geocodable name like 'Eiffel Tower, Paris'). This must be a real, findable place for a map.
     - A plausible Google Maps 'link'.
     - 'travelInfo' (unless it's the last activity of the day).
 6.  **Costs**: Provide an 'estimatedCost' breakdown (total, accommodation, food, localTransport) in Indian Rupees (INR), reflecting the travel preference.
