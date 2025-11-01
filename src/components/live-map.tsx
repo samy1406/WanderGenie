@@ -36,20 +36,17 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
     try {
       if (!location) return null;
       // Prioritize the exact location string first.
-      const data = await handleGeocodeLocation(location);
+      let data = await handleGeocodeLocation(location);
+      
+      // Fallback for locations that might need city context
+      if (!data || data.length === 0) {
+          const queryWithCity = `${location}, ${destination}`;
+          data = await handleGeocodeLocation(queryWithCity);
+      }
+
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         return [parseFloat(lon), parseFloat(lat)];
-      }
-
-      // Fallback for locations that might need city context
-      if (location.split(',').length === 1) {
-          const queryWithCity = `${location}, ${destination}`;
-          const fallbackData = await handleGeocodeLocation(queryWithCity);
-           if (fallbackData && fallbackData.length > 0) {
-                const { lat, lon } = fallbackData[0];
-                return [parseFloat(lon), parseFloat(lat)];
-            }
       }
 
       console.error(`No coordinates found for "${location}"`);
