@@ -33,42 +33,31 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   const [error, setError] = useState<string | null>(null);
 
   const fetchCoords = async (location: string): Promise<[number, number] | null> => {
-    const search = async (query: string) => {
-        try {
-            if (!query) return null;
-            const data = await handleGeocodeLocation(query);
-            return data;
-        } catch (err: any) {
-            console.error(`Error fetching coordinates for "${query}":`, err.message);
-            return null;
-        }
-    }
+    try {
+      if (!location) return null;
+      // Prioritize the exact location string first.
+      const data = await handleGeocodeLocation(location);
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        return [parseFloat(lon), parseFloat(lat)];
+      }
 
-    let data;
-    
-    const queries = new Set<string>();
-    queries.add(location); 
-    if (location.includes(',')) {
-        queries.add(location.split(',')[0].trim());
-    }
-    queries.add(`${location}, India`);
-    
-    const city = location.split(',').pop()?.trim();
-    if(city && city.toLowerCase() !== location.toLowerCase()) {
-        queries.add(city);
-    }
+      // Fallback for locations that might need city context
+      if (location.split(',').length === 1) {
+          const queryWithCity = `${location}, ${destination}`;
+          const fallbackData = await handleGeocodeLocation(queryWithCity);
+           if (fallbackData && fallbackData.length > 0) {
+                const { lat, lon } = fallbackData[0];
+                return [parseFloat(lon), parseFloat(lat)];
+            }
+      }
 
-    for (const query of queries) {
-        if (!query) continue;
-        data = await search(query);
-        if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            return [parseFloat(lon), parseFloat(lat)];
-        }
+      console.error(`No coordinates found for "${location}"`);
+      return null;
+    } catch (err: any) {
+        console.error(`Error fetching coordinates for "${location}":`, err.message);
+        return null;
     }
-
-    console.error(`No coordinates found for "${location}" after all fallbacks.`);
-    return null;
   };
 
 
