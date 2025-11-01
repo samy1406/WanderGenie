@@ -7,7 +7,6 @@ import ItineraryForm, { formSchema } from "@/components/itinerary-form";
 import ItineraryDisplay from "@/components/itinerary-display";
 import TravelOptions from "@/components/travel-options";
 import type { GeneratePersonalizedItineraryOutput } from "@/ai/flows/generate-personalized-itinerary";
-import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -31,7 +30,6 @@ function TripPlannerContent() {
   const { toast } = useToast();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { currentTrip, setCurrentTrip, addTrip, isCurrentTripSaved, clearCurrentTrip } = useTrip();
-  const { addBookingAndSaveTrip } = useBooking();
   const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -54,9 +52,6 @@ function TripPlannerContent() {
       departureTime: "any",
       arrivalTime: "any",
       tripType: "oneway",
-      adults: 1,
-      children: 0,
-      infants: 0,
     },
   });
 
@@ -79,16 +74,9 @@ function TripPlannerContent() {
             departureDate: currentTrip.departureDate ? new Date(currentTrip.departureDate) : new Date(),
             returnDate: currentTrip.returnDate ? new Date(currentTrip.returnDate) : undefined,
             tripType: currentTrip.returnDate ? 'roundtrip' : 'oneway',
-            // Note: adults/children/infants are not part of the trip object yet
-            adults: form.getValues('adults') || 1, 
-            children: form.getValues('children') || 0,
-            infants: form.getValues('infants') || 0,
         });
         setTripType(currentTrip.returnDate ? 'roundtrip' : 'oneway');
         // Do not automatically change viewState here, let the ?view=book param handle it
-    } else {
-        // Optional: Reset form to defaults if there's no current trip
-        // form.reset();
     }
   }, [currentTrip, form]);
 
@@ -144,13 +132,14 @@ function TripPlannerContent() {
           });
           promises.push(returnOptionsPromise);
       } else {
-          promises.push(Promise.resolve(null)); // Ensure there's always a third element
+          promises.push(Promise.resolve({ success: true, data: null })); // Ensure there's always a third element
       }
 
-      const [itineraryResult, outboundOptionsResult, returnOptionsResult] = await Promise.all(promises);
+      const [itineraryResponse, outboundOptionsResponse, returnOptionsResponse] = await Promise.all(promises);
 
-      if (!itineraryResult) throw new Error("The generated itinerary was empty.");
-      if (!outboundOptionsResult) throw new Error("Could not get outbound travel options.");
+      if (!itineraryResponse.success) throw new Error(itineraryResponse.error);
+      if (!outboundOptionsResponse.success) throw new Error(outboundOptionsResponse.error);
+      if (!returnOptionsResponse.success) throw new Error(returnOptionsResponse.error);
 
       setCurrentTrip({
         id: `trip_${Date.now()}`,
@@ -161,9 +150,9 @@ function TripPlannerContent() {
         travelPreference: values.travelPreference,
         departureDate: values.departureDate.toISOString(),
         returnDate: values.returnDate ? values.returnDate.toISOString() : undefined,
-        itinerary: itineraryResult,
-        outboundTravelOptions: outboundOptionsResult,
-        returnTravelOptions: returnOptionsResult,
+        itinerary: itineraryResponse.data,
+        outboundTravelOptions: outboundOptionsResponse.data,
+        returnTravelOptions: returnOptionsResponse.data,
         bookingIds: [],
         createdAt: new Date().toISOString(),
         userId: user?.id,
@@ -175,7 +164,7 @@ function TripPlannerContent() {
       setError(`Sorry, we couldn't complete your request. ${errorMessage}`);
       toast({
         title: "Generation Failed",
-        description: "There was a problem creating your trip plan.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

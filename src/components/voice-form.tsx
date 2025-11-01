@@ -1,3 +1,4 @@
+
 "use client";
 
 import { z } from "zod";
@@ -32,8 +33,10 @@ export function VoiceForm({ onTranscriptionComplete, form }: VoiceFormProps) {
             stopListening();
             if (transcript) {
                 try {
-                    const extractedDetails = await handleExtractTripDetails(transcript);
-                    if (extractedDetails) {
+                    const response = await handleExtractTripDetails(transcript);
+
+                    if (response.success) {
+                        const extractedDetails = response.data;
                         if (extractedDetails.origin) form.setValue("origin", extractedDetails.origin);
                         if (extractedDetails.destination) form.setValue("destination", extractedDetails.destination);
                         if (extractedDetails.tripDuration) form.setValue("tripDuration", extractedDetails.tripDuration);
@@ -43,12 +46,15 @@ export function VoiceForm({ onTranscriptionComplete, form }: VoiceFormProps) {
                             title: "Trip Details Extracted",
                             description: "Your trip details have been filled in from your voice command.",
                         });
+                    } else {
+                         throw new Error(response.error);
                     }
                     onTranscriptionComplete(transcript);
                 } catch (error) {
+                     const errorMessage = error instanceof Error ? error.message : "Could not extract details from your speech.";
                     toast({
                         title: "Extraction Failed",
-                        description: "Could not extract details from your speech. Please try again.",
+                        description: errorMessage,
                         variant: "destructive",
                     });
                 }
