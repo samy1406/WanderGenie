@@ -22,9 +22,6 @@ export const formSchema = z.object({
   departureTime: z.string().optional(),
   arrivalTime: z.string().optional(),
   tripType: z.enum(["oneway", "roundtrip"]),
-  adults: z.coerce.number().min(1, "At least one adult is required.").default(1),
-  children: z.coerce.number().min(0).default(0),
-  infants: z.coerce.number().min(0).default(0),
 }).refine(data => {
     if (data.tripType === 'roundtrip') {
         return !!data.returnDate;

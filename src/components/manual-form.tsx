@@ -9,6 +9,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import {
   Select,
@@ -86,7 +87,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
             });
         }
         return filters;
-    }, [watchAllFields, form]);
+    }, [watchAllFields.departureTime, watchAllFields.arrivalTime, form]);
 
 
     return (
@@ -232,6 +233,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                           <SelectItem value="speed">Fastest Route</SelectItem>
                       </SelectContent>
                       </Select>
+                      <FormMessage />
                   </FormItem>
                   )}
               />
@@ -255,8 +257,9 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         <FormItem>
                         <FormLabel>Duration (in days)</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min="1" {...field} />
                         </FormControl>
+                        <FormMessage />
                         </FormItem>
                     )}
                 />
@@ -273,6 +276,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                             {...field}
                             />
                         </FormControl>
+                         <FormMessage />
                         </FormItem>
                     )}
                 />
