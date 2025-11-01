@@ -249,7 +249,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 pt-6 border-t bg-gray-50 rounded-b-lg">
-             <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-x-6 gap-y-4 items-end">
+             <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-x-6 gap-y-4 items-start">
                 <FormField
                     control={form.control}
                     name="tripDuration"
