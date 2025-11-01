@@ -2,20 +2,9 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useRouter } from "next/navigation";
 import { useBooking } from "@/context/booking-context";
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -29,19 +18,19 @@ type BookingModalProps = {
 
 export function BookingModal({ option, optionType, triggerButton }: BookingModalProps) {
   const { setBookingOption } = useBooking();
+  const router = useRouter();
 
   const handleBookNowClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default link behavior if it's wrapped in one
+    e.preventDefault(); 
     setBookingOption({
       item: option,
       type: optionType,
     });
-    // Navigation is now handled by the Link component
+    router.push('/book');
   };
 
-  return (
-    <Link href="/book" onClick={handleBookNowClick} passHref>
-        {React.cloneElement(triggerButton as React.ReactElement)}
-    </Link>
-  );
+  // Clone the trigger button and attach our onClick handler
+  return React.cloneElement(triggerButton as React.ReactElement, {
+    onClick: handleBookNowClick,
+  });
 }
