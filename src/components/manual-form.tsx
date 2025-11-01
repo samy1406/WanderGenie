@@ -41,7 +41,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
     return (
       <Card className="w-full shadow-lg border-none">
         <CardContent className="p-0">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_1fr_auto] items-stretch border rounded-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr_1.5fr_1.5fr_auto] items-stretch border rounded-lg">
               {/* From */}
               <FormField
               control={form.control}
@@ -196,7 +196,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
           </div>
 
           <div className="p-4 border-t bg-gray-50 rounded-b-lg">
-            <div className="grid md:grid-cols-2 lg:grid-cols-[1fr_2fr_auto] gap-6 items-end">
+             <div className="grid md:grid-cols-2 lg:grid-cols-[1fr_2fr_auto] gap-6 items-end">
                 <FormField
                     control={form.control}
                     name="tripDuration"
@@ -227,7 +227,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                     />
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-auto justify-start">
+                        <Button variant="outline" size="sm" className="w-full md:w-auto justify-start self-end">
                             <SlidersHorizontal className="mr-2 h-4 w-4" /> More Filters
                         </Button>
                     </PopoverTrigger>
