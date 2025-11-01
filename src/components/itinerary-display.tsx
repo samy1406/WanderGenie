@@ -192,9 +192,9 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
 
               return (
               <AccordionItem key={index} value={`day-${index}`} className="border-b-2 border-primary/10">
-                <AccordionTrigger className="font-headline text-xl font-bold hover:text-primary py-4">
+                <AccordionTrigger className="font-headline text-xl font-bold hover:text-primary py-4 text-left">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-body text-sm">
+                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center font-body text-sm flex-shrink-0">
                       {day.day}
                     </div>
                     <div>
