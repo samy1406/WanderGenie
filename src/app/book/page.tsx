@@ -2,7 +2,7 @@
 // src/app/book/page.tsx
 'use client';
 
-import { useBooking, type InsuranceDetails, type SeatDetails } from '@/context/booking-context';
+import { useBooking, type InsuranceDetails, type SeatDetails, type PriceSummary } from '@/context/booking-context';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee, CaseUpper, ShieldQuestion, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Trash2, User, Mail, Phone, ArrowRight, ShieldCheck, Tag, Baby, PersonStanding, Building, IndianRupee, CaseUpper, ShieldQuestion, ArrowLeft, Wallet } from 'lucide-react';
 import { AuthModal } from '@/components/auth-modal';
 import type { GetTravelOptionsOutput } from '@/ai/flows/get-travel-options';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -24,6 +24,17 @@ import { useToast } from '@/hooks/use-toast';
 import { handleBookingRequest, handlePaymentRequest } from '@/app/actions';
 import { formatCurrency } from '@/lib/formatters';
 import { useTrip } from '@/context/trip-context';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
 type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
@@ -63,10 +74,10 @@ const bookingFormSchema = z.object({
     path: ["gstDetails"],
 });
 
-const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number, description: string } } = {
-    "WANDER10": { type: 'percentage', value: 10, description: "Get 10% off your booking." },
-    "FLYHIGH": { type: 'fixed', value: 500, description: "Get flat ₹500 off." },
-    "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off." },
+const DUMMY_COUPONS: { [key: string]: { type: 'fixed' | 'percentage', value: number, description: string, minAmount?: number, applicableModes?: string[] } } = {
+    "WANDER10": { type: 'percentage', value: 10, description: "Get 10% off on bookings over ₹5000.", minAmount: 5000 },
+    "FLYHIGH": { type: 'fixed', value: 500, description: "Get flat ₹500 off on Flights.", applicableModes: ['Flight'] },
+    "TRAVELNOW": { type: 'fixed', value: 1200, description: "Get flat ₹1200 off on bookings over ₹10000.", minAmount: 10000 },
 };
 
 const HOTEL_INSURANCE_COST = 1;
@@ -155,8 +166,8 @@ export default function BookPage() {
   const useGST = form.watch('useGST');
   const wantsInsurance = form.watch('insurance') === 'yes';
 
-  const priceSummary = useMemo(() => {
-    const summary = {
+  const priceSummary: PriceSummary & { adults: { count: number }, children: { count: number }, infants: { count: number } } = useMemo(() => {
+    const summary: PriceSummary & { adults: { count: number }, children: { count: number }, infants: { count: number } } = {
         adults: { count: 0 },
         children: { count: 0 },
         infants: { count: 0 },
@@ -298,6 +309,15 @@ export default function BookPage() {
             amountPaid: priceSummary.grandTotal,
             seatDetails,
             insuranceDetails,
+            priceSummary: {
+                baseFare: priceSummary.baseFare,
+                gst: priceSummary.gst,
+                platformFee: priceSummary.platformFee,
+                insurance: priceSummary.insurance,
+                subTotal: priceSummary.subTotal,
+                discount: priceSummary.discount,
+                grandTotal: priceSummary.grandTotal,
+            }
         };
 
         addBookingAndSaveTrip(newBooking, currentTrip);
@@ -320,6 +340,27 @@ export default function BookPage() {
   const applyCoupon = (code: string) => {
     const coupon = DUMMY_COUPONS[code.toUpperCase()];
     if(coupon) {
+        if(coupon.minAmount && priceSummary.grandTotal < coupon.minAmount) {
+             toast({
+                title: "Coupon Not Applicable",
+                description: `This coupon requires a minimum booking amount of ₹${coupon.minAmount}.`,
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if(coupon.applicableModes && bookingOption?.type === 'travel') {
+            const travelMode = (bookingOption.item as TravelOption).mode;
+            if(!coupon.applicableModes.includes(travelMode)){
+                 toast({
+                    title: "Coupon Not Applicable",
+                    description: `This coupon is only valid for ${coupon.applicableModes.join(', ')} bookings.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+        }
+
         let discount = 0;
         if(coupon.type === 'fixed') {
             discount = coupon.value;
@@ -378,7 +419,7 @@ export default function BookPage() {
     <>
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50">
       <div className="flex justify-start mb-4">
-        <Button variant="outline" onClick={() => router.push('/')}>
+        <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
         </Button>
       </div>
@@ -705,17 +746,42 @@ export default function BookPage() {
                         </CardContent>
                     </Card>
                     
-                    <div className="flex justify-end">
-                         <Button type="submit" size="lg" disabled={isProcessing} className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-                            {isProcessing ? (
-                                <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>
-                                Processing...
-                                </>
-                            ) : (
-                                <>Pay Securely <ArrowRight className="ml-2 h-4 w-4" /></>
-                            )}
-                        </Button>
+                     <div className="flex justify-end">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button type="button" size="lg" disabled={!form.formState.isValid || isProcessing} className="w-full lg:w-auto bg-accent hover:bg-accent/90 text-accent-foreground">
+                                    <Wallet className="mr-2 h-4 w-4"/> Proceed to Payment
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Your Payment</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        You are about to make a payment for your booking. Please review the total amount before proceeding.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="my-4">
+                                    <p className="text-center text-sm text-muted-foreground">Total Payable Amount</p>
+                                    <p className="text-center text-4xl font-bold flex items-center justify-center">
+                                        <IndianRupee className="h-8 w-8 mr-1"/>
+                                        {formatCurrency(priceSummary.grandTotal)}
+                                    </p>
+                                </div>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Go Back</AlertDialogCancel>
+                                    <AlertDialogAction onClick={form.handleSubmit(onFormSubmit)} disabled={isProcessing}>
+                                         {isProcessing ? (
+                                            <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>
+                                            Processing...
+                                            </>
+                                        ) : (
+                                            <>Confirm & Pay <ArrowRight className="ml-2 h-4 w-4" /></>
+                                        )}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </form>
             </Form>
@@ -799,7 +865,7 @@ export default function BookPage() {
                         <div key={code} className="flex justify-between items-center text-sm p-2 bg-secondary/50 rounded-md">
                             <div>
                                 <p className="font-semibold">{code}</p>
-                                <p className="text-muted-foreground">{description.replace('₹', '')}</p>
+                                <p className="text-muted-foreground flex items-center">{description.replace('₹', '')}</p>
                             </div>
                             <Button variant="link" size="sm" onClick={() => applyCoupon(code)}>Apply</Button>
                         </div>

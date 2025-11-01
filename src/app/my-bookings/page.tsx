@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useBooking, type Booking, type Passenger, type SeatDetails, type InsuranceDetails } from '@/context/booking-context';
+import { useBooking, type Booking, type Passenger, type SeatDetails, type InsuranceDetails, type PriceSummary } from '@/context/booking-context';
 import { useTrip } from '@/context/trip-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
 import { FormatBoldText } from '@/components/format-bold-text';
-import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight } from 'lucide-react';
+import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import {
   AlertDialog,
@@ -26,6 +26,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
@@ -44,6 +52,41 @@ const getIconForBooking = (booking: Booking) => {
     return iconMap[travelOption.mode] || <Briefcase className="mr-3 h-6 w-6 text-primary" />;
 }
 
+const PriceBreakoutContent = ({ summary }: { summary: PriceSummary }) => (
+    <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+            <span>Base Fare</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.baseFare)}</span>
+        </div>
+        <div className="flex justify-between">
+            <span>Taxes & Surcharges (GST)</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.gst)}</span>
+        </div>
+        <div className="flex justify-between">
+            <span>Platform Fee</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.platformFee)}</span>
+        </div>
+        {summary.insurance > 0 && (
+            <div className="flex justify-between">
+                <span>Insurance</span>
+                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.insurance)}</span>
+            </div>
+        )}
+        {summary.discount > 0 && (
+            <div className="flex justify-between text-green-600">
+                <span>Discount</span>
+                <span className='flex items-center'>-<IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.discount)}</span>
+            </div>
+        )}
+        <Separator />
+        <div className="flex justify-between font-bold text-lg">
+            <span>Grand Total</span>
+            <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1"/>{formatCurrency(summary.grandTotal)}</span>
+        </div>
+    </div>
+);
+
+
 function BookingCard({ 
   booking,
   onCancelBooking,
@@ -53,9 +96,11 @@ function BookingCard({
   onCancelBooking: (bookingId: string) => void;
   onViewTrip: (bookingId: string) => void;
 }) {
-  const { item, type, passengerDetails, bookingDate, transactionId, amountPaid, seatDetails, insuranceDetails } = booking;
+  const { item, type, passengerDetails, bookingDate, transactionId, amountPaid, seatDetails, insuranceDetails, priceSummary } = booking;
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
 
   return (
+    <>
     <Card className="overflow-hidden">
       <CardHeader className="bg-secondary/30">
         <div className="flex justify-between items-start">
@@ -72,7 +117,7 @@ function BookingCard({
           <div className="text-right">
             <p className="flex items-center text-xl font-bold">
                 <IndianRupee className="h-5 w-5 mr-1"/>
-                {formatCurrency(booking.amountPaid)}
+                {formatCurrency(booking.amountPaid || 0)}
             </p>
             <p className="text-xs text-muted-foreground">Total Price</p>
           </div>
@@ -111,6 +156,11 @@ function BookingCard({
         </div>
       </CardContent>
       <CardFooter className="bg-secondary/30 p-4 flex justify-end gap-2">
+            {priceSummary && (
+                <Button variant="ghost" onClick={() => setIsPriceModalOpen(true)}>
+                    <Wallet className="mr-2 h-4 w-4"/> View Price Breakout
+                </Button>
+            )}
             <Button variant="outline" onClick={() => onViewTrip(booking.id)}>
                 <ArrowRight className="mr-2 h-4 w-4" /> View Trip Plan
             </Button>
@@ -138,6 +188,19 @@ function BookingCard({
         </AlertDialog>
       </CardFooter>
     </Card>
+
+    <Dialog open={isPriceModalOpen} onOpenChange={setIsPriceModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Price Breakout</DialogTitle>
+            </DialogHeader>
+            {priceSummary && <PriceBreakoutContent summary={priceSummary} />}
+             <DialogFooter>
+                <DialogClose asChild><Button>Close</Button></DialogClose>
+             </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   )
 }
 
@@ -226,5 +289,3 @@ export default function MyBookingsPage() {
     </div>
   );
 }
-
-    

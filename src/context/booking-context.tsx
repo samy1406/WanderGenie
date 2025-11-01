@@ -41,6 +41,16 @@ export type InsuranceDetails = {
     coverageAmount: number;
 }
 
+export type PriceSummary = {
+    baseFare: number;
+    gst: number;
+    platformFee: number;
+    insurance: number;
+    subTotal: number;
+    discount: number;
+    grandTotal: number;
+}
+
 export type Booking = BookingItem & {
     id: string;
     tripId?: string; // Associate booking with a trip
@@ -51,6 +61,7 @@ export type Booking = BookingItem & {
     itinerary?: GeneratePersonalizedItineraryOutput;
     seatDetails?: SeatDetails;
     insuranceDetails?: InsuranceDetails;
+    priceSummary?: PriceSummary;
 };
 
 
