@@ -43,6 +43,7 @@ export type InsuranceDetails = {
 
 export type Booking = BookingItem & {
     id: string;
+    tripId?: string; // Associate booking with a trip
     passengerDetails: PassengerDetails;
     bookingDate: string;
     transactionId?: string;
@@ -62,6 +63,7 @@ type BookingContextType = {
   deleteBookingFromList: (bookingId: string) => void;
   updateBookingInList: (updatedBooking: Booking) => void;
   getBookingById: (bookingId: string) => Booking | undefined;
+  getBookingsForTrip: (tripId: string) => Booking[];
   pendingBooking: Booking | null;
   setPendingBooking: (booking: Booking | null) => void;
   clearPendingBooking: () => void;
@@ -73,7 +75,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingOption, setBookingOption] = useState<BookingItem | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [pendingBooking, setPendingBooking] = useState<Booking | null>(null);
-  const { addTrip, setCurrentTrip } = useTrip();
+  const { addTrip, setCurrentTrip, updateTrip } = useTrip();
   const { isAuthenticated, handlePostAuth } = useAuth();
   
   useEffect(() => {
@@ -100,7 +102,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setBookings(newBookings);
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
     
-    let updatedTrip = { ...tripToSave };
+    let updatedTrip = { ...tripToSave, bookingIds: [...(tripToSave.bookingIds || []), booking.id] };
 
     if (booking.type === 'hotel') {
         const hotelName = (booking.item as HotelOption).name;
@@ -141,7 +143,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         updatedTrip.itinerary = newItinerary;
     }
 
-    addTrip(updatedTrip); // Save the (potentially updated) trip
+    updateTrip(updatedTrip); // Use updateTrip to save changes
     setCurrentTrip(updatedTrip); // Make it the active trip
   };
   
@@ -171,6 +173,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     return bookings.find(b => b.id === bookingId);
   }
 
+  const getBookingsForTrip = (tripId: string) => {
+    return bookings.filter(b => b.tripId === tripId);
+  }
+
   const clearPendingBooking = () => {
     setPendingBooking(null);
   };
@@ -184,6 +190,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     deleteBookingFromList,
     updateBookingInList,
     getBookingById,
+    getBookingsForTrip,
     pendingBooking,
     setPendingBooking,
     clearPendingBooking

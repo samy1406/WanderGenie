@@ -147,6 +147,7 @@ export function TripPlanner() {
         itinerary: itineraryResult,
         outboundTravelOptions: outboundOptionsResult,
         returnTravelOptions: returnOptionsResult,
+        bookingIds: [],
       });
 
     } catch (error) {
@@ -229,9 +230,6 @@ export function TripPlanner() {
                         </>
                       ) : (
                         <TravelOptions 
-                            outboundTravelOptions={currentTrip.outboundTravelOptions!} 
-                            returnTravelOptions={currentTrip.returnTravelOptions}
-                            hotelOptions={currentTrip.outboundTravelOptions!.hotelOptions}
                             onHotelBooked={(hotelName) => {
                                 // This callback is now mainly for UI feedback if needed
                                 // The itinerary update is handled within the context

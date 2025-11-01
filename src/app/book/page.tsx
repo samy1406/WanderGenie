@@ -246,6 +246,7 @@ export default function BookPage() {
         const newBooking = {
             ...bookingOption,
             id: bookingReq.bookingId,
+            tripId: currentTrip.id,
             transactionId: paymentReq.transactionId,
             passengerDetails: {
                 passengers: data.passengers,
@@ -767,5 +768,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    

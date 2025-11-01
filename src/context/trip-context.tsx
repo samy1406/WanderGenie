@@ -21,11 +21,13 @@ export type Trip = {
     outboundTravelOptions?: GetTravelOptionsOutput;
     returnTravelOptions?: GetTravelOptionsOutput | null;
     userId?: string;
+    bookingIds?: string[];
 };
 
 type TripContextType = {
   trips: Trip[];
   addTrip: (trip: Trip) => void;
+  updateTrip: (trip: Trip) => void;
   getTrip: (tripId: string) => Trip | undefined;
   deleteTrip: (tripId: string) => void;
   currentTrip: Trip | null;
@@ -79,14 +81,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
     
     const tripWithUser = { ...trip, userId: user.id };
 
-    // Check if the trip already exists by a unique property (e.g., id)
     const tripExists = trips.some(t => t.id === tripWithUser.id);
     let newTrips;
     if (tripExists) {
-        // Update the existing trip
         newTrips = trips.map(t => t.id === tripWithUser.id ? tripWithUser : t);
     } else {
-        // Add the new trip
         newTrips = [...trips, tripWithUser];
     }
     
@@ -94,6 +93,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
     saveTripsToStorage(newTrips, user.id);
     toast({ title: "Trip Saved!", description: `${trip.name} has been added to your collection.` });
   }, [user, trips, saveTripsToStorage, toast]);
+
+  const updateTrip = useCallback((trip: Trip) => {
+    if (!user) return;
+    const newTrips = trips.map(t => t.id === trip.id ? trip : t);
+    setTrips(newTrips);
+    saveTripsToStorage(newTrips, user.id);
+  }, [user, trips, saveTripsToStorage]);
 
   const getTrip = (tripId: string) => {
     return trips.find(t => t.id === tripId);
@@ -125,6 +131,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const value = {
     trips,
     addTrip,
+    updateTrip,
     getTrip,
     deleteTrip,
     currentTrip,
