@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Eye } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export function AuthModal() {
   const { isAuthModalOpen, closeAuthModal, authModalView, login, signup } = useAuth();
@@ -59,6 +60,10 @@ export function AuthModal() {
         }
         if (passwordStrength < 3) {
             toast({title: "Password is too weak", description: "Please choose a stronger password.", variant: "destructive"});
+            return;
+        }
+        if (contact.length !== 10) {
+            toast({title: "Invalid Contact Number", description: "Contact number must be 10 digits.", variant: "destructive"});
             return;
         }
         signup({name, email, password, age: parseInt(age), contact});
@@ -116,7 +121,19 @@ export function AuthModal() {
            {view === 'signup' && (
             <div className="grid gap-2">
                 <Label htmlFor="contact">Contact Number</Label>
-                <Input id="contact" type="number" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g., 1234567890" />
+                <div className="flex items-center gap-2">
+                    <Select defaultValue="+91">
+                        <SelectTrigger className="w-[80px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="+91">+91</SelectItem>
+                            <SelectItem value="+1">+1</SelectItem>
+                            <SelectItem value="+44">+44</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Input id="contact" type="tel" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="e.g., 9876543210" maxLength={10} />
+                </div>
             </div>
            )}
           <div className="grid gap-2">

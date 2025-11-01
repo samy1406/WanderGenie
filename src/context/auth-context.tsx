@@ -43,7 +43,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Mock user data - in a real app, this would be fetched from a database
 let MOCK_USERS: User[] = [
     { id: '0', name: 'Admin User', email: 'admin@wandergenie.com', password: 'Admin@123' },
-    { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!' },
+    { id: '1', name: 'Wanderer', email: 'test@example.com', password: 'Password1!', contact: '1234567890', age: 30 },
 ];
 
 
@@ -123,7 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handlePostAuth = () => {
-    // The `useBooking` hook will have logic to check for `isAuthenticated` and complete the action.
+    // This is now just a simple function to close the modal.
+    // The component that initiated the auth flow is responsible
+    // for checking isAuthenticated and proceeding with its action.
     closeAuthModal();
   };
 
@@ -211,5 +213,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

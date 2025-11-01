@@ -47,7 +47,7 @@ const gstDetailsSchema = z.object({
 const bookingFormSchema = z.object({
   passengers: z.array(passengerSchema).min(1, 'At least one passenger is required'),
   contactEmail: z.string().email('A valid contact email is required'),
-  contactPhone: z.string().min(10, 'A valid contact phone number is required'),
+  contactPhone: z.string().length(10, 'Contact number must be 10 digits'),
   agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions." }),
   useGST: z.boolean().default(false),
   gstDetails: gstDetailsSchema.optional(),
@@ -491,9 +491,21 @@ export default function BookPage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center"><Phone className="mr-2 h-4 w-4"/> Mobile no</FormLabel>
-                                <FormControl>
-                                <Input type="tel" placeholder="+91 Enter Mobile no" {...field} />
-                                </FormControl>
+                                <div className="flex items-center gap-2">
+                                     <Select defaultValue="+91">
+                                        <SelectTrigger className="w-[80px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="+91">+91</SelectItem>
+                                            <SelectItem value="+1">+1</SelectItem>
+                                            <SelectItem value="+44">+44</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormControl>
+                                        <Input type="tel" placeholder="Enter Mobile no" {...field} maxLength={10} />
+                                    </FormControl>
+                                </div>
                                 <FormMessage />
                             </FormItem>
                             )}
@@ -707,5 +719,3 @@ export default function BookPage() {
   </>
   );
 }
-
-    
