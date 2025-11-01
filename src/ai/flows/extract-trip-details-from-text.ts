@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -28,7 +29,7 @@ export async function extractTripDetailsFromText(input: string): Promise<Extract
 const prompt = ai.definePrompt({
   name: 'extractTripDetailsPrompt',
   input: {schema: ExtractTripDetailsFromTextInputSchema},
-  output: {schema: ExtractTripDetailsFromTextOutputSchema},
+  output: {schema: ExtractTripDetailsFromTextOutputSchema, format: 'json'},
   prompt: `You are an expert at extracting structured travel information from unstructured text. Analyze the following user request and extract the origin, destination, trip duration in days, and their interests.
 
 If a piece of information is not present, leave the corresponding field null.
