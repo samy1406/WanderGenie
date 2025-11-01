@@ -234,7 +234,10 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                 destination={destination} 
                 origin={origin} 
                 journeyStarted={journeyStarted}
+                simulationStarted={simulationStarted}
                 selectedActivity={selectedActivity}
+                checkpoints={itineraryCheckpoints}
+                currentCheckpointIndex={currentCheckpointIndex}
             />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
@@ -401,3 +404,5 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
 };
 
 export default ItineraryDisplay;
+
+    

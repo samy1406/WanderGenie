@@ -19,12 +19,25 @@ import { handleGeocodeLocation } from '@/app/actions';
 
 type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
 
-const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: { 
-    destination: string, 
-    origin: string, 
-    journeyStarted: boolean,
+type LiveMapProps = {
+    destination: string;
+    origin: string;
+    journeyStarted: boolean;
+    simulationStarted: boolean;
     selectedActivity: Activity | null;
-}) => {
+    checkpoints: Activity[];
+    currentCheckpointIndex: number;
+};
+
+const LiveMap = ({
+    destination,
+    origin,
+    journeyStarted,
+    simulationStarted,
+    selectedActivity,
+    checkpoints,
+    currentCheckpointIndex
+}: LiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Map | null>(null);
   const vectorSourceRef = useRef<VectorSource<Point | LineString> | null>(null);
@@ -35,10 +48,8 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
   const fetchCoords = async (location: string): Promise<[number, number] | null> => {
     try {
       if (!location) return null;
-      // Prioritize the exact location string first.
       let data = await handleGeocodeLocation(location);
       
-      // Fallback for locations that might need city context
       if (!data || data.length === 0) {
           const queryWithCity = `${location}, ${destination}`;
           data = await handleGeocodeLocation(queryWithCity);
@@ -174,7 +185,24 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
             }
         }
         
-        const nextDestCoords = await fetchCoords(locationToSearch);
+        let nextDestCoords = await fetchCoords(locationToSearch);
+
+        // Dummy location logic for simulation
+        if (!nextDestCoords && simulationStarted) {
+            setError(`Could not find "${locationToSearch}". Plotting near next valid location.`);
+            setTimeout(() => setError(null), 5000);
+
+            // Find the next valid checkpoint
+            for (let i = currentCheckpointIndex + 1; i < checkpoints.length; i++) {
+                const nextValidCoords = await fetchCoords(checkpoints[i].location);
+                if (nextValidCoords) {
+                    // Create a dummy coordinate slightly offset from the next valid one
+                    nextDestCoords = [nextValidCoords[0] - 0.01, nextValidCoords[1] - 0.01];
+                    break;
+                }
+            }
+        }
+
 
         if (nextDestCoords) {
             const nextDestPoint = fromLonLat(nextDestCoords);
@@ -215,7 +243,7 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
         }
     }
 
-  }, [selectedActivity, journeyStarted, destination]);
+  }, [selectedActivity, journeyStarted, simulationStarted, destination, checkpoints, currentCheckpointIndex]);
 
   return (
     <div className="relative w-full h-full">
@@ -230,3 +258,5 @@ const LiveMap = ({ destination, origin, journeyStarted, selectedActivity }: {
 };
 
 export default LiveMap;
+
+    
