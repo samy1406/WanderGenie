@@ -58,7 +58,7 @@ type BookingContextType = {
   bookingOption: BookingItem | null;
   setBookingOption: (option: BookingItem | null) => void;
   bookings: Booking[];
-  addBookingAndSaveTrip: (booking: Booking, tripToSave: Trip) => void;
+  addBookingAndSaveTrip: (booking: Omit<Booking, 'tripId'>, tripToSave: Trip) => void;
   deleteBooking: (bookingId: string) => void;
   deleteBookingFromList: (bookingId: string) => void;
   updateBookingInList: (updatedBooking: Booking) => void;
@@ -97,8 +97,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, pendingBooking, handlePostAuth]);
 
 
-  const addBookingAndSaveTrip = (booking: Booking, tripToSave: Trip) => {
-    const newBookings = [...bookings, booking];
+  const addBookingAndSaveTrip = (booking: Omit<Booking, 'tripId'>, tripToSave: Trip) => {
+    const bookingWithTripId: Booking = { ...booking, tripId: tripToSave.id };
+    const newBookings = [...bookings, bookingWithTripId];
     setBookings(newBookings);
     localStorage.setItem('wandergenie-bookings', JSON.stringify(newBookings));
     

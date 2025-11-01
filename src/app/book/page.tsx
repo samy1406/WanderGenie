@@ -82,7 +82,7 @@ const PLATFORM_FEES = {
 
 export default function BookPage() {
   const router = useRouter();
-  const { bookingOption, addBookingAndSaveTrip, setPendingBooking, bookings } = useBooking();
+  const { bookingOption, addBookingAndSaveTrip, setPendingBooking, bookings, getBookingsForTrip } = useBooking();
   const { currentTrip } = useTrip();
   const { isAuthenticated, user, openAuthModal } = useAuth();
   const { toast } = useToast();
@@ -120,10 +120,9 @@ export default function BookPage() {
   
   // This effect pre-fills the form with the latest booking details for the current trip
   useEffect(() => {
-    if (currentTrip && currentTrip.bookingIds && currentTrip.bookingIds.length > 0) {
+    if (currentTrip) {
       // Find the latest booking for this trip
-      const tripBookings = bookings
-        .filter(b => currentTrip.bookingIds?.includes(b.id))
+      const tripBookings = getBookingsForTrip(currentTrip.id)
         .sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime());
 
       if (tripBookings.length > 0) {
@@ -144,7 +143,7 @@ export default function BookPage() {
         form.setValue('contactEmail', user.email || '');
         form.setValue('contactPhone', user.contact || '');
     }
-  }, [currentTrip, bookings, isAuthenticated, user, form, toast]);
+  }, [currentTrip, getBookingsForTrip, isAuthenticated, user, form, toast]);
 
 
   const { fields, append, remove } = useFieldArray({
@@ -289,7 +288,6 @@ export default function BookPage() {
         const newBooking = {
             ...bookingOption,
             id: bookingReq.bookingId,
-            tripId: currentTrip.id,
             transactionId: paymentReq.transactionId,
             passengerDetails: {
                 passengers: data.passengers,
