@@ -1,3 +1,4 @@
+
 // This file is machine-generated - edit at your own risk.
 
 'use server';
@@ -56,7 +57,7 @@ export async function adjustItinerary(
 const adjustItineraryPrompt = ai.definePrompt({
   name: 'adjustItineraryPrompt',
   input: {schema: AdjustItineraryInputSchema},
-  output: {schema: AdjustItineraryOutputSchema},
+  output: {schema: AdjustItineraryOutputSchema, format: 'json'},
   tools: [getCurrentWeather],
   prompt: `The user's current plan is "{{currentPlan}}" in {{location}}.
 The user's preferences are for "{{userPreferences}}".

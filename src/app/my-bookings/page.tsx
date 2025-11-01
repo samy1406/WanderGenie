@@ -1,0 +1,396 @@
+
+// src/app/my-bookings/page.tsx
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useBooking, type Booking, type Passenger, type SeatDetails, type InsuranceDetails, type PriceSummary } from '@/context/booking-context';
+import { useTrip, type Trip } from '@/context/trip-context';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import type { GetTravelOptionsOutput } from "@/ai/flows/get-travel-options";
+import { FormatBoldText } from '@/components/format-bold-text';
+import { User, Calendar, Plane, Hotel, IndianRupee, Trash2, AlertTriangle, Briefcase, Ticket, Bus, Train, Shield, ArrowRight, Wallet, PersonStanding, Baby, ArrowLeft, Clock } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { format, differenceInSeconds } from 'date-fns';
+
+type TravelOption = GetTravelOptionsOutput['travelOptions'][0];
+type HotelOption = GetTravelOptionsOutput['hotelOptions'][0];
+
+const iconMap: { [key: string]: React.ReactElement } = {
+    Flight: <Plane className="mr-3 h-6 w-6 text-primary" />,
+    Train: <Train className="mr-3 h-6 w-6 text-primary" />,
+    Bus: <Bus className="mr-3 h-6 w-6 text-primary" />,
+    hotel: <Hotel className="mr-3 h-6 w-6 text-primary" />,
+};
+
+const getIconForBooking = (booking: Booking) => {
+    if (booking.type === 'hotel') return iconMap.hotel;
+    const travelOption = booking.item as TravelOption;
+    return iconMap[travelOption.mode] || <Briefcase className="mr-3 h-6 w-6 text-primary" />;
+}
+
+const PriceBreakoutContent = ({ summary }: { summary: PriceSummary }) => (
+    <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+            <span>Base Fare</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.baseFare)}</span>
+        </div>
+        <div className="flex justify-between">
+            <span>Taxes & Surcharges (GST)</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.gst)}</span>
+        </div>
+        <div className="flex justify-between">
+            <span>Platform Fee</span>
+            <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.platformFee)}</span>
+        </div>
+        {summary.insurance > 0 && (
+            <div className="flex justify-between">
+                <span>Insurance</span>
+                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.insurance)}</span>
+            </div>
+        )}
+        {summary.discount > 0 && (
+            <div className="flex justify-between text-green-600">
+                <span>Discount</span>
+                <span className='flex items-center'>-<IndianRupee className="h-4 w-4 mr-1"/>{formatCurrency(summary.discount)}</span>
+            </div>
+        )}
+        <Separator />
+        <div className="flex justify-between font-bold text-lg">
+            <span>Grand Total</span>
+            <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1"/>{formatCurrency(summary.grandTotal)}</span>
+        </div>
+    </div>
+);
+
+const useCountdown = (targetDate: Date) => {
+    const [timeLeft, setTimeLeft] = useState(differenceInSeconds(targetDate, new Date()));
+
+    useEffect(() => {
+        if (timeLeft <= 0) return;
+
+        const intervalId = setInterval(() => {
+            setTimeLeft(differenceInSeconds(targetDate, new Date()));
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, [targetDate, timeLeft]);
+
+    const days = Math.floor(timeLeft / (60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (60 * 60 * 24)) / (60 * 60));
+    const minutes = Math.floor((timeLeft % (60 * 60)) / 60);
+    const seconds = Math.floor(timeLeft % 60);
+    
+    return { days, hours, minutes, seconds, isPast: timeLeft <= 0 };
+};
+
+const CountdownTimer = ({ date }: { date: string }) => {
+    const target = useMemo(() => {
+        // Assume a plausible time like 10:00 AM for the countdown
+        const d = new Date(date);
+        d.setHours(10, 0, 0, 0); 
+        return d;
+    }, [date]);
+    
+    const { days, hours, minutes, seconds, isPast } = useCountdown(target);
+
+    if (isPast) {
+        return <span className="text-sm text-green-600">Journey Started</span>;
+    }
+
+    return (
+        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>{String(days).padStart(2, '0')}d</span>:
+            <span>{String(hours).padStart(2, '0')}h</span>:
+            <span>{String(minutes).padStart(2, '0')}m</span>:
+            <span>{String(seconds).padStart(2, '0')}s</span>
+        </div>
+    );
+};
+
+
+function BookingCard({ 
+  booking,
+  trip,
+  onCancelBooking,
+  onViewTrip
+}: { 
+  booking: Booking;
+  trip?: Trip; 
+  onCancelBooking: (bookingId: string) => void;
+  onViewTrip: (bookingId: string) => void;
+}) {
+  const { item, type, passengerDetails, bookingDate, transactionId, amountPaid, seatDetails, insuranceDetails, priceSummary } = booking;
+  const isHotel = type === 'hotel';
+  const travelItem = isHotel ? null : item as TravelOption;
+  const hotelItem = isHotel ? item as HotelOption : null;
+
+
+  return (
+    <>
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-secondary/30">
+        <div className="flex justify-between items-start">
+          <div>
+             <div className="flex items-center">
+                <CardTitle className="flex items-center text-2xl">
+                {getIconForBooking(booking)}
+                <FormatBoldText text={isHotel ? hotelItem!.name : travelItem!.details} />
+                </CardTitle>
+                <span className="font-mono text-xs bg-gray-800 text-gray-200 px-2 py-0.5 rounded-full ml-4">ID: {booking.id}</span>
+            </div>
+            <CardDescription className="flex items-center gap-4 mt-2 text-xs">
+                <span>Booked on: {new Date(booking.bookingDate).toLocaleDateString()}</span>
+                {trip && <CountdownTimer date={trip.departureDate} />}
+            </CardDescription>
+          </div>
+           <div className="text-right">
+              <div className="flex flex-col items-end gap-2">
+                  <p className="flex items-center text-xl font-bold">
+                      <IndianRupee className="h-5 w-5 mr-1"/>
+                      {formatCurrency(booking.amountPaid || 0)}
+                  </p>
+                   {priceSummary && (
+                      <Dialog>
+                          <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-primary hover:text-primary-foreground hover:bg-primary">
+                                <IndianRupee className="mr-2 h-4 w-4" />
+                                Price Breakout
+                              </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle>Price Breakout</DialogTitle>
+                                  <DialogDescription>ID: {booking.id}</DialogDescription>
+                              </DialogHeader>
+                              <PriceBreakoutContent summary={priceSummary} />
+                              <DialogFooter>
+                                  <DialogClose asChild><Button>Close</Button></DialogClose>
+                              </DialogFooter>
+                          </DialogContent>
+                      </Dialog>
+                  )}
+              </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-6">
+        
+        {trip && !isHotel && (
+            <div className="mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">From</p>
+                        <p className="text-xl font-bold">{trip.origin}</p>
+                        <p className="text-sm text-muted-foreground">{format(new Date(trip.departureDate), "dd MMM, yyyy")} - 10:00 AM</p>
+                    </div>
+                    <div className="text-center flex-1 px-4">
+                        <div className="flex items-center justify-center text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-2" /> {travelItem?.duration}
+                        </div>
+                        <div className="w-full bg-border h-0.5 relative my-1">
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"></div>
+                        </div>
+                         <p className="text-xs text-center text-muted-foreground">{travelItem?.mode}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">To</p>
+                        <p className="text-xl font-bold">{trip.destination}</p>
+                        {trip.returnDate && <p className="text-sm text-muted-foreground">{format(new Date(trip.returnDate), "dd MMM, yyyy")} - 06:00 PM</p>}
+                    </div>
+                </div>
+            </div>
+        )}
+         {isHotel && (
+            <div className="mb-6">
+                <p className="text-lg font-semibold"><FormatBoldText text={hotelItem!.name} /></p>
+                <p className="text-sm text-muted-foreground">{trip?.destination}</p>
+            </div>
+        )}
+
+        <Separator className="my-6" />
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+                <h4 className="font-semibold mb-2 flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground" />Passengers</h4>
+                <ul className="space-y-1 text-sm text-foreground/90">
+                {passengerDetails.passengers.map((p, i) => (
+                    <li key={i}>{p.title}. {p.firstName} {p.lastName} ({p.gender}, {p.age})</li>
+                ))}
+                </ul>
+            </div>
+            {seatDetails && (
+                 <div>
+                    <h4 className="font-semibold mb-2 flex items-center"><Ticket className="mr-2 h-4 w-4 text-muted-foreground" />Seat Details</h4>
+                    <p className="text-sm"><strong>PNR:</strong> <span className="font-mono">{seatDetails.pnr}</span></p>
+                    <p className="text-sm"><strong>Seats:</strong> <span className="font-mono">{seatDetails.seats.join(', ')}</span></p>
+                </div>
+            )}
+             {insuranceDetails && (
+                 <div>
+                    <h4 className="font-semibold mb-2 flex items-center"><Shield className="mr-2 h-4 w-4 text-muted-foreground" />Insurance</h4>
+                    <p className="text-sm"><strong>Policy ID:</strong> <span className="font-mono">{insuranceDetails.policyId}</span></p>
+                    <p className="text-sm"><strong>Provider:</strong> {insuranceDetails.provider}</p>
+                    <p className="text-sm flex items-center"><strong>Coverage:</strong><IndianRupee className="inline h-3 w-3 mx-1"/>{formatCurrency(insuranceDetails.coverageAmount)}</p>
+                </div>
+            )}
+             <div className="md:col-span-full lg:col-span-1 lg:col-start-3">
+                <h4 className="font-semibold mb-2 flex items-center"><Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />Transaction</h4>
+                <p className="text-sm"><strong>TXN ID:</strong> <span className="font-mono">{transactionId}</span></p>
+                <p className="text-sm"><strong>Date:</strong> {new Date(bookingDate).toLocaleString()}</p>
+            </div>
+        </div>
+      </CardContent>
+      <CardFooter className="bg-secondary/30 p-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onViewTrip(booking.id)}>
+                <ArrowRight className="mr-2 h-4 w-4" /> View Trip Plan
+            </Button>
+            <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" /> Cancel Booking
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center"><AlertTriangle className="mr-2 text-destructive" />Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently cancel your booking. 
+                    Cancellation is free for WanderGenie Beta. In a real app, policies would apply.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
+                    Yes, Cancel It
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </CardFooter>
+    </Card>
+    </>
+  )
+}
+
+
+export default function MyBookingsPage() {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const { bookings, deleteBooking } = useBooking();
+  const { trips, setCurrentTrip, getTrip } = useTrip();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [userBookings, setUserBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/');
+    } else if (user) {
+      const filteredBookings = bookings.filter(booking => booking.passengerDetails.email === user.email);
+      setUserBookings(filteredBookings.sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()));
+    }
+  }, [isAuthenticated, isLoading, router, user, bookings]);
+
+
+  const handleCancelBooking = (bookingId: string) => {
+    // In a real app, this would involve API calls, checking refund policies etc.
+    // Standard practice: Often non-refundable or partially refundable depending on time.
+    // For this app, we assume a 100% refund for beta.
+    const bookingToCancel = bookings.find(b => b.id === bookingId);
+    if (!bookingToCancel) return;
+
+    const refundAmount = bookingToCancel.amountPaid || 0;
+
+    deleteBooking(bookingId);
+
+    toast({
+        title: "Booking Cancelled",
+        description: <p className="flex items-center">Your booking has been cancelled. A refund of <IndianRupee className="inline h-4 w-4 mx-1"/>{formatCurrency(refundAmount)} has been initiated.</p>,
+    })
+  }
+
+  const handleViewTrip = (bookingId: string) => {
+    // Find the trip associated with this booking
+    const tripForBooking = trips.find(trip => trip.bookingIds.includes(bookingId));
+
+    if (tripForBooking) {
+        setCurrentTrip(tripForBooking);
+        router.push('/');
+    } else {
+        toast({
+            title: "Trip Plan Not Found",
+            description: "We couldn't find the saved trip plan associated with this booking.",
+            variant: "destructive"
+        });
+    }
+  };
+
+  if (isLoading || !isAuthenticated) {
+    return <div className="text-center p-8">Loading...</div>;
+  }
+  
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+            <div>
+                <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
+                <p className="text-muted-foreground">Welcome back, {user?.name}! Here are your trip details.</p>
+            </div>
+             <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            </Button>
+        </div>
+
+      {userBookings.length > 0 ? (
+        <div className="space-y-6">
+          {userBookings.map((booking) => {
+              const trip = booking.tripId ? getTrip(booking.tripId) : undefined;
+              return (
+              <BookingCard 
+                key={booking.id} 
+                booking={booking}
+                trip={trip}
+                onCancelBooking={handleCancelBooking}
+                onViewTrip={handleViewTrip}
+              />
+          )})}
+        </div>
+      ) : (
+        <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <h2 className="text-xl font-semibold text-muted-foreground">You have no bookings yet.</h2>
+          <p className="mt-2 text-muted-foreground">Ready to plan your next adventure?</p>
+          <Button onClick={() => router.push('/')} className="mt-4">Plan a Trip</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+    

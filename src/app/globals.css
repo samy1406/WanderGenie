@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Lighter blue-white */
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 210 40% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -16,7 +16,7 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 346 77% 58%; /* Vibrant Pink/Coral */
+    --accent: 28 100% 50%; /* Vibrant Orange for Search Button */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -43,7 +43,7 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 346 77% 58%;
+    --accent: 28 100% 50%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
@@ -68,4 +68,47 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
+}
+
+#admin-test-panel {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: #fff;
+  border: 2px solid #000;
+  padding: 15px;
+  z-index: 10000;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  font-family: sans-serif;
+}
+
+#admin-test-panel h3 {
+  margin-top: 0;
+  color: black;
+}
+
+#admin-test-panel button {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#admin-test-panel button:hover {
+  background-color: #0056b3;
+}
+
+#admin-panel-toggle {
+    margin-top: 10px;
+    background-color: #6c757d;
+}
+
+#admin-panel-toggle:hover {
+    background-color: #5a6268;
 }
