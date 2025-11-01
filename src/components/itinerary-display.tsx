@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import LiveMap from "./live-map";
 import SuggestionModal from "./suggestion-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Button } from "./ui/button";
 import { CheckCircle2, Backpack, Info, MapPin, Rocket, StopCircle, Building, Utensils, BusFront, IndianRupee, Link, Bot, Save, Clock, Sunrise, Sun, Sunset, Moon } from "lucide-react";
@@ -18,8 +18,17 @@ import { formatCurrency } from "@/lib/formatters";
 import type { User } from '@/context/auth-context';
 import { useAuth } from "@/context/auth-context";
 import { addDays, format } from 'date-fns';
+import { AdminPanel } from "./admin-panel";
 
 type Activity = NonNullable<GeneratePersonalizedItineraryOutput['dailyPlan'][0]['morning']>[0];
+
+const allActivities = (dailyPlan: GeneratePersonalizedItineraryOutput['dailyPlan']) =>
+  dailyPlan.flatMap(day => [
+    ...(day.morning || []),
+    ...(day.afternoon || []),
+    ...(day.evening || []),
+    ...(day.night || [])
+  ]);
 
 const ActivityList = ({ activities, journeyStarted, selectedActivity, onActivitySelect }: { activities: Activity[], journeyStarted: boolean, selectedActivity: Activity | null, onActivitySelect: (activity: Activity) => void }) => {
   if (!activities || activities.length === 0) return null;
@@ -88,24 +97,43 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
   const [activeDay, setActiveDay] = useState<string | undefined>("day-0");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
-  const handleToggleJourney = () => {
-    const isStarting = !journeyStarted;
-    setJourneyStarted(isStarting);
+  const itineraryCheckpoints = useMemo(() => allActivities(dailyPlan), [dailyPlan]);
+  const [currentCheckpointIndex, setCurrentCheckpointIndex] = useState(0);
 
-    if (isStarting) {
-      if (dailyPlan.length > 0) {
-        setActiveDay("day-0");
-        const firstActivity = dailyPlan[0].morning?.[0] ?? dailyPlan[0].afternoon?.[0];
-        if (firstActivity) {
-            setSelectedActivity(firstActivity);
+  useEffect(() => {
+    if (journeyStarted) {
+      // Set the first activity when journey starts
+      const firstActivity = itineraryCheckpoints[0];
+      if (firstActivity) {
+        setSelectedActivity(firstActivity);
+        setCurrentCheckpointIndex(0);
+        // Also expand the corresponding accordion
+        const dayOfFirstActivity = dailyPlan.findIndex(day => 
+            allActivities([day]).some(act => act.description === firstActivity.description)
+        );
+        if (dayOfFirstActivity !== -1) {
+            setActiveDay(`day-${dayOfFirstActivity}`);
         }
       }
-      console.log("Journey started!");
     } else {
-      setActiveDay(undefined);
+      // Reset when journey ends
       setSelectedActivity(null);
-      console.log("Journey ended.");
+      setCurrentCheckpointIndex(0);
     }
+  }, [journeyStarted, itineraryCheckpoints, dailyPlan]);
+
+  const handleSelectActivity = (activity: Activity) => {
+    setSelectedActivity(activity);
+    const activityIndex = itineraryCheckpoints.findIndex(
+      (act) => act.description === activity.description
+    );
+    if (activityIndex !== -1) {
+      setCurrentCheckpointIndex(activityIndex);
+    }
+  };
+
+  const handleToggleJourney = () => {
+    setJourneyStarted(isStarting => !isStarting);
   };
 
   const handleToggleSimulation = () => {
@@ -142,6 +170,25 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
         onItineraryUpdate(newItinerary);
     }
   };
+  
+  const handleNextCheckpoint = () => {
+    const nextIndex = currentCheckpointIndex + 1;
+    if (nextIndex < itineraryCheckpoints.length) {
+      setCurrentCheckpointIndex(nextIndex);
+      const nextActivity = itineraryCheckpoints[nextIndex];
+      setSelectedActivity(nextActivity);
+      
+      const dayOfNextActivity = dailyPlan.findIndex(day => 
+        allActivities([day]).some(act => act.description === nextActivity.description)
+      );
+      if (dayOfNextActivity !== -1) {
+        setActiveDay(`day-${dayOfNextActivity}`);
+      }
+    } else {
+        // Reached end of trip
+        setSelectedActivity(null);
+    }
+  };
 
   return (
     <Card className="h-full flex flex-col shadow-lg border-primary/20 bg-card">
@@ -175,15 +222,19 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
             </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6">
+      <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden pt-6 relative">
+       {simulationStarted && journeyStarted && user?.email === 'admin@wandergenie.com' && (
+          <AdminPanel
+            nextCheckpoint={itineraryCheckpoints[currentCheckpointIndex] || null}
+            onNext={handleNextCheckpoint}
+          />
+        )}
         <div className="h-64 rounded-lg overflow-hidden border shadow-inner">
              <LiveMap 
                 destination={destination} 
                 origin={origin} 
-                journeyStarted={journeyStarted} 
-                simulationStarted={simulationStarted}
+                journeyStarted={journeyStarted}
                 selectedActivity={selectedActivity}
-                itineraryData={itineraryData}
             />
         </div>
         <ScrollArea className="flex-1 pr-4 -mr-4">
@@ -217,28 +268,28 @@ const ItineraryDisplay = ({ itineraryData, destination, origin, onItineraryUpdat
                   {day.morning && day.morning.length > 0 && (
                     <div className="space-y-2">
                         <h4 className="font-semibold flex items-center text-muted-foreground"><Sunrise className="mr-2 h-4 w-4" /> Morning</h4>
-                        <ActivityList activities={day.morning} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                        <ActivityList activities={day.morning} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={handleSelectActivity} />
                     </div>
                   )}
 
                   {day.afternoon && day.afternoon.length > 0 && (
                      <div className="space-y-2">
                         <h4 className="font-semibold flex items-center text-muted-foreground"><Sun className="mr-2 h-4 w-4" /> Afternoon</h4>
-                        <ActivityList activities={day.afternoon} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                        <ActivityList activities={day.afternoon} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={handleSelectActivity} />
                     </div>
                   )}
 
                    {day.evening && day.evening.length > 0 && (
                      <div className="space-y-2">
                         <h4 className="font-semibold flex items-center text-muted-foreground"><Sunset className="mr-2 h-4 w-4" /> Evening</h4>
-                        <ActivityList activities={day.evening} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                        <ActivityList activities={day.evening} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={handleSelectActivity} />
                     </div>
                   )}
                   
                   {day.night && day.night.length > 0 && (
                      <div className="space-y-2">
                         <h4 className="font-semibold flex items-center text-muted-foreground"><Moon className="mr-2 h-4 w-4" /> Night</h4>
-                        <ActivityList activities={day.night} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={setSelectedActivity} />
+                        <ActivityList activities={day.night} journeyStarted={journeyStarted} selectedActivity={selectedActivity} onActivitySelect={handleSelectActivity} />
                     </div>
                   )}
 
