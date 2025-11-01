@@ -27,7 +27,7 @@ import type { TripType } from "./trip-planner";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays, differenceInCalendarDays } from "date-fns";
 import { Badge } from "./ui/badge";
 import React from "react";
 
@@ -156,7 +156,15 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                                field.onChange(date);
+                                if (tripType === 'roundtrip' && date && form.getValues('returnDate')) {
+                                    const newDuration = differenceInCalendarDays(form.getValues('returnDate'), date) + 1;
+                                    if (newDuration > 0) {
+                                        form.setValue('tripDuration', newDuration, { shouldValidate: true });
+                                    }
+                                }
+                            }}
                             disabled={(date) =>
                               date < new Date(new Date().setHours(0,0,0,0))
                             }
@@ -202,7 +210,16 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                                field.onChange(date);
+                                const departureDate = form.getValues('departureDate');
+                                if (departureDate && date) {
+                                     const newDuration = differenceInCalendarDays(date, departureDate) + 1;
+                                    if (newDuration > 0) {
+                                        form.setValue('tripDuration', newDuration, { shouldValidate: true });
+                                    }
+                                }
+                            }}
                             disabled={(date) =>
                               date < (form.getValues("departureDate") || new Date())
                             }
@@ -257,7 +274,19 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         <FormItem>
                         <FormLabel>Duration (in days)</FormLabel>
                         <FormControl>
-                            <Input type="number" min="1" {...field} />
+                            <Input 
+                                type="number" 
+                                min="1" 
+                                {...field}
+                                onChange={(e) => {
+                                    const newDuration = parseInt(e.target.value, 10);
+                                    field.onChange(newDuration);
+                                    if (tripType === 'roundtrip' && form.getValues('departureDate') && newDuration > 0) {
+                                        const newReturnDate = addDays(form.getValues('departureDate'), newDuration - 1);
+                                        form.setValue('returnDate', newReturnDate, { shouldValidate: true });
+                                    }
+                                }} 
+                            />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -344,7 +373,7 @@ export function ManualForm({ isLoading, form, tripType, setTripType }: ManualFor
                         </PopoverContent>
                     </Popover>
                     {activeFilters.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 pt-2">
                             {activeFilters.map(filter => (
                                 <FilterBadge
                                     key={filter.id}

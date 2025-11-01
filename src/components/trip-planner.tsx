@@ -55,31 +55,6 @@ function TripPlannerContent() {
     },
   });
 
-  const departureDate = form.watch("departureDate");
-  const returnDate = form.watch("returnDate");
-  const tripDuration = form.watch("tripDuration");
-  
-  // Effect to update tripDuration when dates change
-  useEffect(() => {
-    if (departureDate && returnDate && tripType === 'roundtrip') {
-      const duration = differenceInCalendarDays(returnDate, departureDate) + 1;
-      if (duration > 0 && duration !== tripDuration) {
-        form.setValue("tripDuration", duration, { shouldValidate: true });
-      }
-    }
-  }, [departureDate, returnDate, tripType, form, tripDuration]);
-
-  // Effect to update returnDate when duration changes
-  useEffect(() => {
-    if (departureDate && tripDuration > 0 && tripType === 'roundtrip') {
-      const newReturnDate = addDays(departureDate, tripDuration - 1);
-      // Only update if the new date is different to avoid infinite loops
-      if (!returnDate || newReturnDate.getTime() !== returnDate.getTime()) {
-        form.setValue("returnDate", newReturnDate, { shouldValidate: true });
-      }
-    }
-  }, [departureDate, tripDuration, tripType, form, returnDate]);
-
   // Effect to handle navigating directly to the booking view
   useEffect(() => {
     if (searchParams.get('view') === 'book' && currentTrip) {
