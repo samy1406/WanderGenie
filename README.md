@@ -1,6 +1,6 @@
 # WanderGenie ✨
 
-WanderGenie is your smart travel assistant, designed to make planning your next adventure seamless and enjoyable. Generate personalized itineraries, discover hidden gems, and manage your travel plans all in one place.
+WanderGenie is your smart travel assistant, designed to make planning your next adventure seamless and enjoyable. Generate personalized itineraries, discover hidden gems, book your travel, and manage your plans all in one place.
 
 
 
@@ -8,17 +8,19 @@ WanderGenie is your smart travel assistant, designed to make planning your next 
 
 ## What is WanderGenie?
 
-WanderGenie is an intelligent travel planning application that helps users create customized travel itineraries based on their interests, budget, and schedule. Whether you're planning a weekend getaway or a month-long expedition, WanderGenie takes the stress out of planning so you can focus on making memories.
+WanderGenie is an intelligent travel planning application that helps users create customized travel itineraries based on their interests, budget, and schedule. But it doesn't stop at planning. WanderGenie provides a complete, end-to-end experience, allowing you to book your flights and hotels directly and manage all your reservations from a personal dashboard.
 
 ---
 
 ## Key Features
 
-- ✈️ **AI-Powered Itinerary Generation**: Automatically create detailed day-by-day plans based on your travel preferences.
+- ✈️ **AI-Powered Itinerary Generation**: Automatically create detailed day-by-day plans based on your travel preferences, from morning activities to dinner recommendations.
+- 💳 **Integrated Booking Engine**: Book your flights and hotels directly within the app. No need to go to other sites to complete your reservation.
+- 🗂️ **Saved Trips Dashboard**: Keep all your plans organized in "My Saved Trips." See the status of your bookings at a glance (e.g., Departure: Booked, Hotel: Pending).
 - 📍 **Interactive Map View**: Visualize your trip, discover points of interest, and plan your routes effectively.
-- 💰 **Budget Tracking**: Keep an eye on your expenses to stay within your budget.
+- 💰 **Budget & Expense Tracking**: Get an estimated trip cost broken down by accommodation, food, and transport. Apply promo codes to get discounts on your bookings.
 - ☁️ **Weather Forecasts**: Get up-to-date weather information for your destination.
-- 📝 **Collaborative Planning**: Share your trip with friends and family to plan together.
+- 📝 **Collaborative Planning**: Receive curated lists of must-do activities and essential "Things to Carry" for your specific destination. Share your trip with friends and family to plan together
 - 🚀 **Smart Suggestions**: Get real-time suggestions to adapt your plans based on changing conditions.
 
 ---
@@ -28,35 +30,46 @@ WanderGenie is an intelligent travel planning application that helps users creat
 #### 1. Plan Your Trip with a Simple Form
 Provide your origin, destination, duration, and interests to get started.
 
-<img width="930" height="468" alt="image" src="https://github.com/user-attachments/assets/2efa7011-cacf-4f96-96d8-5c1ba0ce92e0" />
+<img width="933" height="630" alt="image" src="https://github.com/user-attachments/assets/e6755924-d50c-4c7c-8faf-278ec8c2fb30" />
+
 
 
 
 #### 2. Get a Detailed, AI-Generated Itinerary
-WanderGenie creates a complete day-by-day plan which you can explore.
+WanderGenie creates a complete, day-by-day plan. You can see your full adventure laid out, including a map view, and detailed activities with timings for morning, afternoon, evening, and night.
 
-<img width="923" height="630" alt="image" src="https://github.com/user-attachments/assets/4017ef23-4c81-4366-baee-beade036efd7" />
+<img width="933" height="548" alt="image" src="https://github.com/user-attachments/assets/f28d4d6f-0452-426c-a60f-801b6e9bc4db" />
+<img width="933" height="498" alt="image" src="https://github.com/user-attachments/assets/6a277621-d44f-4072-9093-fc073c7b5fbf" />
+
+
 
 
 
 #### 3. Dive Into Daily Activities
-Expand each day to see a checklist of activities, including tips and suggestions.
+Get a clear overview of your trip essentials, including an estimated budget breakdown (Accommodation, Food, Local Transport), a checklist of "Must-Do Activities," and a packing list of "Things to Carry."
 
-<img width="915" height="705" alt="image" src="https://github.com/user-attachments/assets/0699ee06-5c86-49c8-8dbd-7ad23ea3b35f" />
+<img width="933" height="511" alt="image" src="https://github.com/user-attachments/assets/75089cfc-05e1-4912-9431-420da38c6bad" />
 
 
 
-#### 4. All Your Trip Details in One Place
-Get estimates for your trip cost, a list of must-do activities, and a checklist of things to carry.
+#### 4. Seamless, Integrated Booking
+Move from planning to booking without ever leaving the app. The "Travel Detail" page lets you fill in passenger information, add travel insurance, select GST details, and apply coupon codes for discounts.
 
-<img width="861" height="699" alt="image" src="https://github.com/user-attachments/assets/5aff941c-d182-4501-96f5-0a179b767cb4" />
+<img width="933" height="890" alt="image" src="https://github.com/user-attachments/assets/293c8bf1-ebd2-4eff-88df-bfb7a3a32066" />
 
-#### 5. Convenient Travel & Booking Options
-The app suggests various travel options, including train, bus, and flight details with cost and duration estimates.
 
-<img width="900" height="483" alt="image" src="https://github.com/user-attachments/assets/71898ef7-638a-44a7-98a5-2dc76e86a32b" />
+#### 5. Secure Checkout & Confirmation
+Review your "Price Summary," including fares, taxes, and discounts, and proceed to a simple payment confirmation. Once complete, you'll receive an instant "Booking Confirmed!" screen with all your details, including Booking ID, PNR, and seat information.
 
-#### 6. Smart Suggestion on the GO!
+<img width="933" height="591" alt="image" src="https://github.com/user-attachments/assets/1731c388-5816-4552-8e35-7d1ef4848b08" />
+<img width="933" height="773" alt="image" src="https://github.com/user-attachments/assets/4eb0a870-03dd-41f1-b67d-540e602830bb" />
+
+#### 6. Manage All Your Trips
+Your "My Saved Trips" dashboard shows all your planned adventures. You can easily track the booking status for each part of your trip, like "Departure: Booked" or "Hotel: Pending," helping you stay organized.
+<img width="664" height="528" alt="image" src="https://github.com/user-attachments/assets/2f41158e-690c-4bc0-9ade-9dcace2683db" />
+
+
+#### 7. Smart Suggestion on the GO!
 The app can quickly suggest you alternative if you are not happy or interested on the current option. If you like that you can update the current day itinerary with new option.
 
 <img width="420" height="520" alt="image" src="https://github.com/user-attachments/assets/8c2baf06-4d17-457f-b6ea-87995cd14fbd" />
